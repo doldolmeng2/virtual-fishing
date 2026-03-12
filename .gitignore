@@ -1,0 +1,93 @@
+# 참고: https://github.com/github/gitignore/blob/main/Unity.gitignore
+
+.utmp/
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+*.log
+
+# Blender 임시 파일
+*.blend1
+*.blend1.meta
+
+# 메모리 캡처 (용량·민감정보)
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Jetbrains Rider 플러그인 자동생성
+/[Aa]ssets/Plugins/Editor/JetBrains*
+*.DotSettings.user
+
+# Visual Studio 캐시
+.vs/
+
+# Gradle 캐시 (Android 빌드)
+.gradle/
+
+# 자동생성 솔루션/프로젝트 파일 (클론 시 Unity가 재생성)
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity 메타 (자동생성)
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# 크래시 리포트
+sysinfo.txt
+mono_crash.*
+
+# 빌드 결과물
+*.apk
+*.aab
+*.unitypackage
+*.unitypackage.meta
+*.app
+
+# Crashlytics
+crashlytics-build.properties
+
+# 테스트 러너
+InitTestScene*.unity*
+
+# Addressables
+/ServerData
+/[Aa]ssets/StreamingAssets/aa*
+/[Aa]ssets/AddressableAssetsData/link.xml*
+/[Aa]ssets/Addressables_Temp*
+/[Aa]ssets/AddressableAssetsData/*/*.bin*
+
+# Visual Scripting 자동생성
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers
+/[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta
+
+# 플레이 모드 테스트 씬
+/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# OS 생성 파일
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE/에디터
+*.code-workspace
+.idea/
