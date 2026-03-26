@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+title SD-01: 초기 접속 및 캘리브레이션
+
+actor Player
+participant "AccountManager\n<<IAccountService>>" as AM
+participant "FeedbackManager\n<<IFeedbackService>>" as FM
+participant "CalibrationController\n<<ICalibrationService>>" as CC
+participant "PlayerDataSO" as PD
+participant "GameFlowManager\n<<IGameFlowManager>>" as GFM
+participant "FishingSiteManager" as FSM
+participant "SceneService\n<<ISceneService>>" as SS
+
+== 로그인 ==
+Player -> AM : SelectAccount(id)
+activate AM
+AM -> AM : LoadAccount(id)\n도감 + LastPlayedAt 로드
+AM --> FM : <<VoidEventSO>> OnAccountLoaded
+FM -> FM : ShowLoadingScreen()
+FM -> FM : PlaySound("LoginComplete")
+AM --> GFM : TransitionTo(Calibration)
+deactivate AM
+
+== 캘리브레이션: 앉은키 ==
+GFM -> CC : StartCalibration()
+activate CC
+FM -> FM : ShowGazeIcon()
+FM -> FM : PlayTTS("정면을 응시해주세요")
+Player -> CC : ConfirmForwardGaze()
+CC -> PD : sittingHeight = HMD.y
+CC -> PD : currentPosition = (HMD.x, HMD.z)
+
+== 캘리브레이션: 팔 길이 ==
+FM -> FM : PlayTTS("양팔을 뻗어주세요")
+Player -> CC : ExtendArms()
+CC -> CC : D = Distance(leftCtrl, rightCtrl)
+CC -> PD : armLength = D / 2
+CC -> PD : safetyRadius = CalcFromArmLength()
+FM -> FM : PlayHaptic(StrongPulse, Both)
+FM -> FM : PlayTTS("캘리브레이션 완료")
+FM -> FM : ShowSafetyZoneVisual(safetyRadius)
+CC --> GFM : <<VoidEventSO>> CalibrationComplete
+deactivate CC
+
+== 낚시터 선택 ==
+GFM -> FSM : ShowSiteList()
+FSM -> FM : ShowUI("SiteSelectPanel")
+FM -> FM : PlaySiteAmbientPreview()
+Player -> FSM : SelectSite(siteData)
+FSM -> SS : LoadScene(siteData.sceneName)
+SS --> GFM : <<VoidEventSO>> OnSceneLoaded
+GFM -> GFM : TransitionTo(FishingReady)
+
+alt 예외: 컨트롤러 추적 실패
+  CC -> FM : <<VoidEventSO>> TrackingLost
+  FM -> FM : PlayTTS("컨트롤러를 확인해주세요")
+  FM -> FM : ShowWarningUI()
+end
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml
+!theme plain
+title SD-04: 미니게임 실행
+
+actor Player
+participant "MiniGameManager\n<<IMiniGame>>" as MGM
+participant "TensionCalculator\n<<ITensionCalculator>>" as TC
+participant "TensionDataSO" as TD
+participant "FishController\n<<IFish>>" as FC
+participant "FishingRodController\n<<IFishingRod>>" as FRC
+participant "FeedbackManager\n<<IFeedbackService>>" as FM
+participant "GameFlowManager\n<<IGameFlowManager>>" as GFM
+
+== 미니게임 초기화 ==
+MGM -> MGM : SetDifficulty(fish.Resistance, fish.Weight)
+MGM -> MGM : SetRemainingTime(baseTime / difficulty)
+MGM -> FM : ShowUI("MiniGamePanel")
+FM -> FM : PlayBGM("MiniGameTense")
+FM -> FM : PlayTTS("릴을 감아주세요!")
+
+== 미니게임 루프 ==
+loop 매 프레임 (SuccessGauge < 100 && Time > 0)
+  Player -> FRC : RotateSubController() [릴 감기]
+  FRC -> FRC : UpdateReelingSpeed(rotationDelta)
+  Player -> FRC : PullRod() [낚싯대 당기기]
+
+  FC -> FC : ExecuteMovement()
+  FC --> FM : OnFishMoved(direction)
+  FM -> FM : ShowVisualEffect("Splash", fishPos)
+
+  alt 물고기 강한 저항
+    FM -> FM : PlayHaptic(StrongPulse, Both)
+    FM -> FM : PlayTTS("낚싯대를 반대로 당기세요!")
+  else 일반 상태
+    FM -> FM : PlayHaptic(LightPulse, Sub)
+    FM -> FM : PlaySound("ReelClick")
+  end
+
+  TC -> TC : Calculate(fish.Resistance, reelingSpeed, rodDir)
+  TC -> TD : currentTension 업데이트
+  TC --> FM : <<FloatEventSO>> TensionChanged
+
+  alt TD.GetCurrentZone() == Safe
+    MGM -> MGM : SuccessGauge += rate * reelingSpeed
+    MGM --> FM : <<FloatEventSO>> SuccessGaugeChanged
+  else TD.GetCurrentZone() == Danger
+    FM -> FM : ShowUI("TensionWarning") [붉은 점멸]
+    FM -> FM : PlaySound("WarningBeep")
+  end
+
+  MGM -> MGM : RemainingTime -= deltaTime
+end
+
+== 결과 판정 ==
+alt 성공: SuccessGauge >= 100
+  MGM -> MGM : EndMiniGame(true)
+  MGM --> GFM : <<VoidEventSO>> MiniGameResult
+  FM -> FM : HideUI("MiniGamePanel")
+  GFM -> GFM : TransitionTo(Result)
+
+else 실패: 장력 초과 (줄 끊어짐)
+  FM -> FM : PlaySound("LineSnap")
+  FM -> FM : PlayHaptic(LightPulse, Both) [진동 끊김]
+  FM -> FM : PlayTTS("줄이 끊어졌습니다")
+  MGM -> MGM : EndMiniGame(false)
+  GFM -> GFM : TransitionTo(FishingReady)
+
+else 실패: 시간 초과
+  FM -> FM : PlayTTS("시간이 초과되었습니다")
+  FM -> FM : ShowVisualEffect("FishEscape")
+  MGM -> MGM : EndMiniGame(false)
+  GFM -> GFM : TransitionTo(FishingReady)
+end
+
+@enduml

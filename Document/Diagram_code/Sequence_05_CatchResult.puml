@@ -1,0 +1,53 @@
+@startuml
+!theme plain
+title SD-05: 포획 결과 및 수족관 도감
+
+actor Player
+participant "FishController\n<<IFish>>" as FC
+participant "AccountManager\n<<IAccountService>>" as AM
+participant "FeedbackManager\n<<IFeedbackService>>" as FM
+participant "FishingRodController\n<<IFishingRod>>" as FRC
+participant "GameFlowManager\n<<IGameFlowManager>>" as GFM
+participant "GameSettingsSO" as GS
+
+== 포획 연출 ==
+FC -> FC : MoveToPlayerView()
+FM -> FM : PlaySound("Fanfare")
+FM -> FM : ShowVisualEffect("Fireworks", fishPos)
+
+== 물고기 상호작용 ==
+loop 플레이어 터치
+  Player -> FC : Touch/Rotate [보조 컨트롤러]
+  FM -> FM : PlayHaptic(LightPulse, Sub)
+  FM -> FM : PlaySound("FishFlop")
+end
+
+== 정보 표시 ==
+FM -> FM : ShowUI("FishInfoPanel", fishData)
+note right
+  어종, 크기, 무게, 등급 등
+  크고 대비가 뚜렷한 글씨체
+end note
+FM -> FM : PlayTTS("붕어를 잡으셨습니다!\n무게는 2.3kg입니다")
+
+== 확인 처리 ==
+alt 수동: 버튼 클릭
+  Player -> FM : Press("ConfirmButton")
+  FM -> FM : PlaySound("ButtonClick")
+  FM -> FM : PlayHaptic(LightPulse, Sub)
+else 자동: autoConfirmDelay 경과
+  GS -> GS : autoConfirmDelay (10초)
+  ...10초 경과 시 자동 확인...
+end
+
+== 도감 저장 ==
+AM -> AM : AddToEncyclopedia(fishCatchData)
+AM -> AM : SaveAccount()
+FM -> FM : ShowVisualEffect("FishToAquarium")
+FM -> FM : HideUI("FishInfoPanel")
+
+== 상태 복귀 ==
+FRC -> FRC : state = Idle
+GFM -> GFM : TransitionTo(FishingReady)
+
+@enduml

@@ -1,0 +1,62 @@
+@startuml
+!theme plain
+title SD-02: 낚시 준비 및 캐스팅
+
+actor Player
+participant "FishingRodController\n<<IFishingRod>>" as FRC
+participant "FloatController\n<<IFishingFloat>>" as FC
+participant "FishingLineRenderer" as FLR
+participant "FeedbackManager\n<<IFeedbackService>>" as FM
+participant "GameFlowManager\n<<IGameFlowManager>>" as GFM
+
+== 낚싯대 부착 ==
+Player -> FRC : OnGrab(hand) [트리거 입력]
+activate FRC
+FRC -> FRC : state = Attached
+FRC --> FM : <<VoidEventSO>> RodStateChanged
+FM -> FM : PlaySound("RodAttach")
+FM -> FM : PlayHaptic(LightPulse, Main)
+
+== 캐스팅 준비 ==
+loop 캐스팅 존 체크
+  FRC -> FRC : CheckCastingZone(controllerPos)
+  alt 캐스팅 존 진입
+    FM -> FM : PlaySound("ZoneEnter")
+  end
+end
+
+== 캐스팅 실행 ==
+Player -> FRC : SwingMotion()
+FRC -> FRC : DetectExitFromZone()
+FRC -> FRC : CalculatePower(holdTime, acceleration)
+FRC -> FRC : CalculateDirection(controllerDir)
+FRC -> FRC : state = Casting
+FM -> FM : PlayHaptic(StrongPulse, Main)
+FM -> FM : PlaySound("LineCast")
+
+FRC -> FC : Launch(power, direction)
+activate FC
+FRC -> FLR : UpdateLine()
+
+== 착수 ==
+FC -> FC : SimulateTrajectory()
+FM -> FM : ShowVisualEffect("Trajectory", floatPos)
+FC -> FC : DetectWaterSurface()
+FC -> FC : velocity = 0
+FC -> FC : CalculateSinkingDepth()
+FC --> FM : <<VoidEventSO>> OnWaterLanded
+FM -> FM : ShowVisualEffect("Splash", landPos)
+FM -> FM : PlaySound("WaterSplash")
+deactivate FC
+
+FRC -> FRC : state = WaitingForBite
+FRC --> GFM : <<VoidEventSO>> RodStateChanged
+deactivate FRC
+
+note right of FC
+  착수 후 찌는 수면 위에서
+  물의 흐름에 따라 약간씩
+  자연스럽게 움직임
+end note
+
+@enduml

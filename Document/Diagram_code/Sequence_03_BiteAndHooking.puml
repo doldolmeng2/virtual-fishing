@@ -1,0 +1,70 @@
+@startuml
+!theme plain
+title SD-03: 입질 및 물고기 낚기
+
+actor Player
+participant "FishSpawner\n<<IFishSpawner>>" as FS
+participant "FishController\n<<IFish>>" as FC
+participant "FloatController\n<<IFishingFloat>>" as FLC
+participant "FishingRodController\n<<IFishingRod>>" as FRC
+participant "TensionDataSO" as TD
+participant "FeedbackManager\n<<IFeedbackService>>" as FM
+participant "GameFlowManager\n<<IGameFlowManager>>" as GFM
+
+== 입질 대기 ==
+FS -> FS : StartBiteTimer()
+FS -> FS : SelectFishByProbability()
+note right: 어종별 확률 + 대기 시간 계산
+
+...대기 시간 경과...
+
+== 입질 발생 ==
+FS -> FC : Initialize(speciesData)
+activate FC
+FC -> FC : weight, resistance 설정
+FS --> FM : 예고 입질 이벤트
+FM -> FM : ShowVisualEffect("Ripple", floatPos)
+FM -> FM : PlayHaptic(LightPulse, Main)
+
+...잠시 후 본 입질...
+
+FS --> FRC : <<VoidEventSO>> BiteOccurred
+FLC -> FLC : SinkingDepth 급격히 증가
+FM -> FM : PlaySound("FloatSink")
+FM -> FM : PlayHaptic(StrongPulse, Main)
+TD -> TD : 장력 추적 활성화
+
+== 챔질 판정 (Hooking Zone + 가속도 이중 조건) ==
+FM -> FM : ShowVisualEffect("HookingZoneGuide")
+note right: 입질 발생 시 챔질 존 가이드 표시\n(위로 올리라는 화살표 등)
+
+alt 성공: hookTimingWindow 내 챔질
+  Player -> FRC : LiftRod() [위로 드는 동작]
+  FRC -> FRC : CheckHookingZone(controllerPos)
+  note right: 조건 1: IsInHookingZone == true\n조건 2: Acceleration >= hookingMinAcceleration\n두 조건 동시 충족 시 성공
+
+  alt 존 진입 (가속도 판정 전)
+    FM -> FM : PlayHaptic(LightPulse, Main)
+  end
+
+  FRC -> FRC : JudgeHookSuccess()
+  FRC -> FRC : state = Hit
+  FM -> FM : PlayHaptic(StrongPulse, Main)
+  FM -> FM : ShowVisualEffect("HookSuccess")
+  FM -> FM : PlaySound("HookSuccess")
+
+  FRC -> FRC : state = MiniGame
+  FRC --> GFM : <<VoidEventSO>> RodStateChanged
+  GFM -> GFM : TransitionTo(MiniGame)
+
+else 실패: 타이밍 초과
+  FC -> FC : 물고기 도망
+  deactivate FC
+  FM -> FM : PlayTTS("아쉽습니다. 다시 도전해보세요")
+  FM -> FM : ShowVisualEffect("FishEscape")
+  FRC -> FRC : state = Idle (롤백)
+  FLC -> FLC : RetractLine()
+  GFM -> GFM : TransitionTo(FishingReady)
+end
+
+@enduml

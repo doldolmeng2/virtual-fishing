@@ -1,0 +1,57 @@
+@startuml
+!theme plain
+title SD-08: 게임 종료
+
+actor Player
+participant "FeedbackManager\n<<IFeedbackService>>" as FM
+participant "AccountManager\n<<IAccountService>>" as AM
+participant "GameFlowManager\n<<IGameFlowManager>>" as GFM
+participant "GameSettingsSO" as GS
+
+== 종료 요청 ==
+Player -> FM : Press("ExitGameButton")
+FM -> FM : PlaySound("ButtonClick")
+FM -> FM : PlayHaptic(LightPulse, Main)
+
+== 데이터 저장 ==
+GFM -> GFM : TransitionTo(ExitSequence)
+GFM -> AM : SaveAccount()
+activate AM
+FM -> FM : ShowUI("SavingProgress")
+FM -> FM : PlayTTS("기록을 안전하게\n저장하고 있습니다")
+AM -> AM : Sync Encyclopedia,\nScore, PlayTime
+AM -> AM : UpdateLastPlayedAt()
+AM --> FM : <<VoidEventSO>> OnAccountSaved
+deactivate AM
+FM -> FM : HideUI("SavingProgress")
+
+== 화면 이탈 시퀀스 ==
+FM -> FM : FadeScreen(0.7, 3.0)
+note right
+  풍경만 서서히 어둡게
+  발밑 지면과 배경광은 유지
+  (VR 멀미 방지)
+end note
+
+FM -> FM : ShowUI("ExitMessage")
+FM -> FM : PlayTTS(\n"VR 기기를 천천히 벗고,\n주변에 부딪힐 물건이 없는지\n확인한 뒤에 움직여주세요.\n수고하셨습니다.")
+
+== 최종 종료 ==
+alt 수동: 버튼 클릭
+  Player -> FM : Press("FullExitButton")
+else 자동: autoConfirmDelay 경과
+  ...10초 경과...
+end
+
+FM -> FM : FadeScreen(0.0, 1.0)
+GFM -> GFM : Application.Quit()
+
+== 예외: 비정상 종료 ==
+note over GFM, AM
+  배터리 방전 / HMD 벗김 / 기기 오류 시:
+  autoSaveInterval(120초)마다 실행되는
+  자동 저장 데이터로 복구
+  (트리거: 물고기 포획 시, 씬 전환 시, 주기적)
+end note
+
+@enduml
