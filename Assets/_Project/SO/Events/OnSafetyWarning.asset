@@ -9,6 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b67a3d26e26961489b0b337672c5285, type: 3}
-  m_Name: OnTensionChanged
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Core.Events.FloatEventSO
+  m_Script: {fileID: 11500000, guid: 3af0aefc597f5584990f7ec97f77241b, type: 3}
+  m_Name: OnSafetyWarning
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Core.Events.IntEventSO
