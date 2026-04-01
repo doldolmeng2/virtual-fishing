@@ -31,6 +31,16 @@ namespace VirtualFishing.Account
             _saveFolderPath = Path.Combine(Application.persistentDataPath, "Accounts");
             if (!Directory.Exists(_saveFolderPath))
                 Directory.CreateDirectory(_saveFolderPath);
+
+            ClearRuntimeData();
+        }
+
+        private void ClearRuntimeData()
+        {
+            accountData.accountId = "";
+            accountData.lastPlayedAt = "";
+            accountData.encyclopedia.Clear();
+            accountData.totalScore = 0;
         }
 
         private void OnEnable()
