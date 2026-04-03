@@ -1,0 +1,236 @@
+@startuml
+!theme plain
+title VR 낚시 게임 - 코어 인프라 (SO Event System + Shared Data)
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "Enums" #F5F5F5 {
+  enum GameState {
+    Login
+    Calibration
+    FishingReady
+    Fishing
+    MiniGame
+    Result
+    Warning
+    Paused
+    ExitSequence
+  }
+
+  enum RodState {
+    Idle
+    Attached
+    Casting
+    WaitingForBite
+    Hit
+    MiniGame
+  }
+
+  enum TensionZone {
+    Safe
+    Warning
+    Danger
+    Critical
+  }
+
+  enum SafetyWarningLevel {
+    None
+    NearBoundary
+    Outside
+    Emergency
+  }
+
+  enum BackgroundType {
+    River
+    Lake
+    Sea
+    Pond
+  }
+
+  enum MovementPattern {
+    Calm
+    Aggressive
+    Erratic
+  }
+
+  enum HapticPattern {
+    LightPulse
+    StrongPulse
+    Continuous
+    RhythmicWarning
+  }
+
+  enum ControllerHand {
+    Left
+    Right
+    Both
+  }
+}
+
+package "SO Event System\n<<Observer Pattern>>" #E8F5E9 {
+  interface "IGameEventListener<T>" as IListener {
+    + OnEventRaised(value : T) : void
+  }
+
+  interface IVoidEventListener {
+    + OnEventRaised() : void
+  }
+
+  abstract class "GameEventSO<T>" as GameEventSO <<ScriptableObject>> {
+    - _listeners : List<IGameEventListener<T>>
+    + Raise(value : T) : void
+    + Register(listener) : void
+    + Unregister(listener) : void
+  }
+
+  class VoidEventSO <<ScriptableObject>> {
+    - _listeners : List<IVoidEventListener>
+    + Raise() : void
+    + Register(listener) : void
+    + Unregister(listener) : void
+  }
+
+  class FloatEventSO <<ScriptableObject>>
+  class IntEventSO <<ScriptableObject>>
+  class StringEventSO <<ScriptableObject>>
+
+  class VoidEventListener <<MonoBehaviour>> {
+    - gameEvent : VoidEventSO
+    - response : UnityEvent
+  }
+
+  class FloatEventListener <<MonoBehaviour>> {
+    - gameEvent : FloatEventSO
+    - response : UnityEvent<float>
+  }
+
+  FloatEventSO --|> GameEventSO
+  IntEventSO --|> GameEventSO
+  StringEventSO --|> GameEventSO
+  VoidEventListener ..|> IVoidEventListener
+  FloatEventListener ..|> IListener
+  VoidEventListener --> VoidEventSO : subscribes
+  FloatEventListener --> FloatEventSO : subscribes
+  GameEventSO --> IListener : notifies *
+  VoidEventSO --> IVoidEventListener : notifies *
+}
+
+package "Shared Data\n<<SO Pattern>>" #E3F2FD {
+  class PlayerDataSO <<ScriptableObject>> {
+    + sittingHeight : float
+    + armLength : float
+    + currentPosition : Vector3
+    + safetyRadius : float
+  }
+
+  class AccountDataSO <<ScriptableObject>> {
+    + accountId : string
+    + lastPlayedAt : string
+    + encyclopedia : List<FishCatchRecord>
+    + totalScore : int
+  }
+
+  class FishSpeciesDataSO <<ScriptableObject>> {
+    + speciesName : string
+    + displayName : string
+    + weightRange : FloatRange
+    + baseResistance : float
+    + movementPattern : MovementPattern
+    + rarity : int
+    + icon : Sprite
+    + prefab : GameObject
+  }
+
+  class FishDatabaseSO <<ScriptableObject>> {
+    + allSpecies : List<FishSpeciesDataSO>
+    + GetRandomByRarity() : FishSpeciesDataSO
+  }
+
+  class FishingSiteDataSO <<ScriptableObject>> {
+    + siteName : string
+    + backgroundType : BackgroundType
+    + spawnFishList : List<FishSpawnEntry>
+    + sceneName : string
+    + ambientSound : AudioClip
+  }
+
+  class TensionDataSO <<ScriptableObject>> {
+    + currentTension : float
+    + maxTension : float
+    + safeZoneMin : float
+    + safeZoneMax : float
+    + dangerThreshold : float
+    + GetCurrentZone() : TensionZone
+    + ResetTension() : void
+  }
+
+  class GameSettingsSO <<ScriptableObject>> {
+    + castingPowerMultiplier : float
+    + castingZoneRadius : float
+    + hookTimingWindow : float
+    + hookingZoneRadius : float
+    + hookingZoneOffset : Vector3
+    + hookingMinAcceleration : float
+    + safetyCheckInterval : float
+    + autoConfirmDelay : float
+    + autoSaveInterval : float
+  }
+
+  class MiniGameSettingsSO <<ScriptableObject>> {
+    + baseDifficulty : float
+    + baseTimeLimit : float
+    + tensionIncreaseRate : float
+    + gaugeIncreaseRate : float
+  }
+
+  FishDatabaseSO *-- "*" FishSpeciesDataSO
+  FishingSiteDataSO o-- "*" FishSpeciesDataSO
+  FishSpeciesDataSO --> MovementPattern
+  FishingSiteDataSO --> BackgroundType
+  TensionDataSO --> TensionZone
+}
+
+package "Data Structures" #FFF3E0 {
+  class FishCatchData <<struct>> {
+    + species : FishSpeciesDataSO
+    + weight : float
+    + caughtAt : string
+    + siteType : BackgroundType
+  }
+
+  class FishCatchRecord <<Serializable>> {
+    + speciesName : string
+    + weight : float
+    + caughtAt : string
+    + siteName : string
+    + score : int
+  }
+
+  class FishSpawnEntry <<Serializable>> {
+    + speciesData : FishSpeciesDataSO
+    + spawnProbability : float
+    + minWaitTime : float
+    + maxWaitTime : float
+  }
+
+  class FloatRange <<Serializable>> {
+    + min : float
+    + max : float
+    + GetRandom() : float
+  }
+}
+
+note as N1
+  <b>SO Event System (Observer Pattern)</b>
+  프리팹 간 직접 참조 없이 이벤트 통신
+  인스펙터에서 드래그&드롭으로 연결
+  씬 독립적 (씬 전환 시에도 유지)
+
+  <b>Shared Data SO (SO Pattern)</b>
+  런타임 공유 데이터 컨테이너
+  여러 시스템이 동일 SO를 참조
+  씬 간 데이터 자연스럽게 유지
+end note
+
+@enduml

@@ -1,0 +1,69 @@
+@startuml
+!theme plain
+title SD-06: 안전 구역 이탈 감지
+
+actor Player
+participant "PlayerSafetyMonitor\n<<ISafetyMonitor>>" as PSM
+participant "PlayerDataSO" as PD
+participant "FeedbackManager\n<<IFeedbackService>>" as FM
+participant "GameFlowManager\n<<IGameFlowManager>>" as GFM
+participant "GameSettingsSO" as GS
+
+== 실시간 모니터링 ==
+loop safetyCheckInterval 간격 (0.2초)
+  PSM -> PD : currentPosition 업데이트\n(HMD x, z)
+  PSM -> PSM : distance = CalcDistance\n(currentPos, centerPos)
+
+  alt distance < safetyRadius - 0.3m
+    PSM -> PSM : level = None
+
+  else distance >= safetyRadius - 0.3m\n[1차 경고: 경계 근접]
+    PSM -> PSM : level = NearBoundary
+    PSM --> FM : <<IntEventSO>> SafetyWarning
+    FM -> FM : ShowVisualEffect("BlueGrid", floor)
+    note right
+      바닥에 은은한 푸른색
+      격자무늬 서서히 표시
+    end note
+
+  else distance >= safetyRadius\n[2차 경고: 구역 이탈]
+    PSM -> PSM : level = Outside
+    PSM --> FM : <<IntEventSO>> SafetyWarning
+    PSM --> GFM : <<IntEventSO>> SafetyWarning
+    GFM -> GFM : TransitionTo(Warning)
+    FM -> FM : ShowUI("SafetyWarning")
+    FM -> FM : PlayTTS("안전 구역을 벗어났습니다.\n중앙으로 돌아와 주세요")
+    FM -> FM : PlayHaptic(RhythmicWarning, Both)
+    FM -> FM : PlaySound("WarningAlarm")
+
+    PSM -> PSM : StartEmergencyTimer()
+
+    alt 장시간 이탈 (emergencyTimeout 초과)
+      PSM -> PSM : level = Emergency
+      PSM --> GFM : <<IntEventSO>> SafetyWarning
+      GFM -> GFM : TransitionTo(Paused)
+      FM -> FM : FadeScreen(0.8, 1.0)
+      FM -> FM : ShowPassthrough(true)
+      FM -> FM : PlayTTS("위험합니다.\n제자리로 돌아와 주세요")
+    end
+  end
+end
+
+== 안전 구역 복귀 ==
+Player -> PSM : [구역 내로 이동]
+PSM -> PSM : level = None
+PSM --> GFM : <<IntEventSO>> SafetyWarning(None)
+
+alt 이전 상태가 Warning
+  GFM -> GFM : RestorePreviousState()
+  FM -> FM : HideUI("SafetyWarning")
+  FM -> FM : StopHaptic()
+
+else 이전 상태가 Paused (패스스루)
+  FM -> FM : ShowPassthrough(false)
+  FM -> FM : ShowUI("ResumeButton")
+  Player -> FM : Press("ResumeButton")
+  GFM -> GFM : RestorePreviousState()
+end
+
+@enduml
