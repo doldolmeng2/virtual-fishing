@@ -60,8 +60,8 @@ namespace VirtualFishing.Fishing
         {
             _attachedHand = hand;
             transform.SetParent(hand);
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
+            // 잡은 위치의 상대 오프셋 유지 (현실적 그랩)
+            // VR에서는 XR Grab Interactable이 이걸 자동 처리함
         }
 
         public void Detach()
@@ -79,6 +79,7 @@ namespace VirtualFishing.Fishing
         public void UpdateReelingInput(float rotationDelta)
         {
             ReelingSpeed = rotationDelta;
+            floatController?.SetReelSpeed(rotationDelta);
         }
 
         #endregion
@@ -119,6 +120,7 @@ namespace VirtualFishing.Fishing
         public void Cast(float power, Vector3 direction)
         {
             float clampedPower = Mathf.Clamp(power, gameSettings.minCastingPower, gameSettings.maxCastingPower);
+            Debug.Log($"[Rod] Cast! power={clampedPower:F2}, dir={direction}");
             SetState(RodState.Casting);
             onCastStarted?.Raise();
             floatController.Launch(clampedPower, direction);
@@ -155,7 +157,7 @@ namespace VirtualFishing.Fishing
                 floatController.OnWaterLanded -= HandleWaterLanded;
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (!_isGrabbed) return;
 
@@ -174,20 +176,32 @@ namespace VirtualFishing.Fishing
 
         private void UpdateAcceleration()
         {
-            _acceleration = (_currentVelocity - _previousVelocity).magnitude / Time.deltaTime;
-            _previousVelocity = _currentVelocity;
+            // 속도의 크기 변화 = 가속도
+            _acceleration = _currentVelocity.magnitude;
+            _direction = _currentVelocity.normalized;
         }
 
         #region 캐스팅 존 판정
 
+        private float _debugLogTimer;
+
         private void UpdateCastingZoneCheck()
         {
             Vector3 zoneCenter = GetCastingZoneCenter();
-            Vector3 controllerPos = transform.position;
+            // 손(컨트롤러) 위치를 사용 — 낚싯대가 아닌 부착된 손 기준
+            Vector3 controllerPos = _attachedHand != null ? _attachedHand.position : transform.position;
             float distance = Vector3.Distance(controllerPos, zoneCenter);
             bool isAboveCenter = controllerPos.y > zoneCenter.y;
 
             IsInCastingZone = distance < gameSettings.castingZoneRadius && isAboveCenter;
+
+            // 주기적 디버그 로그
+            _debugLogTimer += Time.deltaTime;
+            if (_debugLogTimer > 0.5f)
+            {
+                _debugLogTimer = 0f;
+                Debug.Log($"[Rod:Zone] hand={controllerPos:F2} center={zoneCenter:F2} dist={distance:F2} radius={gameSettings.castingZoneRadius} above={isAboveCenter} inZone={IsInCastingZone} hold={_castingZoneHoldTime:F2} accel={_acceleration:F2}");
+            }
 
             if (IsInCastingZone)
             {
@@ -197,7 +211,7 @@ namespace VirtualFishing.Fishing
             // 이지 캐스팅: 존 진입만 하면 자동 투척
             if (gameSettings.easyCastingEnabled && IsInCastingZone)
             {
-                Vector3 defaultDir = transform.forward;
+                Vector3 defaultDir = _attachedHand != null ? _attachedHand.forward : transform.forward;
                 Cast(gameSettings.easyCastingPower, defaultDir);
                 ResetCastingState();
                 return;
@@ -208,6 +222,7 @@ namespace VirtualFishing.Fishing
             {
                 bool holdValid = _castingZoneHoldTime >= gameSettings.minCastingHoldTime;
                 bool accelValid = _acceleration >= gameSettings.minCastingAcceleration;
+                Debug.Log($"[Rod:Cast?] 존 이탈! holdTime={_castingZoneHoldTime:F2}(>={gameSettings.minCastingHoldTime}) holdOK={holdValid}, accel={_acceleration:F2}(>={gameSettings.minCastingAcceleration}) accelOK={accelValid}");
 
                 if (holdValid && accelValid)
                 {
@@ -279,7 +294,7 @@ namespace VirtualFishing.Fishing
                 _isBiteActive = false;
                 IsInHookingZone = false;
                 onHookFailed?.Raise();
-                ResetToIdle();
+                ReelIn();
             }
         }
 
@@ -296,6 +311,7 @@ namespace VirtualFishing.Fishing
 
         private void HandleWaterLanded()
         {
+            Debug.Log($"[Rod] HandleWaterLanded, currentState={_currentState}");
             if (_currentState == RodState.Casting)
             {
                 SetState(RodState.WaitingForBite);
@@ -310,21 +326,46 @@ namespace VirtualFishing.Fishing
         private void SetState(RodState newState)
         {
             if (_currentState == newState) return;
+            Debug.Log($"[Rod] {_currentState} → {newState}");
             _currentState = newState;
             OnRodStateChanged?.Invoke(newState);
             onRodStateChanged?.Raise();
         }
 
-        private void ResetToIdle()
+        /// <summary>
+        /// 줄 회수. 그랩 유지한 채 Attached로 복귀.
+        /// </summary>
+        public void ReelIn()
         {
+            Debug.Log("[Rod] 줄 회수 (ReelIn)");
+            _isBiteActive = false;
+            IsInHookingZone = false;
             floatController?.ResetFloat();
             ReelingSpeed = 0f;
-            SetState(RodState.Idle);
+
+            if (_isGrabbed)
+                SetState(RodState.Attached);
+            else
+                SetState(RodState.Idle);
+        }
+
+        /// <summary>
+        /// 디버그: 강제 상태 전환
+        /// </summary>
+        public void ForceState(RodState state)
+        {
+            Debug.Log($"[Rod] 강제 전환: {_currentState} → {state}");
+            _currentState = state;
+
+            if (state == RodState.WaitingForBite)
+            {
+                _isBiteActive = false;
+            }
         }
 
         public void OnMiniGameEnded()
         {
-            ResetToIdle();
+            ReelIn();
         }
 
         #endregion
