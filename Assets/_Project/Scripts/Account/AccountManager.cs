@@ -59,24 +59,46 @@ namespace VirtualFishing.Account
 
             if (File.Exists(filePath))
             {
-                string json = File.ReadAllText(filePath);
-                var saveData = JsonUtility.FromJson<AccountSaveData>(json);
-                ApplyToSO(saveData);
-                Debug.Log($"[Account] 계정 로드 완료: {accountId}");
+                try
+                {
+                    string json = File.ReadAllText(filePath);
+                    var saveData = JsonUtility.FromJson<AccountSaveData>(json);
+
+                    if (saveData == null || string.IsNullOrEmpty(saveData.accountId))
+                        throw new Exception("역직렬화 결과가 유효하지 않음");
+
+                    ApplyToSO(saveData);
+                    Debug.Log($"[Account] 계정 로드 완료: {accountId}");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[Account] 세이브 파일 손상 — 백업 후 새 계정 생성: {e.Message}");
+
+                    string backupPath = filePath + $".backup_{DateTime.Now:yyyyMMdd_HHmmss}";
+                    try { File.Copy(filePath, backupPath); }
+                    catch { /* 백업 실패해도 진행 */ }
+
+                    InitializeNewAccount(accountId);
+                }
             }
             else
             {
-                accountData.accountId = accountId;
-                accountData.lastPlayedAt = "";
-                accountData.encyclopedia.Clear();
-                accountData.totalScore = 0;
-                Debug.Log($"[Account] 새 계정 생성: {accountId}");
+                InitializeNewAccount(accountId);
             }
 
             UpdateLastPlayedAt();
 
             onAccountLoaded?.Raise();
             OnAccountLoaded?.Invoke();
+        }
+
+        private void InitializeNewAccount(string accountId)
+        {
+            accountData.accountId = accountId;
+            accountData.lastPlayedAt = "";
+            accountData.encyclopedia.Clear();
+            accountData.totalScore = 0;
+            Debug.Log($"[Account] 새 계정 생성: {accountId}");
         }
 
         public void SaveAccount()
