@@ -20,7 +20,7 @@ namespace VirtualFishing.Interfaces
     {
         float CurrentTension { get; }
         TensionZone CurrentZone { get; }
-        void Calculate(float fishResistance, float reelingSpeed, Vector3 rodDirection);
+        void Calculate(float fishResistance, float reelingSpeed, FishMoveState fishMoveState, Vector3 rodDirection);
         void Reset();
         event Action<float> OnTensionChanged;
         event Action<TensionZone> OnTensionZoneChanged;
