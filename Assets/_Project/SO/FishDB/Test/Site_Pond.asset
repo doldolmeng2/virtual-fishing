@@ -20,9 +20,9 @@ MonoBehaviour:
   skyboxMaterial: {fileID: 0}
   backgroundImage: {fileID: 0}
   spawnFishList:
-  - speciesData: {fileID: 11400000, guid: 57db1531e48a45b3b8c2e1fc4938cd79, type: 2}
-    spawnWeight: 60
-  - speciesData: {fileID: 11400000, guid: 9ff950cfac6144048f6665346a11d786, type: 2}
-    spawnWeight: 30
-  - speciesData: {fileID: 11400000, guid: e87c54b43fc34bdb8fef65ca530dc012, type: 2}
-    spawnWeight: 10
+  - speciesDataField: {fileID: 11400000, guid: 57db1531e48a45b3b8c2e1fc4938cd79, type: 2}
+    spawnWeightField: 60
+  - speciesDataField: {fileID: 11400000, guid: 9ff950cfac6144048f6665346a11d786, type: 2}
+    spawnWeightField: 30
+  - speciesDataField: {fileID: 11400000, guid: e87c54b43fc34bdb8fef65ca530dc012, type: 2}
+    spawnWeightField: 10

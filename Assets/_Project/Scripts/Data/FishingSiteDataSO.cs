@@ -21,7 +21,7 @@ namespace VirtualFishing.Data
         [SerializeField] private Sprite backgroundImage;
 
         [Header("Fish Spawn")]
-        [SerializeField] private List<FishSpawnEntry> spawnFishListField = new();
+        public List<FishSpawnEntry> spawnFishList = new();
 
         public string SiteId => siteId;
         public string DisplayName => displayName;
@@ -31,12 +31,11 @@ namespace VirtualFishing.Data
         public AudioClip AmbientSound => ambientSound;
         public Material SkyboxMaterial => skyboxMaterial;
         public Sprite BackgroundImage => backgroundImage;
-        public IReadOnlyList<FishSpawnEntry> SpawnFishList => spawnFishListField;
-        public List<FishSpawnEntry> spawnFishList => spawnFishListField;
+        public IReadOnlyList<FishSpawnEntry> SpawnFishList => spawnFishList;
 
         private void OnValidate()
         {
-            spawnFishListField ??= new List<FishSpawnEntry>();
+            spawnFishList ??= new List<FishSpawnEntry>();
         }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VirtualFishing.Core.Events;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
@@ -9,8 +10,10 @@ namespace VirtualFishing.Core.Fish
 {
     public class FishSpawner : MonoBehaviour, IFishSpawner
     {
+        [FormerlySerializedAs("currentSite")]
         [SerializeField] private FishingSiteDataSO siteData;
         [SerializeField] private MiniGameSettingsSO settings;
+        [FormerlySerializedAs("fishController")]
         [SerializeField] private MonoBehaviour fishControllerRef;
         [SerializeField] private VoidEventSO onWarningBiteEvent;
         [SerializeField] private VoidEventSO onBiteOccurredEvent;

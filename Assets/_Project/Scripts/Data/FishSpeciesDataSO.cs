@@ -18,8 +18,9 @@ namespace VirtualFishing.Data
         [SerializeField] private FloatRange sizeRangeCm = new FloatRange(10f, 30f);
         [FormerlySerializedAs("weightRange")]
         [SerializeField] private FloatRange weightRangeKg = new FloatRange(0.5f, 2f);
+        [FormerlySerializedAs("baseResistance")]
         [Min(0f)]
-        [SerializeField] private float baseResistance = 1f;
+        [SerializeField] private float baseResistanceValue = 1f;
         [SerializeField] private MovementPattern movementPattern = MovementPattern.Calm;
         [SerializeField] private FloatRange moveModeDurationRange = new FloatRange(1f, 2.5f);
         [Min(0f)]
@@ -44,7 +45,8 @@ namespace VirtualFishing.Data
         public int rarity => rarityValue;
         public FloatRange SizeRangeCm => sizeRangeCm;
         public FloatRange WeightRangeKg => weightRangeKg;
-        public float BaseResistance => baseResistance;
+        public float BaseResistance => baseResistanceValue;
+        public float baseResistance => baseResistanceValue;
         public MovementPattern MovementPattern => movementPattern;
         public FloatRange MoveModeDurationRange => moveModeDurationRange;
         public float MinWaitTime => minWaitTime;
@@ -78,7 +80,7 @@ namespace VirtualFishing.Data
         private void OnValidate()
         {
             rarityValue = Mathf.Max(1, rarityValue);
-            baseResistance = Mathf.Max(0f, baseResistance);
+            baseResistanceValue = Mathf.Max(0f, baseResistanceValue);
             moveModeDurationRange.min = Mathf.Max(0.1f, moveModeDurationRange.min);
             moveModeDurationRange.max = Mathf.Max(moveModeDurationRange.min, moveModeDurationRange.max);
             minWaitTime = Mathf.Max(0f, minWaitTime);

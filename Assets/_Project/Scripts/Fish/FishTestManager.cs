@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -9,13 +10,18 @@ namespace VirtualFishing.Core.Fish
     {
         [SerializeField] private FishSpawner fishSpawner;
         [SerializeField] private KeyCode triggerKey = KeyCode.Space;
+        [FormerlySerializedAs("movementTestKey")]
         [SerializeField] private KeyCode startRandomMovementKey = KeyCode.G;
         [SerializeField] private KeyCode stopRandomMovementKey = KeyCode.S;
         [SerializeField] private FishController fishController;
         [SerializeField] private FishEnvironmentController environmentController;
 
+        private bool startMovementOnNextBite;
+
         private void Awake()
         {
+            NormalizeLegacyKeyBindings();
+
             if (fishSpawner == null)
             {
                 fishSpawner = GetComponent<FishSpawner>();
@@ -69,6 +75,14 @@ namespace VirtualFishing.Core.Fish
                     return;
                 }
 
+                if (fishController.CurrentSpecies == null)
+                {
+                    startMovementOnNextBite = true;
+                    Debug.Log("[FishTestManager] G pressed before fish initialization. Movement will start automatically on the next bite.");
+                    return;
+                }
+
+                startMovementOnNextBite = false;
                 Debug.Log("[FishTestManager] G pressed. Starting random movement mode loop.");
                 fishController.StartRandomMovementModeLoop();
             }
@@ -81,6 +95,7 @@ namespace VirtualFishing.Core.Fish
                     return;
                 }
 
+                startMovementOnNextBite = false;
                 Debug.Log("[FishTestManager] S pressed. Stopping random movement mode loop.");
                 fishController.StopRandomMovementModeLoop();
             }
@@ -125,6 +140,19 @@ namespace VirtualFishing.Core.Fish
         }
 #endif
 
+        private void OnValidate()
+        {
+            NormalizeLegacyKeyBindings();
+        }
+
+        private void NormalizeLegacyKeyBindings()
+        {
+            if (startRandomMovementKey == KeyCode.M)
+            {
+                startRandomMovementKey = KeyCode.G;
+            }
+        }
+
         private void HandleBiteOccurred(Data.FishSpeciesDataSO speciesData)
         {
             if (speciesData == null)
@@ -134,6 +162,15 @@ namespace VirtualFishing.Core.Fish
             }
 
             Debug.Log($"[FishTestManager] BiteOccurred event received: {speciesData.DisplayName}");
+
+            if (!startMovementOnNextBite || fishController == null)
+            {
+                return;
+            }
+
+            startMovementOnNextBite = false;
+            Debug.Log("[FishTestManager] Pending movement request detected. Starting random movement mode loop after bite.");
+            fishController.StartRandomMovementModeLoop();
         }
     }
 }
