@@ -24,6 +24,7 @@ namespace VirtualFishing.Interfaces
     {
         void StartBiteTimer();
         void CancelBite();
-        event Action<FishSpeciesDataSO> BiteOccurred;
+        event Action OnWarningBite;                    // 예고 입질
+        event Action<FishSpeciesDataSO> OnBiteOccurred; // 본 입질
     }
 }

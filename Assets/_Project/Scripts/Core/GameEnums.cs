@@ -75,4 +75,12 @@ namespace VirtualFishing
         Continuous,
         RhythmicWarning
     }
+
+    public enum FishMoveState
+    {
+        Normal,   // 일반 상황 - 릴링 시 기본 텐션 증가
+        Left,     // 물고기가 왼쪽으로 이동 → 릴링 시 텐션 배율 증가
+        Right,    // 물고기가 오른쪽으로 이동 → 릴링 시 텐션 배율 증가
+        Opposite  // 물고기가 멀어짐 → 릴링 시 텐션 배율 2x 이상 증가
+    }
 }
