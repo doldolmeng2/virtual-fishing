@@ -11,7 +11,8 @@ namespace VirtualFishing.Data
         [SerializeField] private string fishId = "Fish_New";
         [SerializeField] private string displayName = "New Fish";
         [Range(1, 5)]
-        [SerializeField] private int rarity = 1;
+        [FormerlySerializedAs("rarity")]
+        [SerializeField] private int rarityValue = 1;
 
         [Header("Catch Data")]
         [SerializeField] private FloatRange sizeRangeCm = new FloatRange(10f, 30f);
@@ -37,8 +38,10 @@ namespace VirtualFishing.Data
 
         public string FishId => fishId;
         public string SpeciesName => fishId;
+        public string speciesName => displayName;
         public string DisplayName => displayName;
-        public int Rarity => rarity;
+        public int Rarity => rarityValue;
+        public int rarity => rarityValue;
         public FloatRange SizeRangeCm => sizeRangeCm;
         public FloatRange WeightRangeKg => weightRangeKg;
         public float BaseResistance => baseResistance;
@@ -74,7 +77,7 @@ namespace VirtualFishing.Data
 
         private void OnValidate()
         {
-            rarity = Mathf.Max(1, rarity);
+            rarityValue = Mathf.Max(1, rarityValue);
             baseResistance = Mathf.Max(0f, baseResistance);
             moveModeDurationRange.min = Mathf.Max(0.1f, moveModeDurationRange.min);
             moveModeDurationRange.max = Mathf.Max(moveModeDurationRange.min, moveModeDurationRange.max);
