@@ -54,6 +54,13 @@ namespace VirtualFishing
         Erratic
     }
 
+    public enum FishMoveMode
+    {
+        Stop,
+        MoveLeft,
+        MoveRight
+    }
+
     public enum ControllerHand
     {
         Left,
