@@ -8,17 +8,15 @@ namespace VirtualFishing.EditorTools
 {
     public static class FishTestPrefabBuilder
     {
-        private const string RootFolder = "Assets/_Project/Art/TestFish";
-        private const string MaterialFolder = RootFolder + "/Materials";
-        private const string PrefabFolder = RootFolder + "/Prefabs";
+        private const string MaterialFolder = "Assets/_Project/Materials/Fish";
+        private const string PrefabFolder = "Assets/_Project/Prefabs/Fish";
         private const string FishDbFolder = "Assets/_Project/SO/FishDB/Test";
 
         [MenuItem("VirtualFishing/Fish/Build Test Fish Prefabs")]
         public static void BuildTestFishPrefabs()
         {
-            EnsureFolder("Assets/_Project/Art", "TestFish");
-            EnsureFolder(RootFolder, "Materials");
-            EnsureFolder(RootFolder, "Prefabs");
+            EnsureFolder("Assets/_Project/Materials", "Fish");
+            EnsureFolder("Assets/_Project/Prefabs", "Fish");
 
             BuildAndAssign(
                 fishAssetName: "Fish_Crucian",
