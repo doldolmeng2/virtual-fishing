@@ -91,3 +91,7 @@ Desktop.ini
 # IDE/에디터
 *.code-workspace
 .idea/
+
+# 에디터 로컬 복구 파일
+Assets/_Recovery/
+Assets/_Recovery.meta
