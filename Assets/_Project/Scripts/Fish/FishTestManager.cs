@@ -36,7 +36,7 @@ namespace VirtualFishing.Core.Fish
         {
             if (fishSpawner != null)
             {
-                fishSpawner.BiteOccurred += HandleBiteOccurred;
+                fishSpawner.OnBiteOccurred += HandleBiteOccurred;
             }
         }
 
@@ -44,7 +44,7 @@ namespace VirtualFishing.Core.Fish
         {
             if (fishSpawner != null)
             {
-                fishSpawner.BiteOccurred -= HandleBiteOccurred;
+                fishSpawner.OnBiteOccurred -= HandleBiteOccurred;
             }
         }
 

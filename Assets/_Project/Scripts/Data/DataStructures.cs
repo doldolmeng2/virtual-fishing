@@ -34,6 +34,8 @@ namespace VirtualFishing.Data
         public FishSpeciesDataSO SpeciesData => speciesData;
         public float SpawnWeight => spawnWeight;
         public bool IsValid => speciesData != null && spawnWeight > 0f;
+        public FishSpeciesDataSO speciesData => this.speciesData;
+        public float spawnProbability => spawnWeight;
     }
 
     [Serializable]

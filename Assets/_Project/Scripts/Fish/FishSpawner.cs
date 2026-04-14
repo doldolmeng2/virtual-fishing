@@ -5,106 +5,128 @@ using VirtualFishing.Core.Events;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
 
-namespace VirtualFishing.Fish
+namespace VirtualFishing.Core.Fish
 {
     public class FishSpawner : MonoBehaviour, IFishSpawner
     {
         [SerializeField] private FishingSiteDataSO siteData;
         [SerializeField] private MiniGameSettingsSO settings;
-        [SerializeField] private MonoBehaviour fishControllerRef; // IFish를 구현한 FishController 연결
+        [SerializeField] private MonoBehaviour fishControllerRef;
         [SerializeField] private VoidEventSO onWarningBiteEvent;
         [SerializeField] private VoidEventSO onBiteOccurredEvent;
 
-        private IFish _fish;
-        private Coroutine _biteCoroutine;
+        private IFish fish;
+        private Coroutine biteCoroutine;
 
         public event Action OnWarningBite;
         public event Action<FishSpeciesDataSO> OnBiteOccurred;
 
         private void Awake()
         {
-            _fish = fishControllerRef as IFish;
+            fish = fishControllerRef as IFish;
         }
 
-        /// <summary>
-        /// 낚시 대기 상태 진입 시 호출. 예고/본 입질 타이머를 시작한다.
-        /// </summary>
         public void StartBiteTimer()
         {
-            if (_biteCoroutine != null)
-                StopCoroutine(_biteCoroutine);
-            _biteCoroutine = StartCoroutine(BiteRoutine());
+            if (biteCoroutine != null)
+            {
+                StopCoroutine(biteCoroutine);
+            }
+
+            biteCoroutine = StartCoroutine(BiteRoutine());
         }
 
         public void CancelBite()
         {
-            if (_biteCoroutine == null) return;
-            StopCoroutine(_biteCoroutine);
-            _biteCoroutine = null;
+            if (biteCoroutine == null)
+            {
+                return;
+            }
+
+            StopCoroutine(biteCoroutine);
+            biteCoroutine = null;
         }
 
         private IEnumerator BiteRoutine()
         {
-            // 본 입질 대기 시간: biteMinTime ~ biteMaxTime
-            float biteTime = UnityEngine.Random.Range(settings.biteMinTime, settings.biteMaxTime);
-
-            // 예고 입질 대기 시간: 본 입질 범위의 절반 구간
-            float warningTime = UnityEngine.Random.Range(settings.biteMinTime / 2f, settings.biteMaxTime / 2f);
-
-            // 최소 간격 보장: 예고와 본 입질 사이 biteGapMinTime 이상 확보
-            if (biteTime - warningTime < settings.biteGapMinTime)
-                warningTime = biteTime - settings.biteGapMinTime;
-
-            warningTime = Mathf.Max(0f, warningTime);
-
-            // 예고 입질
-            yield return new WaitForSeconds(warningTime);
-            OnWarningBite?.Invoke();
-            onWarningBiteEvent?.Raise();
-
-            // 본 입질 (나머지 시간 대기)
-            yield return new WaitForSeconds(biteTime - warningTime);
-
             FishSpeciesDataSO species = SelectFishSpecies();
             if (species == null)
             {
-                _biteCoroutine = null;
+                Debug.LogWarning("[FishSpawner] Bite routine aborted: no valid fish species found.");
+                biteCoroutine = null;
                 yield break;
             }
 
-            // 물고기 데이터 초기화 (담당자 C가 구현한 FishController)
-            _fish?.Initialize(species);
+            float waitTime = species.GetRandomWaitTime();
+            yield return new WaitForSeconds(waitTime);
 
+            Debug.Log($"[FishSpawner] Warning bite occurred: species={species.DisplayName}, wait={waitTime:F2}s");
+            OnWarningBite?.Invoke();
+            onWarningBiteEvent?.Raise();
+
+            float mainBiteDelay = settings != null
+                ? Mathf.Max(settings.biteGapMinTime, UnityEngine.Random.Range(0.5f, 1.5f))
+                : UnityEngine.Random.Range(0.5f, 1.5f);
+
+            yield return new WaitForSeconds(mainBiteDelay);
+
+            fish?.Initialize(species);
+
+            Debug.Log($"[FishSpawner] Main bite occurred: species={species.DisplayName}, mainDelay={mainBiteDelay:F2}s");
             OnBiteOccurred?.Invoke(species);
             onBiteOccurredEvent?.Raise();
 
-            _biteCoroutine = null;
+            biteCoroutine = null;
         }
 
-        /// <summary>
-        /// spawnFishList의 확률에 따라 어종을 선택한다.
-        /// </summary>
         private FishSpeciesDataSO SelectFishSpecies()
         {
             if (siteData == null || siteData.spawnFishList == null || siteData.spawnFishList.Count == 0)
-                return null;
-
-            float total = 0f;
-            foreach (var entry in siteData.spawnFishList)
-                total += entry.spawnProbability;
-
-            float roll = UnityEngine.Random.Range(0f, total);
-            float cumulative = 0f;
-
-            foreach (var entry in siteData.spawnFishList)
             {
-                cumulative += entry.spawnProbability;
-                if (roll <= cumulative)
-                    return entry.speciesData;
+                return null;
             }
 
-            // 부동소수점 오차 방어
-            return siteData.spawnFishList[siteData.spawnFishList.Count - 1].speciesData;
+            float totalWeight = 0f;
+            foreach (FishSpawnEntry entry in siteData.spawnFishList)
+            {
+                if (entry != null && entry.IsValid)
+                {
+                    totalWeight += entry.spawnProbability;
+                }
+            }
+
+            if (totalWeight <= 0f)
+            {
+                return null;
+            }
+
+            float roll = UnityEngine.Random.Range(0f, totalWeight);
+            float cumulative = 0f;
+
+            foreach (FishSpawnEntry entry in siteData.spawnFishList)
+            {
+                if (entry == null || !entry.IsValid)
+                {
+                    continue;
+                }
+
+                cumulative += entry.spawnProbability;
+                if (roll <= cumulative)
+                {
+                    return entry.speciesData;
+                }
+            }
+
+            for (int i = siteData.spawnFishList.Count - 1; i >= 0; i--)
+            {
+                FishSpawnEntry entry = siteData.spawnFishList[i];
+                if (entry != null && entry.IsValid)
+                {
+                    return entry.speciesData;
+                }
+            }
+
+            return null;
         }
     }
 }

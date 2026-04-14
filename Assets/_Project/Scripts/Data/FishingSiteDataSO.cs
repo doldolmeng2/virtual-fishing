@@ -32,6 +32,7 @@ namespace VirtualFishing.Data
         public Material SkyboxMaterial => skyboxMaterial;
         public Sprite BackgroundImage => backgroundImage;
         public IReadOnlyList<FishSpawnEntry> SpawnFishList => spawnFishList;
+        public List<FishSpawnEntry> spawnFishList => this.spawnFishList;
 
         private void OnValidate()
         {
