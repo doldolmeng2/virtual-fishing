@@ -26,16 +26,16 @@ namespace VirtualFishing.Data
     [Serializable]
     public class FishSpawnEntry
     {
-        [SerializeField] private FishSpeciesDataSO speciesData;
+        [SerializeField] private FishSpeciesDataSO speciesDataField;
         [FormerlySerializedAs("spawnProbability")]
         [Min(0f)]
-        [SerializeField] private float spawnWeight = 1f;
+        [SerializeField] private float spawnWeightField = 1f;
 
-        public FishSpeciesDataSO SpeciesData => speciesData;
-        public float SpawnWeight => spawnWeight;
-        public bool IsValid => speciesData != null && spawnWeight > 0f;
-        public FishSpeciesDataSO speciesData => this.speciesData;
-        public float spawnProbability => spawnWeight;
+        public FishSpeciesDataSO SpeciesData => speciesDataField;
+        public float SpawnWeight => spawnWeightField;
+        public bool IsValid => speciesDataField != null && spawnWeightField > 0f;
+        public FishSpeciesDataSO speciesData => speciesDataField;
+        public float spawnProbability => spawnWeightField;
     }
 
     [Serializable]
