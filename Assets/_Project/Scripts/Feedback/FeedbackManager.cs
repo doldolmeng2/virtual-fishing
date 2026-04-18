@@ -12,21 +12,104 @@ namespace VirtualFishing.Feedback
         [SerializeField] private TTSManager ttsManager;
         // UI 매니저는 구조에 따라 분리하거나 이곳에 통합 가능
 
-        #region SO Event 수신부 (UnityEvent로 연결)
+        #region 낚시, 미니게임 이벤트 수신부
 
-        // 시나리오 05: 포획 결과 연출
+        // 1. 낚싯대 상태 변경 이벤트 수신 (IntEventSO 등을 통해 Enum 인덱스 수신)
+        public void OnRodStateChangedEvent(int stateIndex)
+        {
+            RodState state = (RodState)stateIndex; // GameEnums.cs 참조
+
+            switch (state)
+            {
+                case RodState.Attached:
+                    PlaySound("RodAttach");
+                    PlayHaptic(HapticPattern.LightPulse, ControllerHand.Right); // 낚싯대를 쥔 주 사용 손
+                    break;
+                case RodState.Casting:
+                    PlaySound("LineCast");
+                    PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Right);
+                    break;
+                case RodState.Hit:
+                    PlaySound("HookSuccess");
+                    PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Right);
+                    ShowVisualEffect("HookSuccess", Vector3.zero); // 임시 위치(Vector3.zero)
+                    break;
+            }
+            Debug.Log($"<color=green>[피드백]</color> 낚싯대 상태 변경 이벤트 수신: {state}");
+        }
+
+        // 2. 찌 착수 이벤트 수신 (VoidEventSO)
+        public void OnWaterLandedEvent()
+        {
+            PlaySound("WaterSplash");
+            ShowVisualEffect("Splash", Vector3.zero);
+        }
+
+        // 3. 입질 발생 이벤트 수신 (VoidEventSO)
+        public void OnBiteOccurredEvent()
+        {
+            PlaySound("FloatSink");
+            PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Right);
+        }
+
+        // 4. 미니게임 시작 이벤트 수신 (VoidEventSO)
+        public void OnMiniGameStartedEvent()
+        {
+            ShowUI("MiniGamePanel");
+            // soundManager.PlayBGM(...); //미니게임 BGM 클립 전달 필요
+            PlayTTS("릴을 감아주세요!");
+        }
+
+        // 5. 미니게임 중 텐션(장력) 변화 이벤트 수신 (FloatEventSO)
+        public void OnTensionChangedEvent(float tension)
+        {
+            Debug.Log($"<color=green>[피드백]</color> 장력 변화 이벤트 수신: {tension}");
+            // 기획된 장력 한계치(예: Danger 영역 진입 기준 80f)를 넘어가면 경고 피드백
+            if (tension >= 80f) 
+            {
+                ShowUI("TensionWarning");
+                PlaySound("WarningBeep");
+                PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Both); // 양손에 강한 저항감
+                // PlayTTS("낚싯대를 반대로 당기세요!"); // 필요시 주석 해제
+            }
+            else
+            {
+                HideUI("TensionWarning");
+            }
+        }
+
+        // 6. 미니게임 결과 이벤트 수신 (성공=true, 실패=false 전달받음)
+        public void OnMiniGameResultEvent(bool isSuccess)
+        {
+            HideUI("MiniGamePanel");
+            
+            if (!isSuccess) // 실패 (줄 끊어짐 또는 시간 초과)
+            {
+                PlaySound("LineSnap");
+                hapticManager.StopAll(); // 진동 강제 종료
+                PlayTTS("아쉽습니다. 물고기를 놓쳤습니다.");
+                ShowVisualEffect("FishEscape", Vector3.zero);
+            }
+            // 성공 시에는 OnCatchResultEvent()가 이어서 호출될 것이므로 생략합니다.
+        }
+
+        #endregion
+
+        #region 결과, 안전, 종료 이벤트 수신부
+
         public void OnCatchResultEvent()
         {
             PlaySound("Fanfare");
             ShowVisualEffect("Fireworks", Vector3.zero);
             ShowUI("FishInfoPanel");
             PlayTTS("물고기를 잡으셨습니다.");
+            Debug.Log("<color=green>[피드백]</color> 포획 결과 이벤트 수신: 성공");
         }
 
-        // 시나리오 06: 안전 구역 이탈 경고 (0:None, 1:Near, 2:Outside, 3:Emergency)
         public void OnSafetyWarningEvent(int level)
         {
             SafetyWarningLevel warningLevel = (SafetyWarningLevel)level;
+            Debug.Log($"<color=green>[피드백]</color> 안전 경고 이벤트 수신: {warningLevel}");
 
             switch (warningLevel)
             {
@@ -52,7 +135,6 @@ namespace VirtualFishing.Feedback
             }
         }
 
-        // 시나리오 08: 게임 종료 시퀀스
         public void OnExitSequenceEvent()
         {
             ShowUI("SavingProgress");
