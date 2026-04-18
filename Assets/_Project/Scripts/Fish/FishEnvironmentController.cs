@@ -19,6 +19,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private bool applyOnStart = true;
 
         private AudioSource audioSource;
+        private GameObject siteEnvironmentInstance;
         private GameObject debugEnvironmentInstance;
 
         public FishingSiteDataSO CurrentSite => currentSite;
@@ -53,8 +54,9 @@ namespace VirtualFishing.Core.Fish
 
             ApplySkybox();
             ApplyAmbientSound();
+            ApplySiteEnvironmentPrefab();
 
-            if (createDebugEnvironment)
+            if (siteEnvironmentInstance == null && createDebugEnvironment)
             {
                 BuildDebugEnvironment();
             }
@@ -93,6 +95,33 @@ namespace VirtualFishing.Core.Fish
             {
                 audioSource.Stop();
                 Debug.Log("[FishEnvironmentController] Ambient sound is not assigned. Visual-only environment applied.");
+            }
+        }
+
+        private void ApplySiteEnvironmentPrefab()
+        {
+            if (siteEnvironmentInstance != null)
+            {
+                Destroy(siteEnvironmentInstance);
+                siteEnvironmentInstance = null;
+            }
+
+            if (currentSite.EnvironmentPrefab == null)
+            {
+                return;
+            }
+
+            Transform parent = environmentRoot != null ? environmentRoot : transform;
+            siteEnvironmentInstance = Instantiate(currentSite.EnvironmentPrefab, parent);
+            siteEnvironmentInstance.name = $"{currentSite.EnvironmentPrefab.name}_Runtime";
+            siteEnvironmentInstance.transform.localPosition = Vector3.zero;
+            siteEnvironmentInstance.transform.localRotation = Quaternion.identity;
+            siteEnvironmentInstance.transform.localScale = Vector3.one;
+
+            if (debugEnvironmentInstance != null)
+            {
+                Destroy(debugEnvironmentInstance);
+                debugEnvironmentInstance = null;
             }
         }
 
@@ -177,7 +206,7 @@ namespace VirtualFishing.Core.Fish
                 BackgroundType.River => new Color(0.45f, 0.75f, 0.92f),
                 BackgroundType.Lake => new Color(0.36f, 0.62f, 0.85f),
                 BackgroundType.Sea => new Color(0.2f, 0.42f, 0.72f),
-                BackgroundType.Pond => new Color(0.55f, 0.76f, 0.62f),
+                BackgroundType.Pond => new Color(0.73f, 0.82f, 0.9f),
                 _ => new Color(0.5f, 0.5f, 0.5f)
             };
         }
@@ -201,7 +230,7 @@ namespace VirtualFishing.Core.Fish
                 BackgroundType.River => new Color(1f, 0.96f, 0.86f),
                 BackgroundType.Lake => new Color(0.95f, 0.95f, 0.9f),
                 BackgroundType.Sea => new Color(0.85f, 0.92f, 1f),
-                BackgroundType.Pond => new Color(1f, 0.93f, 0.82f),
+                BackgroundType.Pond => new Color(1f, 0.95f, 0.88f),
                 _ => Color.white
             };
         }

@@ -95,3 +95,11 @@ Desktop.ini
 # 에디터 로컬 복구 파일
 Assets/_Recovery/
 Assets/_Recovery.meta
+
+# osy Asset 원본 import 파일 무시
+Assets/Pure Poly/
+Assets/IgniteCoders/
+Assets/_Recovery/
+Assets/TutorialInfo/
+Assets/IgniteCoders.meta
+Assets/Pure Poly.meta
