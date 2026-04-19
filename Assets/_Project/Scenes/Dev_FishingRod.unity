@@ -274,7 +274,7 @@ Transform:
   m_GameObject: {fileID: 302591755}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1.023, z: -0.582}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -552,8 +552,6 @@ MonoBehaviour:
   m_DisableVisualsWhenBlockedInGroup: 1
   m_StartingSelectedInteractable: {fileID: 0}
   m_StartingTargetFilter: {fileID: 0}
-  m_AutoFindParentInteractableInHierarchy: 0
-  m_ParentInteractableObject: {fileID: 0}
   m_HoverEntered:
     m_PersistentCalls:
       m_Calls: []
@@ -845,50 +843,31 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5084377616381869359, guid: a19f94b86a514434387f26d2d6604013, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a19f94b86a514434387f26d2d6604013, type: 3}
       propertyPath: m_Name
       value: RodModel
+      objectReference: {fileID: 0}
+    - target: {fileID: 4934743724166101612, guid: a19f94b86a514434387f26d2d6604013, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: -1286280383375491085, guid: a19f94b86a514434387f26d2d6604013, type: 3}
+    - targetCorrespondingSourceObject: {fileID: -5084377616381869359, guid: a19f94b86a514434387f26d2d6604013, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 905214884}
+      addedObject: {fileID: 2023445312}
   m_SourcePrefab: {fileID: 100100000, guid: a19f94b86a514434387f26d2d6604013, type: 3}
 --- !u!4 &905214881 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a19f94b86a514434387f26d2d6604013, type: 3}
   m_PrefabInstance: {fileID: 905214880}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &905214882 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -1204716029781107151, guid: a19f94b86a514434387f26d2d6604013, type: 3}
-  m_PrefabInstance: {fileID: 905214880}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &905214883 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: -1286280383375491085, guid: a19f94b86a514434387f26d2d6604013, type: 3}
-  m_PrefabInstance: {fileID: 905214880}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &905214884
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 905214883}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ae2420147f20bd4ab7d72f3a87d069a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Fishing.ReelController
-  reelPivot: {fileID: 905214882}
-  rodController: {fileID: 919290124}
-  degreesPerSecondAtFullSpeed: 540
-  rotationAxis: {x: 0, y: 0, z: 1}
-  idleJitterDegrees: 0
 --- !u!1 &914376346
 GameObject:
   m_ObjectHideFlags: 0
@@ -1110,8 +1089,6 @@ MonoBehaviour:
   m_StartingHoverFilters: []
   m_StartingSelectFilters: []
   m_StartingInteractionStrengthFilters: []
-  m_AutoFindParentInteractableInHierarchy: 0
-  m_ParentInteractableObject: {fileID: 0}
   m_AttachTransform: {fileID: 957331978}
   m_SecondaryAttachTransform: {fileID: 0}
   m_UseDynamicAttach: 0
@@ -1563,8 +1540,6 @@ MonoBehaviour:
   m_DisableVisualsWhenBlockedInGroup: 1
   m_StartingSelectedInteractable: {fileID: 0}
   m_StartingTargetFilter: {fileID: 0}
-  m_AutoFindParentInteractableInHierarchy: 0
-  m_ParentInteractableObject: {fileID: 0}
   m_HoverEntered:
     m_PersistentCalls:
       m_Calls: []
@@ -2194,6 +2169,33 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!1 &2023445308 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -5084377616381869359, guid: a19f94b86a514434387f26d2d6604013, type: 3}
+  m_PrefabInstance: {fileID: 905214880}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2023445309 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 408424013189759332, guid: a19f94b86a514434387f26d2d6604013, type: 3}
+  m_PrefabInstance: {fileID: 905214880}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2023445312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2023445308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae2420147f20bd4ab7d72f3a87d069a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Fishing.ReelController
+  reelPivot: {fileID: 2023445309}
+  rodController: {fileID: 0}
+  degreesPerSecondAtFullSpeed: 540
+  rotationAxis: {x: 0, y: 0, z: 1}
+  idleJitterDegrees: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
