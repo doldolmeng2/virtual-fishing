@@ -6,26 +6,23 @@ using VirtualFishing.Interfaces;
 
 namespace VirtualFishing.Fishing
 {
-    public class FishingRodController : MonoBehaviour, IFishingRod, IGrabbable, ICastable, IVoidEventListener
+    public class FishingRodController : MonoBehaviour, IFishingRod, IGrabbable, ICastable
     {
         [Header("설정")]
         [SerializeField] private GameSettingsSO gameSettings;
         [SerializeField] private PlayerDataSO playerData;
 
         [Header("참조")]
-        [SerializeField] private FloatController floatController;
+        [SerializeField] private FloatController floatCtrl;
         [SerializeField] private Transform rodTip;
 
         [Header("SO 이벤트 - 발행")]
-        [SerializeField] private VoidEventSO onRodGrabbed;
-        [SerializeField] private VoidEventSO onCastStarted;
-        [SerializeField] private VoidEventSO onHookSuccess;
-        [SerializeField] private VoidEventSO onHookFailed;
         [SerializeField] private VoidEventSO onRodStateChanged;
 
-        [Header("SO 이벤트 - 구독")]
-        [SerializeField] private VoidEventSO onBiteOccurred;
-        [SerializeField] private VoidEventSO onWaterLanded;
+        // [SO 이벤트 - 구독]
+        // 설계 문서의 SO Event 패턴(VoidEventListener bridge → UnityEvent → 메서드)을 따라
+        // 씬에 별도 VoidEventListener 컴포넌트가 OnBiteOccurred.asset을 듣고 HandleBiteOccurred를 호출하도록 연결.
+        // FloatController.OnWaterLanded는 같은 프리팹 내부 C# 이벤트로 직접 구독 (아래 OnEnable 참조).
 
         // 상태
         private RodState _currentState = RodState.Idle;
@@ -79,7 +76,7 @@ namespace VirtualFishing.Fishing
         public void UpdateReelingInput(float rotationDelta)
         {
             ReelingSpeed = rotationDelta;
-            floatController?.SetReelSpeed(rotationDelta);
+            floatCtrl?.SetReelSpeed(rotationDelta);
         }
 
         #endregion
@@ -98,14 +95,19 @@ namespace VirtualFishing.Fishing
             Attach(hand);
             SetState(RodState.Attached);
             OnGrabbed?.Invoke();
-            onRodGrabbed?.Raise();
         }
 
         public void OnRelease()
         {
             _isGrabbed = false;
+
+            // 캐스팅 후 그랩 해제 시 찌가 수면에 방치되지 않도록 회수.
+            // ResetFloat은 idempotent — 이미 Attached 상태여도 안전.
+            floatCtrl?.ResetFloat();
+
             Detach();
             ResetCastingState();
+            _isBiteActive = false;
             SetState(RodState.Idle);
             OnReleased?.Invoke();
         }
@@ -122,39 +124,22 @@ namespace VirtualFishing.Fishing
             float clampedPower = Mathf.Clamp(power, gameSettings.minCastingPower, gameSettings.maxCastingPower);
             Debug.Log($"[Rod] Cast! power={clampedPower:F2}, dir={direction}");
             SetState(RodState.Casting);
-            onCastStarted?.Raise();
-            floatController.Launch(clampedPower, direction);
-        }
-
-        #endregion
-
-        #region IVoidEventListener
-
-        public void OnEventRaised()
-        {
-            // onWaterLanded와 onBiteOccurred 모두 VoidEventSO이므로
-            // 별도 핸들러 메서드에서 처리
+            floatCtrl.Launch(clampedPower, direction);
         }
 
         #endregion
 
         private void OnEnable()
         {
-            if (onWaterLanded != null) onWaterLanded.Register(this);
-            if (onBiteOccurred != null) onBiteOccurred.Register(this);
-
-            // 개별 핸들러를 위해 floatController 이벤트 직접 구독
-            if (floatController != null)
-                floatController.OnWaterLanded += HandleWaterLanded;
+            // 같은 프리팹 내 직접 참조 — 설계 다이어그램의 'FishingRodController --> FloatController' 관계에 부합.
+            if (floatCtrl != null)
+                floatCtrl.OnWaterLanded += HandleWaterLanded;
         }
 
         private void OnDisable()
         {
-            if (onWaterLanded != null) onWaterLanded.Unregister(this);
-            if (onBiteOccurred != null) onBiteOccurred.Unregister(this);
-
-            if (floatController != null)
-                floatController.OnWaterLanded -= HandleWaterLanded;
+            if (floatCtrl != null)
+                floatCtrl.OnWaterLanded -= HandleWaterLanded;
         }
 
         private void LateUpdate()
@@ -281,7 +266,6 @@ namespace VirtualFishing.Fishing
                 _isBiteActive = false;
                 IsInHookingZone = false;
                 SetState(RodState.Hit);
-                onHookSuccess?.Raise();
 
                 // Hit → MiniGame 자동 전이
                 SetState(RodState.MiniGame);
@@ -293,7 +277,6 @@ namespace VirtualFishing.Fishing
             {
                 _isBiteActive = false;
                 IsInHookingZone = false;
-                onHookFailed?.Raise();
                 ReelIn();
             }
         }
@@ -340,7 +323,7 @@ namespace VirtualFishing.Fishing
             Debug.Log("[Rod] 줄 회수 (ReelIn)");
             _isBiteActive = false;
             IsInHookingZone = false;
-            floatController?.ResetFloat();
+            floatCtrl?.ResetFloat();
             ReelingSpeed = 0f;
 
             if (_isGrabbed)
@@ -363,6 +346,15 @@ namespace VirtualFishing.Fishing
             }
         }
 
+        /// <summary>
+        /// 미니게임 종료 시 호출되는 외부 진입점. ReelIn으로 위임.
+        ///
+        /// [통합 미정 — 10주차 회의 결정 사항]
+        /// 설계 다이어그램은 OnMiniGameResult SO의 흐름을 MiniGameManager → GameFlowManager로만 명시.
+        /// rod 리셋 트리거 경로가 미정이므로 본 메서드는 직접 호출(GameFlowManager가 IFishingRod 참조로 호출)
+        /// 또는 신규 SO 채널(예: OnRodResetRequested) 도입 후 wiring될 예정.
+        /// 단독으로 OnMiniGameResult.asset에 wiring하지 말 것 — D/A 도메인과 충돌 가능.
+        /// </summary>
         public void OnMiniGameEnded()
         {
             ReelIn();

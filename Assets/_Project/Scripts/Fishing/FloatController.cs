@@ -13,7 +13,7 @@ namespace VirtualFishing.Fishing
         [SerializeField] private GameSettingsSO gameSettings;
 
         [Header("SO 이벤트")]
-        [SerializeField] private VoidEventSO onWaterLandedEvent;
+        [SerializeField] private VoidEventSO onWaterLanded;
 
         [Header("물리")]
         [SerializeField] private float gravityScale = 1f;
@@ -68,8 +68,9 @@ namespace VirtualFishing.Fishing
             _sinkingDepth = 0f;
 
             _rb.isKinematic = false;
-            _rb.linearVelocity = Vector3.zero;
-            _rb.AddForce(direction.normalized * speed, ForceMode.VelocityChange);
+            // 직접 할당 — AddForce(VelocityChange)는 isKinematic 토글 직후
+            // 1프레임 동안 적용되지 않을 수 있음 (특히 unfocused editor).
+            _rb.linearVelocity = direction.normalized * speed;
         }
 
         public void OnWaterContact()
@@ -85,15 +86,7 @@ namespace VirtualFishing.Fishing
             _rb.isKinematic = true;
 
             OnWaterLanded?.Invoke();
-            onWaterLandedEvent?.Raise();
-        }
-
-        public void Sink(float depth)
-        {
-            _sinkingDepth = depth;
-            Vector3 pos = transform.position;
-            pos.y -= depth;
-            transform.position = pos;
+            onWaterLanded?.Raise();
         }
 
         #endregion
