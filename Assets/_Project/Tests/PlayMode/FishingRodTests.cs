@@ -266,6 +266,15 @@ namespace VirtualFishing.Tests
         }
 
         [UnityTest]
+        public IEnumerator Float_Sink_ChangesSinkingDepth()
+        {
+            _float.Sink(0.5f);
+            yield return null;
+
+            Assert.AreEqual(0.5f, _float.SinkingDepth, 0.01f);
+        }
+
+        [UnityTest]
         public IEnumerator Float_ResetFloat_ReturnsToAttached()
         {
             _float.Launch(5f, Vector3.forward);

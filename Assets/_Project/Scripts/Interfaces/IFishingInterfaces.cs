@@ -46,6 +46,7 @@ namespace VirtualFishing.Interfaces
         float Velocity { get; }
         void Launch(float speed, Vector3 direction);
         void OnWaterContact();
+        void Sink(float depth);
         event Action OnWaterLanded;
     }
 }

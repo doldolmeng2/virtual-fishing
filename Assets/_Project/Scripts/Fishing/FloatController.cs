@@ -89,6 +89,14 @@ namespace VirtualFishing.Fishing
             onWaterLanded?.Raise();
         }
 
+        public void Sink(float depth)
+        {
+            _sinkingDepth = depth;
+            Vector3 pos = transform.position;
+            pos.y -= depth;
+            transform.position = pos;
+        }
+
         #endregion
 
         private void Awake()
