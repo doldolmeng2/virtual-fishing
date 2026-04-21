@@ -17,6 +17,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private MonoBehaviour fishControllerRef;
         [SerializeField] private VoidEventSO onWarningBiteEvent;
         [SerializeField] private VoidEventSO onBiteOccurredEvent;
+        [SerializeField] private FishSpeciesDataSO debugForcedSpecies;
 
         private IFish fish;
         private Coroutine biteCoroutine;
@@ -48,6 +49,23 @@ namespace VirtualFishing.Core.Fish
 
             StopCoroutine(biteCoroutine);
             biteCoroutine = null;
+        }
+
+        public void DebugForceBiteImmediately()
+        {
+            FishSpeciesDataSO species = debugForcedSpecies != null ? debugForcedSpecies : SelectFishSpecies();
+            if (species == null)
+            {
+                Debug.LogWarning("[FishSpawner] DebugForceBiteImmediately failed: no valid fish species found.");
+                return;
+            }
+
+            CancelBite();
+            fish?.Initialize(species);
+
+            Debug.Log($"[FishSpawner] Debug force bite occurred immediately: species={species.DisplayName}");
+            OnBiteOccurred?.Invoke(species);
+            onBiteOccurredEvent?.Raise();
         }
 
         private IEnumerator BiteRoutine()

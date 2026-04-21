@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
@@ -14,7 +13,6 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private bool createPlaceholderWhenPrefabMissing = true;
         [SerializeField] private bool clampMovementWithinRange = true;
         [SerializeField] private float horizontalMoveLimit = 10.0f;
-        [SerializeField] private bool reverseDirectionAtHorizontalLimit = true;
 
         [Header("Runtime State")]
         [SerializeField] private FishSpeciesDataSO currentSpecies;
@@ -22,15 +20,15 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float resistance;
         [SerializeField] private MovementPattern pattern;
         [SerializeField] private float sizeCm;
+        [SerializeField] private FishPhase currentPhase = FishPhase.None;
         [SerializeField] private FishMoveMode currentMoveMode = FishMoveMode.Stop;
-        [SerializeField] private float currentModeDuration;
-        [SerializeField] private bool isRandomMovementLoopRunning;
+        [SerializeField] private bool isPhaseMovementActive;
         [SerializeField] private float debugMoveSpeed = 1.5f;
         [SerializeField] private Vector3 visualSpawnPosition;
-        [SerializeField] private bool allowStopModeInRandomLoop = false;
+        [SerializeField] private bool isWaitingAtMovementLimit;
+        [SerializeField] private FishPhase inspectorDebugPhase = FishPhase.Phase2;
 
         private GameObject currentVisualInstance;
-        private Coroutine movementModeRoutine;
 
         public FishSpeciesDataSO CurrentSpecies => currentSpecies;
         public string SpeciesName => currentSpecies != null ? currentSpecies.DisplayName : string.Empty;
@@ -38,13 +36,19 @@ namespace VirtualFishing.Core.Fish
         public float Resistance => resistance;
         public MovementPattern Pattern => pattern;
         public float SizeCm => sizeCm;
+        public FishPhase CurrentPhase => currentPhase;
         public FishMoveMode CurrentMoveMode => currentMoveMode;
+        public FishPhase InspectorDebugPhase
+        {
+            get => inspectorDebugPhase;
+            set => inspectorDebugPhase = value;
+        }
 
         public event Action<Vector3> OnFishMoved;
 
         private void Update()
         {
-            if (!isRandomMovementLoopRunning || currentVisualInstance == null)
+            if (!isPhaseMovementActive || currentVisualInstance == null)
             {
                 return;
             }
@@ -55,7 +59,7 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            float moveSpeed = GetMoveSpeedByPattern();
+            float moveSpeed = GetMoveSpeed();
             currentVisualInstance.transform.position += movementDirection * (moveSpeed * Time.deltaTime);
             ClampVisualPosition();
             currentVisualInstance.transform.forward = movementDirection;
@@ -75,26 +79,28 @@ namespace VirtualFishing.Core.Fish
             sizeCm = speciesData.GetRandomSizeCm();
             resistance = speciesData.BaseResistance;
             pattern = speciesData.MovementPattern;
-            SetMoveMode(FishMoveMode.Stop, 0f);
             SpawnVisual(speciesData);
+            BeginPhaseMovement();
 
             Debug.Log(
                 $"[FishController] Initialized fish: id={speciesData.FishId}, name={speciesData.DisplayName}, " +
-                $"weight={weight:F2}kg, size={sizeCm:F1}cm, resistance={resistance:F2}, pattern={pattern}, moveMode={currentMoveMode}");
+                $"weight={weight:F2}kg, size={sizeCm:F1}cm, resistance={resistance:F2}, pattern={pattern}, phase={currentPhase}, moveMode={currentMoveMode}");
 
             // TODO: Replace this local test visual flow with the team's production fish presentation pipeline.
         }
 
         public void ResetFish()
         {
-            StopRandomMovementModeLoop();
+            StopPhaseMovement();
             ClearVisual();
             currentSpecies = null;
             weight = 0f;
             resistance = 0f;
             pattern = MovementPattern.Calm;
             sizeCm = 0f;
-            SetMoveMode(FishMoveMode.Stop, 0f);
+            currentPhase = FishPhase.None;
+            currentMoveMode = FishMoveMode.Stop;
+            isWaitingAtMovementLimit = false;
 
             Debug.Log("[FishController] Fish state reset.");
         }
@@ -126,35 +132,39 @@ namespace VirtualFishing.Core.Fish
             // TODO: Replace the placeholder movement output with actual fish AI during mini-game integration.
         }
 
-        public void StartRandomMovementModeLoop()
+        public void SetPhase(FishPhase nextPhase)
         {
             if (currentSpecies == null)
             {
-                Debug.LogWarning("[FishController] StartRandomMovementModeLoop skipped: no fish has been initialized.");
+                Debug.LogWarning($"[FishController] SetPhase skipped: no fish has been initialized. requestedPhase={nextPhase}");
                 return;
             }
 
-            if (movementModeRoutine != null)
+            if (nextPhase is FishPhase.None)
             {
-                StopCoroutine(movementModeRoutine);
+                StopPhaseMovement();
+                Debug.Log("[FishController] Phase cleared. Fish movement stopped.");
+                return;
             }
 
-            isRandomMovementLoopRunning = true;
-            movementModeRoutine = StartCoroutine(RandomMovementModeRoutine());
-            Debug.Log("[FishController] Random movement mode loop started.");
+            if (nextPhase == currentPhase)
+            {
+                Debug.Log($"[FishController] SetPhase ignored: already in {currentPhase}.");
+                return;
+            }
+
+            currentPhase = nextPhase;
+            FlipDirectionForPhaseChange();
+            isPhaseMovementActive = true;
+            isWaitingAtMovementLimit = false;
+
+            Debug.Log(
+                $"[FishController] Phase changed: species={SpeciesName}, phase={currentPhase}, moveMode={currentMoveMode}, speed={GetMoveSpeed():F2}");
         }
 
-        public void StopRandomMovementModeLoop()
+        public void ApplyInspectorDebugPhase()
         {
-            if (movementModeRoutine != null)
-            {
-                StopCoroutine(movementModeRoutine);
-                movementModeRoutine = null;
-            }
-
-            isRandomMovementLoopRunning = false;
-            SetMoveMode(FishMoveMode.Stop, 0f);
-            Debug.Log("[FishController] Random movement mode loop stopped.");
+            SetPhase(inspectorDebugPhase);
         }
 
         public FishCatchData BuildCatchData(BackgroundType siteType, string caughtAt)
@@ -221,45 +231,26 @@ namespace VirtualFishing.Core.Fish
             return new Vector3(0.35f, normalizedLength, 0.35f);
         }
 
-        private IEnumerator RandomMovementModeRoutine()
+        private void BeginPhaseMovement()
         {
-            while (true)
-            {
-                FishMoveMode nextMode = GetRandomMoveMode();
-                float duration = currentSpecies != null ? currentSpecies.GetRandomMoveModeDuration() : 1f;
-
-                SetMoveMode(nextMode, duration);
-                yield return new WaitForSeconds(duration);
-            }
+            currentPhase = FishPhase.Phase1;
+            currentMoveMode = UnityEngine.Random.value < 0.5f ? FishMoveMode.MoveLeft : FishMoveMode.MoveRight;
+            isPhaseMovementActive = true;
+            isWaitingAtMovementLimit = false;
         }
 
-        private FishMoveMode GetRandomMoveMode()
+        private void StopPhaseMovement()
         {
-            if (!allowStopModeInRandomLoop)
-            {
-                return UnityEngine.Random.value < 0.5f
-                    ? FishMoveMode.MoveLeft
-                    : FishMoveMode.MoveRight;
-            }
-
-            int randomValue = UnityEngine.Random.Range(0, 5);
-            return randomValue switch
-            {
-                0 => FishMoveMode.MoveLeft,
-                1 => FishMoveMode.MoveLeft,
-                2 => FishMoveMode.Stop,
-                3 => FishMoveMode.MoveRight,
-                _ => FishMoveMode.MoveRight
-            };
+            isPhaseMovementActive = false;
+            currentMoveMode = FishMoveMode.Stop;
+            isWaitingAtMovementLimit = false;
         }
 
-        private void SetMoveMode(FishMoveMode nextMode, float duration)
+        private void FlipDirectionForPhaseChange()
         {
-            currentMoveMode = nextMode;
-            currentModeDuration = duration;
-
-            Debug.Log(
-                $"[FishController] Move mode changed: species={SpeciesName}, mode={currentMoveMode}, duration={currentModeDuration:F2}s");
+            currentMoveMode = currentMoveMode == FishMoveMode.MoveLeft
+                ? FishMoveMode.MoveRight
+                : FishMoveMode.MoveLeft;
         }
 
         private Vector3 GetMovementDirectionByMode(FishMoveMode moveMode)
@@ -272,7 +263,7 @@ namespace VirtualFishing.Core.Fish
             };
         }
 
-        private float GetMoveSpeedByPattern()
+        private float GetMoveSpeed()
         {
             float patternSpeed = pattern switch
             {
@@ -282,7 +273,16 @@ namespace VirtualFishing.Core.Fish
                 _ => 1f
             };
 
-            return patternSpeed * debugMoveSpeed;
+            float phaseSpeedMultiplier = currentPhase switch
+            {
+                FishPhase.Phase1 => 1.35f,
+                FishPhase.Phase3 => 1.15f,
+                FishPhase.Phase2 => 0.95f,
+                FishPhase.Phase4 => 0.7f,
+                _ => 0f
+            };
+
+            return patternSpeed * debugMoveSpeed * phaseSpeedMultiplier;
         }
 
         private void ClampVisualPosition()
@@ -304,20 +304,16 @@ namespace VirtualFishing.Core.Fish
 
             currentVisualInstance.transform.position = clampedPosition;
 
-            if (!reverseDirectionAtHorizontalLimit || !isRandomMovementLoopRunning)
+            if (!hitLeftLimit && !hitRightLimit)
             {
+                isWaitingAtMovementLimit = false;
                 return;
             }
 
-            if (hitLeftLimit && currentMoveMode == FishMoveMode.MoveLeft)
+            if (!isWaitingAtMovementLimit)
             {
-                SetMoveMode(FishMoveMode.MoveRight, currentModeDuration);
-                Debug.Log("[FishController] Reached left movement limit. Reversing to MoveRight.");
-            }
-            else if (hitRightLimit && currentMoveMode == FishMoveMode.MoveRight)
-            {
-                SetMoveMode(FishMoveMode.MoveLeft, currentModeDuration);
-                Debug.Log("[FishController] Reached right movement limit. Reversing to MoveLeft.");
+                isWaitingAtMovementLimit = true;
+                Debug.Log($"[FishController] Reached movement limit while staying in {currentPhase}. Waiting for external phase change.");
             }
         }
 
@@ -344,7 +340,7 @@ namespace VirtualFishing.Core.Fish
 
         private void OnDisable()
         {
-            StopRandomMovementModeLoop();
+            StopPhaseMovement();
         }
     }
 }

@@ -11,12 +11,12 @@ namespace VirtualFishing.Interfaces
         float Weight { get; }
         float Resistance { get; }
         MovementPattern Pattern { get; }
+        FishPhase CurrentPhase { get; }
         FishMoveMode CurrentMoveMode { get; }
         void Initialize(FishSpeciesDataSO speciesData);
         void ResetFish();
         void ExecuteMovement();
-        void StartRandomMovementModeLoop();
-        void StopRandomMovementModeLoop();
+        void SetPhase(FishPhase nextPhase);
         event Action<Vector3> OnFishMoved;
     }
 

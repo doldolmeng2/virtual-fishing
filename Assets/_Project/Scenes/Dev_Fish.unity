@@ -310,7 +310,6 @@ GameObject:
   - component: {fileID: 758574229}
   - component: {fileID: 758574228}
   - component: {fileID: 758574227}
-  - component: {fileID: 758574226}
   - component: {fileID: 758574225}
   - component: {fileID: 758574224}
   - component: {fileID: 758574223}
@@ -533,24 +532,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &758574226
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 758574222}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d2faf3206e346f0be0130a57ca96a37, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Core.Fish.FishTestManager
-  fishSpawner: {fileID: 758574227}
-  triggerKey: 32
-  startRandomMovementKey: 103
-  stopRandomMovementKey: 115
-  fishController: {fileID: 758574228}
-  environmentController: {fileID: 758574224}
 --- !u!114 &758574227
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -103,3 +103,7 @@ Assets/_Recovery/
 Assets/TutorialInfo/
 Assets/IgniteCoders.meta
 Assets/Pure Poly.meta
+Assets/_Project/Prefabs/*.testcopy
+Assets/_Project/Prefabs/*.testcopy.meta
+Assets/_Project/Scripts/Fish/Editor/FishPlayModeHotkeys.cs
+Assets/_Project/Scripts/Fish/Editor/FishPlayModeHotkeys.cs.meta

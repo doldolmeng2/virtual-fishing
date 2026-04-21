@@ -61,6 +61,15 @@ namespace VirtualFishing
         MoveRight
     }
 
+    public enum FishPhase
+    {
+        None,
+        Phase1,
+        Phase2,
+        Phase3,
+        Phase4
+    }
+
     public enum ControllerHand
     {
         Left,

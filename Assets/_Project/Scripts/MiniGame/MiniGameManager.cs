@@ -24,6 +24,22 @@ namespace VirtualFishing.MiniGame
         public event Action<bool> OnMiniGameEnded;
         public event Action<float> OnSuccessGaugeChanged;
 
+        private void OnEnable()
+        {
+            if (tensionCalculator != null)
+            {
+                tensionCalculator.OnTensionChanged += HandleTensionChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (tensionCalculator != null)
+            {
+                tensionCalculator.OnTensionChanged -= HandleTensionChanged;
+            }
+        }
+
         public void StartMiniGame(FishCatchData fishData)
         {
             _fishData = fishData;
@@ -32,7 +48,7 @@ namespace VirtualFishing.MiniGame
             _isRunning = true;
 
             // 난이도: 저항력 0.7 + 무게 0.3
-            float resistance = fishData.species != null ? fishData.species.baseResistance : 1f;
+            float resistance = fishData.species != null ? fishData.species.BaseResistance : 1f;
             Difficulty = Mathf.Max(1f, resistance * 0.7f + fishData.weight * 0.3f);
 
             tensionCalculator.SetDifficulty(Difficulty);
@@ -47,11 +63,10 @@ namespace VirtualFishing.MiniGame
         {
             if (!_isRunning) return;
 
-            float resistance = _fishData.species != null ? _fishData.species.baseResistance : 1f;
+            float resistance = _fishData.species != null ? _fishData.species.BaseResistance : 1f;
             tensionCalculator.Calculate(resistance, reelingSpeed, _currentFishMoveState, rodDirection);
 
             UpdateSuccessGauge(reelingSpeed);
-            CheckFailure();
         }
 
         public void EndMiniGame(bool success)
@@ -100,6 +115,16 @@ namespace VirtualFishing.MiniGame
         {
             if (tensionData.currentTension >= tensionData.maxTension)
                 EndMiniGame(false);
+        }
+
+        private void HandleTensionChanged(float _)
+        {
+            if (!_isRunning)
+            {
+                return;
+            }
+
+            CheckFailure();
         }
     }
 }
