@@ -129,7 +129,7 @@ namespace VirtualFishing.Account
         {
             var record = new FishCatchRecord
             {
-                speciesName = fishData.species != null ? fishData.species.speciesName : "Unknown",
+                speciesName = fishData.species != null ? fishData.species.DisplayName : "Unknown",
                 weight = fishData.weight,
                 caughtAt = fishData.caughtAt,
                 siteName = fishData.siteType.ToString(),
@@ -196,7 +196,7 @@ namespace VirtualFishing.Account
 
         private int CalculateScore(FishCatchData fishData)
         {
-            int rarity = fishData.species != null ? fishData.species.rarity : 1;
+            int rarity = fishData.species != null ? fishData.species.Rarity : 1;
             return Mathf.RoundToInt(fishData.weight * 10f * rarity);
         }
 

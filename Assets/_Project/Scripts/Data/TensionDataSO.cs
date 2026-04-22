@@ -7,18 +7,17 @@ namespace VirtualFishing.Data
     {
         [Range(0f, 100f)] public float currentTension;
         public float maxTension = 100f;
-        public float safeZoneMin = 20f;
-        public float safeZoneMax = 60f;
-        public float dangerThreshold = 80f;
+        public float tooLowThreshold = 10f;  // 이 값 미만으로 내려가면 성공 게이지 감소, 텐션은 이 값으로 고정
+        public float dangerThreshold = 90f;  // 이 값 이상이면 위험 구간 (TensionZone.Critical)
 
+        // Safe: tooLowThreshold ~ dangerThreshold (10~90)
+        // Critical: dangerThreshold 이상 (90~100)
         public TensionZone GetCurrentZone()
         {
-            if (currentTension < safeZoneMin) return TensionZone.Safe;
-            if (currentTension < safeZoneMax) return TensionZone.Warning;
-            if (currentTension < dangerThreshold) return TensionZone.Danger;
+            if (currentTension < dangerThreshold) return TensionZone.Safe;
             return TensionZone.Critical;
         }
 
-        public void ResetTension() => currentTension = 0f;
+        public void ResetTension() => currentTension = tooLowThreshold;
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace VirtualFishing.Data
 {
@@ -25,10 +26,16 @@ namespace VirtualFishing.Data
     [Serializable]
     public class FishSpawnEntry
     {
-        public FishSpeciesDataSO speciesData;
-        [Range(0f, 1f)] public float spawnProbability;
-        public float minWaitTime;
-        public float maxWaitTime;
+        [SerializeField] private FishSpeciesDataSO speciesDataField;
+        [FormerlySerializedAs("spawnProbability")]
+        [Min(0f)]
+        [SerializeField] private float spawnWeightField = 1f;
+
+        public FishSpeciesDataSO SpeciesData => speciesDataField;
+        public float SpawnWeight => spawnWeightField;
+        public bool IsValid => speciesDataField != null && spawnWeightField > 0f;
+        public FishSpeciesDataSO speciesData => speciesDataField;
+        public float spawnProbability => spawnWeightField;
     }
 
     [Serializable]

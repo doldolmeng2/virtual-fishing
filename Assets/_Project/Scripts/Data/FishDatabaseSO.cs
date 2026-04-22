@@ -6,7 +6,9 @@ namespace VirtualFishing.Data
     [CreateAssetMenu(menuName = "VirtualFishing/Data/Fish Database")]
     public class FishDatabaseSO : ScriptableObject
     {
-        public List<FishSpeciesDataSO> allSpecies = new();
+        [SerializeField] private List<FishSpeciesDataSO> allSpecies = new();
+
+        public IReadOnlyList<FishSpeciesDataSO> AllSpecies => allSpecies;
 
         public FishSpeciesDataSO GetRandomByRarity()
         {
@@ -14,19 +16,32 @@ namespace VirtualFishing.Data
 
             float totalWeight = 0f;
             foreach (var species in allSpecies)
-                totalWeight += 1f / species.rarity;
+            {
+                if (species == null) continue;
+                totalWeight += 1f / Mathf.Max(1, species.Rarity);
+            }
+
+            if (totalWeight <= 0f) return null;
 
             float random = Random.Range(0f, totalWeight);
             float cumulative = 0f;
 
             foreach (var species in allSpecies)
             {
-                cumulative += 1f / species.rarity;
+                if (species == null) continue;
+
+                cumulative += 1f / Mathf.Max(1, species.Rarity);
                 if (random <= cumulative)
                     return species;
             }
 
-            return allSpecies[^1];
+            for (int i = allSpecies.Count - 1; i >= 0; i--)
+            {
+                if (allSpecies[i] != null)
+                    return allSpecies[i];
+            }
+
+            return null;
         }
     }
 }
