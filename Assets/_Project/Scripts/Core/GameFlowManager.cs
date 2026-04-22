@@ -25,7 +25,7 @@ namespace VirtualFishing.Core
         #endregion
 
         [Header("현재 상태 (디버그용 — 인스펙터에서 확인)")]
-        [SerializeField] private GameState currentState = GameState.Login;
+        [SerializeField] private GameState currentState = GameState.Calibration;
 
         [Header("이벤트 채널")]
         [SerializeField] private VoidEventSO onCalibrationComplete;
@@ -89,7 +89,7 @@ namespace VirtualFishing.Core
         private void TryTransitionToFishingReady()
         {
             if (currentState != GameState.Calibration) return;
-            if (!_calibrationDone || !_sceneDone) return;
+            if (!_calibrationDone) return;
 
             _calibrationDone = false;
             _sceneDone = false;
