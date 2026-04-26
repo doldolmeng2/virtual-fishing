@@ -434,11 +434,10 @@ namespace VirtualFishing.Fishing
         /// <summary>
         /// 미니게임 종료 시 호출되는 외부 진입점. ReelIn으로 위임.
         ///
-        /// [통합 미정 — 10주차 회의 결정 사항]
-        /// 설계 다이어그램은 OnMiniGameResult SO의 흐름을 MiniGameManager → GameFlowManager로만 명시.
-        /// rod 리셋 트리거 경로가 미정이므로 본 메서드는 직접 호출(GameFlowManager가 IFishingRod 참조로 호출)
-        /// 또는 신규 SO 채널(예: OnRodResetRequested) 도입 후 wiring될 예정.
-        /// 단독으로 OnMiniGameResult.asset에 wiring하지 말 것 — D/A 도메인과 충돌 가능.
+        /// [Wiring — PR #14 통합 결정]
+        /// MiniGameManager가 OnMiniGameResult.asset(VoidEventSO)을 Raise하면
+        /// 같은 프리팹의 자식 GameObject(MiniGameResultBridge)에 부착된 VoidEventListener가 받아
+        /// 본 메서드를 호출. (BiteEventBridge와 동일한 SO Event Bridge 패턴)
         /// </summary>
         public void OnMiniGameEnded()
         {
