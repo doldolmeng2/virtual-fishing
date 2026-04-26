@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using VirtualFishing.Core.Events;
 using VirtualFishing.Data;
+using VirtualFishing.Fishing.Events;
 using VirtualFishing.Interfaces;
 
 namespace VirtualFishing.Fishing
@@ -17,7 +18,7 @@ namespace VirtualFishing.Fishing
         [SerializeField] private Transform rodTip;
 
         [Header("SO 이벤트 - 발행")]
-        [SerializeField] private VoidEventSO onRodStateChanged;
+        [SerializeField] private RodStateTransitionEventSO onRodStateChanged;
 
         // [SO 이벤트 - 구독]
         // 설계 문서의 SO Event 패턴(VoidEventListener bridge → UnityEvent → 메서드)을 따라
@@ -51,7 +52,7 @@ namespace VirtualFishing.Fishing
         public float ReelingSpeed { get; private set; }
         public bool IsInCastingZone { get; private set; }
         public bool IsInHookingZone { get; private set; }
-        public event Action<RodState> OnRodStateChanged;
+        public event Action<RodStateTransition> OnRodStateChanged;
 
         public void Attach(Transform hand)
         {
@@ -309,10 +310,12 @@ namespace VirtualFishing.Fishing
         private void SetState(RodState newState)
         {
             if (_currentState == newState) return;
-            Debug.Log($"[Rod] {_currentState} → {newState}");
+            var previous = _currentState;
+            Debug.Log($"[Rod] {previous} → {newState}");
             _currentState = newState;
-            OnRodStateChanged?.Invoke(newState);
-            onRodStateChanged?.Raise();
+            var transition = new RodStateTransition(previous, newState);
+            OnRodStateChanged?.Invoke(transition);
+            onRodStateChanged?.Raise(transition);
         }
 
         /// <summary>

@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using VirtualFishing.Core.Events;
 using VirtualFishing.Data;
 using VirtualFishing.Fishing;
+using VirtualFishing.Fishing.Events;
 
 namespace VirtualFishing.Tests
 {
@@ -37,7 +38,7 @@ namespace VirtualFishing.Tests
         private PlayerDataSO _playerData;
 
         // Cross-module SO Event 채널
-        private VoidEventSO _onRodStateChangedSO;
+        private RodStateTransitionEventSO _onRodStateChangedSO;
         private VoidEventSO _onWaterLandedSO;
         private VoidEventSO _onBiteOccurredSO;
 
@@ -64,7 +65,7 @@ namespace VirtualFishing.Tests
             _playerData.currentPosition = Vector3.zero;
 
             // SO Event 채널 (실제 환경에선 .asset 파일)
-            _onRodStateChangedSO = ScriptableObject.CreateInstance<VoidEventSO>();
+            _onRodStateChangedSO = ScriptableObject.CreateInstance<RodStateTransitionEventSO>();
             _onWaterLandedSO = ScriptableObject.CreateInstance<VoidEventSO>();
             _onBiteOccurredSO = ScriptableObject.CreateInstance<VoidEventSO>();
 
@@ -136,7 +137,7 @@ namespace VirtualFishing.Tests
         [UnityTest]
         public IEnumerator Publish_OnRodStateChanged_RaisedOnGrab()
         {
-            var listener = new TestVoidListener();
+            var listener = new TestRodStateTransitionListener();
             _onRodStateChangedSO.Register(listener);
 
             _rod.OnGrab(_handGO.transform); // Idle → Attached
@@ -144,6 +145,8 @@ namespace VirtualFishing.Tests
 
             Assert.AreEqual(1, listener.RaiseCount,
                 "Idle→Attached 전이 시 OnRodStateChanged SO가 1회 발화되어야 함");
+            Assert.AreEqual(RodState.Idle, listener.Last?.Previous);
+            Assert.AreEqual(RodState.Attached, listener.Last?.Current);
 
             _onRodStateChangedSO.Unregister(listener);
         }
@@ -155,7 +158,7 @@ namespace VirtualFishing.Tests
         [UnityTest]
         public IEnumerator Publish_OnRodStateChanged_RaisedOnEachTransition()
         {
-            var listener = new TestVoidListener();
+            var listener = new TestRodStateTransitionListener();
             _onRodStateChangedSO.Register(listener);
 
             _rod.OnGrab(_handGO.transform);    // Idle → Attached  (1)
@@ -179,7 +182,7 @@ namespace VirtualFishing.Tests
         [UnityTest]
         public IEnumerator Publish_OnRodStateChanged_NotRaisedByForceState()
         {
-            var listener = new TestVoidListener();
+            var listener = new TestRodStateTransitionListener();
             _onRodStateChangedSO.Register(listener);
 
             _rod.ForceState(RodState.MiniGame);
@@ -329,7 +332,7 @@ namespace VirtualFishing.Tests
         [UnityTest]
         public IEnumerator Integration_HookFailure_RaisesStateBackToAttached()
         {
-            var listener = new TestVoidListener();
+            var listener = new TestRodStateTransitionListener();
             _onRodStateChangedSO.Register(listener);
 
             _rod.OnGrab(_handGO.transform);
@@ -363,7 +366,7 @@ namespace VirtualFishing.Tests
             _onBiteOccurredSO.Raise();
             yield return null;
 
-            var listener = new TestVoidListener();
+            var listener = new TestRodStateTransitionListener();
             _onRodStateChangedSO.Register(listener);
 
             // 챔질 동작
@@ -396,6 +399,17 @@ namespace VirtualFishing.Tests
         {
             public int RaiseCount { get; private set; }
             public void OnEventRaised() => RaiseCount++;
+        }
+
+        private class TestRodStateTransitionListener : IGameEventListener<RodStateTransition>
+        {
+            public int RaiseCount { get; private set; }
+            public RodStateTransition? Last { get; private set; }
+            public void OnEventRaised(RodStateTransition value)
+            {
+                RaiseCount++;
+                Last = value;
+            }
         }
 
         /// <summary>
