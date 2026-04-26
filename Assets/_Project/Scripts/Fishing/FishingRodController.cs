@@ -326,7 +326,8 @@ namespace VirtualFishing.Fishing
 
             // 챔질 존 판정
             Vector3 hookZoneCenter = GetHookingZoneCenter();
-            float distance = Vector3.Distance(transform.position, hookZoneCenter);
+            Vector3 controllerPos = _attachedHand != null ? _attachedHand.position : transform.position;
+            float distance = Vector3.Distance(controllerPos, hookZoneCenter);
             IsInHookingZone = distance < gameSettings.hookingZoneRadius;
 
             // 이중 조건: 존 진입 + 위쪽 가속도
