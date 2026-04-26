@@ -2152,13 +2152,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Core.Events.VoidEventListener
   gameEvent: {fileID: 11400000, guid: 00e12910434feb94881f1feee9a7d2e0, type: 2}
   response:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 919290124}
-        m_TargetAssemblyTypeName: VirtualFishing.Fishing.FishingRodController, VirtualFishing
+        m_TargetAssemblyTypeName: VirtualFishing.Fishing.FishingRodController, Assembly-CSharp
         m_MethodName: HandleBiteOccurred
         m_Mode: 1
         m_Arguments:
@@ -2190,9 +2190,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3ae2420147f20bd4ab7d72f3a87d069a, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Fishing.ReelController
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Fishing.ReelController
   reelPivot: {fileID: 2023445309}
-  rodController: {fileID: 0}
+  rodController: {fileID: 919290124}
   degreesPerSecondAtFullSpeed: 540
   rotationAxis: {x: 0, y: 0, z: 1}
   idleJitterDegrees: 0
