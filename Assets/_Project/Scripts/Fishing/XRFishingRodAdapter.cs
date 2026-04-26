@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace VirtualFishing.Fishing
 {
     /// <summary>
     /// XR Grab Interactable 이벤트를 FishingRodController에 연결하는 어댑터.
-    /// XR Interaction Toolkit의 그랩/릴리즈를 FishingRodController.OnGrab/OnRelease로 전달.
+    /// 낚싯대 그랩/릴리즈/속도 추적 담당.
+    /// 릴 입력은 별도 FishingReelController(왼손 그랩 회전)가 담당하므로 여기서는 처리하지 않음.
     /// </summary>
     [RequireComponent(typeof(XRGrabInteractable))]
     [RequireComponent(typeof(FishingRodController))]
@@ -42,7 +42,7 @@ namespace VirtualFishing.Fishing
         {
             if (_interactorTransform == null) return;
 
-            // 컨트롤러 속도/방향 계산 → FishingRodController에 전달
+            // 컨트롤러 속도/방향 계산 → FishingRodController에 전달 (캐스팅·챔질 가속도 판정용)
             Vector3 currentPos = _interactorTransform.position;
             _currentVelocity = (currentPos - _previousPosition) / Time.deltaTime;
             _previousPosition = currentPos;
@@ -61,6 +61,7 @@ namespace VirtualFishing.Fishing
         {
             _rodController.OnRelease();
             _interactorTransform = null;
+            _rodController.UpdateReelingInput(0f); // 안전: 낚싯대 놓으면 릴 입력 강제 0
         }
     }
 }

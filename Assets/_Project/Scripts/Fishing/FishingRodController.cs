@@ -16,6 +16,8 @@ namespace VirtualFishing.Fishing
         [Header("참조")]
         [SerializeField] private FloatController floatCtrl;
         [SerializeField] private Transform rodTip;
+        [Tooltip("VR 헤드셋(Main Camera) Transform. 할당 시 캐스팅·챔질 존이 헤드셋 위치를 실시간 추적. 미할당 시 playerData 기반(테스트·시뮬레이션용).")]
+        [SerializeField] private Transform hmdReference;
 
         [Header("SO 이벤트 - 발행")]
         [SerializeField] private RodStateTransitionEventSO onRodStateChanged;
@@ -122,10 +124,29 @@ namespace VirtualFishing.Fishing
 
         public void Cast(float power, Vector3 direction)
         {
+            // 방향 보정: 뒤로 날아가지 않도록 HMD(또는 rod) 앞쪽으로 강제 + 최소 위쪽 아크
+            Vector3 castDir = direction;
+            Vector3 forwardFlat;
+            if (hmdReference != null)
+                forwardFlat = new Vector3(hmdReference.forward.x, 0f, hmdReference.forward.z).normalized;
+            else
+                forwardFlat = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
+
+            // XZ는 항상 HMD 앞쪽 + 입력 방향의 측면 성분 약간 반영
+            Vector3 dirFlat = new Vector3(direction.x, 0f, direction.z);
+            float forwardComp = Vector3.Dot(dirFlat, forwardFlat);
+            // 입력의 앞쪽 성분이 음수(뒤로 휘두름)면 forward만 사용
+            if (forwardComp < 0f) dirFlat = forwardFlat;
+            else dirFlat = (forwardFlat + dirFlat * 0.3f).normalized; // 측면 약간 반영
+
+            // 위쪽 아크: 최소 0.4 (포물선 비행 보장)
+            float upY = Mathf.Max(0.4f, direction.y);
+            castDir = (dirFlat + Vector3.up * upY).normalized;
+
             float clampedPower = Mathf.Clamp(power, gameSettings.minCastingPower, gameSettings.maxCastingPower);
-            Debug.Log($"[Rod] Cast! power={clampedPower:F2}, dir={direction}");
+            Debug.Log($"[Rod] Cast! power={clampedPower:F2}, dir={castDir}");
             SetState(RodState.Casting);
-            floatCtrl.Launch(clampedPower, direction);
+            floatCtrl.Launch(clampedPower, castDir);
         }
 
         #endregion
@@ -177,16 +198,35 @@ namespace VirtualFishing.Fishing
             // 손(컨트롤러) 위치를 사용 — 낚싯대가 아닌 부착된 손 기준
             Vector3 controllerPos = _attachedHand != null ? _attachedHand.position : transform.position;
             float distance = Vector3.Distance(controllerPos, zoneCenter);
-            bool isAboveCenter = controllerPos.y > zoneCenter.y;
 
-            IsInCastingZone = distance < gameSettings.castingZoneRadius && isAboveCenter;
+            // Hysteresis: 진입은 엄격(원래 기준), 이탈은 너그럽게(반경 1.5배 + Y는 중심에서 0.5R 아래까지 허용)
+            // → 손 떨림 / 짧은 탈선으로 인한 IN/OUT 깜빡임 방지, 자연스러운 스윙 유지
+            float effectiveRadius;
+            float yThreshold;
+            if (_wasInCastingZone)
+            {
+                effectiveRadius = gameSettings.castingZoneRadius * 1.5f;
+                yThreshold = zoneCenter.y - gameSettings.castingZoneRadius * 0.5f;
+            }
+            else
+            {
+                effectiveRadius = gameSettings.castingZoneRadius;
+                yThreshold = zoneCenter.y;
+            }
 
-            // 주기적 디버그 로그
+            bool inSphere = distance < effectiveRadius;
+            bool isAboveYThreshold = controllerPos.y > yThreshold;
+
+            // 이지 모드: Y 조건 무시 / 일반 모드: Y 임계값 (히스테리시스 적용된) 위쪽만 활성
+            IsInCastingZone = gameSettings.easyCastingEnabled
+                ? inSphere
+                : (inSphere && isAboveYThreshold);
+
             _debugLogTimer += Time.deltaTime;
             if (_debugLogTimer > 0.5f)
             {
                 _debugLogTimer = 0f;
-                Debug.Log($"[Rod:Zone] hand={controllerPos:F2} center={zoneCenter:F2} dist={distance:F2} radius={gameSettings.castingZoneRadius} above={isAboveCenter} inZone={IsInCastingZone} hold={_castingZoneHoldTime:F2} accel={_acceleration:F2}");
+                Debug.Log($"[Rod:Zone] hand={controllerPos:F2} center={zoneCenter:F2} dist={distance:F2}/R={effectiveRadius:F2} y>{yThreshold:F2}? {isAboveYThreshold} inZone={IsInCastingZone} (was={_wasInCastingZone}) hold={_castingZoneHoldTime:F2} accel={_acceleration:F2}");
             }
 
             if (IsInCastingZone)
@@ -222,12 +262,40 @@ namespace VirtualFishing.Fishing
             _wasInCastingZone = IsInCastingZone;
         }
 
+        /// <summary>
+        /// 캐스팅 존 중심 (월드 좌표). 시각화 컴포넌트 등 외부에서도 참조.
+        /// </summary>
+        public Vector3 CastingZoneCenter => GetCastingZoneCenter();
+
+        /// <summary>현재 캐스팅 존 체류 시간 (초). minCastingHoldTime 비교용.</summary>
+        public float CastingHoldTime => _castingZoneHoldTime;
+
+        /// <summary>현재 가속도(=속도 크기) 기준 예상 캐스팅 파워. clamp 적용됨.</summary>
+        public float PredictedCastingPower
+        {
+            get
+            {
+                if (gameSettings == null) return 0f;
+                return Mathf.Clamp(
+                    _acceleration * gameSettings.castingPowerMultiplier,
+                    gameSettings.minCastingPower,
+                    gameSettings.maxCastingPower);
+            }
+        }
+
         private Vector3 GetCastingZoneCenter()
         {
-            // 하이브리드: y축은 캘리 고정, x/z는 HMD 실시간
-            // HMD 위치를 직접 가져올 수 없는 경우 playerData 사용
-            Vector3 center = playerData.currentPosition;
-            center.y = playerData.sittingHeight;
+            // hmdReference 할당 시 헤드셋 실시간 위치 추적, 미할당 시 playerData 기반 (테스트용)
+            Vector3 center;
+            if (hmdReference != null)
+            {
+                center = hmdReference.position;
+            }
+            else
+            {
+                center = playerData.currentPosition;
+                center.y = playerData.sittingHeight;
+            }
             return center + gameSettings.castingZoneOffset;
         }
 
@@ -282,10 +350,23 @@ namespace VirtualFishing.Fishing
             }
         }
 
+        /// <summary>
+        /// 챔질 존 중심 (월드 좌표).
+        /// </summary>
+        public Vector3 HookingZoneCenter => GetHookingZoneCenter();
+
         private Vector3 GetHookingZoneCenter()
         {
-            Vector3 center = playerData.currentPosition;
-            center.y = playerData.sittingHeight;
+            Vector3 center;
+            if (hmdReference != null)
+            {
+                center = hmdReference.position;
+            }
+            else
+            {
+                center = playerData.currentPosition;
+                center.y = playerData.sittingHeight;
+            }
             return center + gameSettings.hookingZoneOffset;
         }
 
