@@ -168,6 +168,10 @@ namespace VirtualFishing.Tests
 
             Assert.AreEqual(2, listener.RaiseCount,
                 "전이가 N회면 SO 이벤트도 N회 발화되어야 함");
+            Assert.AreEqual(RodState.Idle, listener.History[0].Previous);
+            Assert.AreEqual(RodState.Attached, listener.History[0].Current);
+            Assert.AreEqual(RodState.Attached, listener.History[1].Previous);
+            Assert.AreEqual(RodState.Casting, listener.History[1].Current);
 
             _onRodStateChangedSO.Unregister(listener);
         }
@@ -349,6 +353,9 @@ namespace VirtualFishing.Tests
                 "타이밍 초과 시 ReelIn → Attached (그랩 유지)");
             Assert.Greater(listener.RaiseCount, countBeforeBite,
                 "WaitingForBite → Attached 전이로 OnRodStateChanged SO 발화되어야 함");
+            Assert.AreEqual(RodState.WaitingForBite, listener.Last?.Previous,
+                "마지막 전이의 이전 상태는 WaitingForBite (챔질 실패 식별 가능)");
+            Assert.AreEqual(RodState.Attached, listener.Last?.Current);
 
             _onRodStateChangedSO.Unregister(listener);
         }
@@ -382,6 +389,12 @@ namespace VirtualFishing.Tests
             Assert.AreEqual(RodState.MiniGame, _rod.CurrentState);
             Assert.AreEqual(2, listener.RaiseCount,
                 "Hit, MiniGame 각각의 전이마다 SO 발화 — Feedback이 Hit 이벤트를 놓치지 않음");
+            Assert.AreEqual(RodState.WaitingForBite, listener.History[0].Previous);
+            Assert.AreEqual(RodState.Hit, listener.History[0].Current,
+                "첫 전이는 WaitingForBite → Hit (챔질 성공)");
+            Assert.AreEqual(RodState.Hit, listener.History[1].Previous);
+            Assert.AreEqual(RodState.MiniGame, listener.History[1].Current,
+                "두 번째 전이는 Hit → MiniGame (자동 연쇄)");
 
             _onRodStateChangedSO.Unregister(listener);
         }
@@ -405,10 +418,13 @@ namespace VirtualFishing.Tests
         {
             public int RaiseCount { get; private set; }
             public RodStateTransition? Last { get; private set; }
+            public System.Collections.Generic.List<RodStateTransition> History { get; }
+                = new System.Collections.Generic.List<RodStateTransition>();
             public void OnEventRaised(RodStateTransition value)
             {
                 RaiseCount++;
                 Last = value;
+                History.Add(value);
             }
         }
 
