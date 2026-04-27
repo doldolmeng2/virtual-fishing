@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: GameSettings
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.GameSettingsSO
   calibrationTimeout: 30
-  castingPowerMultiplier: 1
+  castingPowerMultiplier: 2.5
   castingZoneRadius: 0.5
   castingZoneOffset: {x: 0, y: 0.3, z: -0.1}
   minCastingHoldTime: 0.15
   minCastingAcceleration: 1
-  minCastingPower: 5
-  maxCastingPower: 6
+  minCastingPower: 6
+  maxCastingPower: 25
   easyCastingEnabled: 0
-  easyCastingPower: 6
+  easyCastingPower: 0.6
   minCastingDistance: 2
   castingBoundaryRadius: 15
   hookTimingWindow: 3
