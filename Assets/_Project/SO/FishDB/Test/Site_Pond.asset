@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 848a162dc91aa4942a53f8e1014904f9, type: 3}
+  m_Name: Site_Pond
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishingSiteDataSO
+  siteId: Site_Pond
+  displayName: Test Pond
+  sceneName: Dev_Fish
+  backgroundType: 3
+  ambientSound: {fileID: 0}
+  skyboxMaterial: {fileID: 0}
+  backgroundImage: {fileID: 0}
+  spawnFishList:
+  - speciesDataField: {fileID: 11400000, guid: 57db1531e48a45b3b8c2e1fc4938cd79, type: 2}
+    spawnWeightField: 60
+  - speciesDataField: {fileID: 11400000, guid: 9ff950cfac6144048f6665346a11d786, type: 2}
+    spawnWeightField: 30
+  - speciesDataField: {fileID: 11400000, guid: e87c54b43fc34bdb8fef65ca530dc012, type: 2}
+    spawnWeightField: 10

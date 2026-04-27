@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80aa74d180c32af4482c0e010d4b09ff, type: 3}
+  m_Name: Fish_Catfish
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishSpeciesDataSO
+  fishId: Fish_Catfish
+  displayName: Catfish
+  rarity: 5
+  sizeRangeCm:
+    min: 40
+    max: 80
+  weightRangeKg:
+    min: 3
+    max: 8.5
+  baseResistance: 2.3
+  movementPattern: 2
+  moveModeDurationRange:
+    min: 1.2
+    max: 2.2
+  minWaitTime: 4
+  maxWaitTime: 8
+  baseScore: 420
+  fishPrefab: {fileID: 0}
+  icon: {fileID: 0}
+  description: Heavy erratic fish for hard bite-flow testing.
