@@ -36,6 +36,15 @@ namespace VirtualFishing.Fishing
             playerData.currentPosition = transform.position;
             playerData.safetyRadius = 1.5f;
 
+            if (simulatedHand != null)
+            {
+                simulatedHand.position = new Vector3(
+                    transform.position.x,
+                    playerData.sittingHeight,
+                    transform.position.z
+                );
+            }
+
             _ready = true;
             Debug.Log("[TestInput] 초기화 완료");
         }
@@ -120,8 +129,8 @@ namespace VirtualFishing.Fishing
                 simulatedHand.position += Vector3.forward * castSwingSpeed * Time.deltaTime;
                 _swingTimer += Time.deltaTime;
 
-                // 충분히 이동했으면 종료
-                if (_swingTimer > 0.5f)
+                // Cast 성공(찌 발사됨) 또는 시간 초과 시 즉시 종료
+                if (rodController.IsCasting || _swingTimer > 2.5f)
                 {
                     Debug.Log("[TestInput] 캐스팅 시뮬레이션 종료");
                     _castPhase = 0;

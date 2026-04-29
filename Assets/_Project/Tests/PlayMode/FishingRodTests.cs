@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using VirtualFishing.Fishing;
+using VirtualFishing.Fishing.Events;
 using VirtualFishing.Data;
 
 namespace VirtualFishing.Tests
@@ -156,13 +157,15 @@ namespace VirtualFishing.Tests
         [UnityTest]
         public IEnumerator StateChanged_EventFired()
         {
-            RodState? received = null;
-            _rod.OnRodStateChanged += (s) => received = s;
+            RodStateTransition? received = null;
+            _rod.OnRodStateChanged += (t) => received = t;
 
             _rod.OnGrab(_handGO.transform);
             yield return null;
 
-            Assert.AreEqual(RodState.Attached, received);
+            Assert.IsTrue(received.HasValue, "전이 이벤트 발화");
+            Assert.AreEqual(RodState.Idle, received.Value.Previous);
+            Assert.AreEqual(RodState.Attached, received.Value.Current);
         }
 
         [UnityTest]
