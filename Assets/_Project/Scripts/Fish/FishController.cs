@@ -10,6 +10,7 @@ namespace VirtualFishing.Core.Fish
         [Header("Visual Test Setup")]
         [SerializeField] private Transform spawnRoot;
         [SerializeField] private Vector3 spawnOffset = new(0f, 0.5f, 2.5f);
+        [SerializeField] private bool flipVisualForward = true;
         [SerializeField] private bool createPlaceholderWhenPrefabMissing = true;
         [SerializeField] private bool clampMovementWithinRange = true;
         [SerializeField] private float horizontalMoveLimit = 10.0f;
@@ -72,7 +73,7 @@ namespace VirtualFishing.Core.Fish
             float moveSpeed = GetMoveSpeed();
             currentVisualInstance.transform.position += movementDirection * (moveSpeed * Time.deltaTime);
             ClampVisualPosition();
-            currentVisualInstance.transform.forward = movementDirection;
+            ApplyVisualDirection(movementDirection);
             UpdateSplashPosition();
         }
 
@@ -137,7 +138,7 @@ namespace VirtualFishing.Core.Fish
 
                 if (movementDirection != Vector3.zero)
                 {
-                    currentVisualInstance.transform.forward = movementDirection;
+                    ApplyVisualDirection(movementDirection);
                 }
 
                 UpdateSplashPosition();
@@ -228,6 +229,7 @@ namespace VirtualFishing.Core.Fish
             {
                 currentVisualInstance.transform.localScale = GetPlaceholderScale(sizeCm);
                 ClampVisualPosition();
+                ApplyVisualDirection(GetMovementDirectionByMode(currentMoveMode));
             }
         }
 
@@ -372,6 +374,18 @@ namespace VirtualFishing.Core.Fish
                 FishMoveMode.MoveRight => Vector3.right,
                 _ => Vector3.zero
             };
+        }
+
+        private void ApplyVisualDirection(Vector3 movementDirection)
+        {
+            if (currentVisualInstance == null || movementDirection == Vector3.zero)
+            {
+                return;
+            }
+
+            currentVisualInstance.transform.forward = flipVisualForward
+                ? -movementDirection
+                : movementDirection;
         }
 
         private float GetMoveSpeed()
