@@ -14,21 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishSpeciesDataSO
   fishId: Fish_Catfish
   displayName: Catfish
-  rarity: 5
+  rarityValue: 5
   sizeRangeCm:
     min: 40
     max: 80
   weightRangeKg:
     min: 3
     max: 8.5
-  baseResistance: 2.3
+  baseResistanceValue: 2.3
   movementPattern: 2
-  moveModeDurationRange:
-    min: 1.2
-    max: 2.2
   minWaitTime: 4
   maxWaitTime: 8
   baseScore: 420
-  fishPrefab: {fileID: 0}
+  fishPrefab: {fileID: 8264218793534278510, guid: ce4ab8efe9a308b4ab2e4d40c6347445, type: 3}
   icon: {fileID: 0}
   description: Heavy erratic fish for hard bite-flow testing.
