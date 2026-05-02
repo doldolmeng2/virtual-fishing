@@ -181,14 +181,13 @@ namespace VirtualFishing.Fishing
                 }
             }
 
-            // H: 챔질 시뮬레이션
+            // H: 챔질 시뮬레이션 (홀드하는 동안 존 안에서 가속도 유지)
             if (_kb.hKey.wasPressedThisFrame)
             {
                 if (rodController.CurrentState == RodState.WaitingForBite)
                 {
                     Debug.Log("[TestInput] 챔질!");
-                    Vector3 hookZone = playerData.currentPosition;
-                    hookZone.y = playerData.sittingHeight + gameSettings.hookingZoneOffset.y;
+                    Vector3 hookZone = rodController.HookingZoneCenter + Vector3.up * 0.05f;
                     simulatedHand.position = hookZone;
                 }
                 else

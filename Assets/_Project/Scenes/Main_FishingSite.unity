@@ -436,25 +436,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 00e12910434feb94881f1feee9a7d2e0, type: 2}
+  gameEvent: {fileID: 11400000, guid: a7688af099690cf4ba832c1e180b72d3, type: 2}
   response:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1341751302}
         m_TargetAssemblyTypeName: VirtualFishing.Core.GameFlowManager, VirtualFishing
-        m_MethodName: HandleBiteOccurred
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: VirtualFishing.Fishing.FishingRodController, VirtualFishing
-        m_MethodName: HandleBiteOccurred
+        m_MethodName: HandleHookingSuccess
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -892,6 +880,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Fish_Env_Manager
       objectReference: {fileID: 0}
+    - target: {fileID: 7017749137655370411, guid: 404979f6efe538746b54f6d5a877f7ba, type: 3}
+      propertyPath: onWaterLandedEvent
+      value: 
+      objectReference: {fileID: 11400000, guid: d07781636769ac04d8e401ddcb72dea0, type: 2}
     m_RemovedComponents:
     - {fileID: 8968792985948669216, guid: 404979f6efe538746b54f6d5a877f7ba, type: 3}
     m_RemovedGameObjects: []
@@ -1424,6 +1416,14 @@ PrefabInstance:
       propertyPath: hmdReference
       value: 
       objectReference: {fileID: 809877358}
+    - target: {fileID: 1898307473797013342, guid: 8ef6d7729172bad40b971ad23878eaa1, type: 3}
+      propertyPath: onHookingSuccess
+      value: 
+      objectReference: {fileID: 11400000, guid: a7688af099690cf4ba832c1e180b72d3, type: 2}
+    - target: {fileID: 1898307473797013342, guid: 8ef6d7729172bad40b971ad23878eaa1, type: 3}
+      propertyPath: onBiteOccurredEvent
+      value: 
+      objectReference: {fileID: 11400000, guid: 00e12910434feb94881f1feee9a7d2e0, type: 2}
     - target: {fileID: 3584383216452137840, guid: 8ef6d7729172bad40b971ad23878eaa1, type: 3}
       propertyPath: m_Name
       value: FishingRod

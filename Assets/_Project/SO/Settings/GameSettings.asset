@@ -18,8 +18,8 @@ MonoBehaviour:
   castingZoneOffset: {x: 0, y: 0.3, z: -0.1}
   minCastingHoldTime: 0.15
   minCastingAcceleration: 1
-  minCastingPower: 2
-  maxCastingPower: 6
+  minCastingPower: 7
+  maxCastingPower: 10
   easyCastingEnabled: 0
   easyCastingPower: 0.6
   minCastingDistance: 2

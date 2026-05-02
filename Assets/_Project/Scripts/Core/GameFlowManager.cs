@@ -89,7 +89,7 @@ namespace VirtualFishing.Core
                 TransitionTo(GameState.FishingReady);
         }
 
-        public void HandleBiteOccurred()
+        public void HandleHookingSuccess()
         {
             if (currentState == GameState.Fishing)
                 TransitionTo(GameState.MiniGame);
