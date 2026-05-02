@@ -106,10 +106,7 @@ namespace VirtualFishing.Fishing
                 _castPhase = 1;
                 _swingTimer = 0f;
 
-                // 캐스팅 존 중심으로 손 이동
-                Vector3 zoneCenter = playerData.currentPosition;
-                zoneCenter.y = playerData.sittingHeight + gameSettings.castingZoneOffset.y + 0.1f;
-                simulatedHand.position = zoneCenter;
+                simulatedHand.position = rodController.CastingZoneCenter + Vector3.up * 0.05f;
             }
 
             if (_castPhase == 1)
@@ -135,6 +132,12 @@ namespace VirtualFishing.Fishing
                     Debug.Log("[TestInput] 캐스팅 시뮬레이션 종료");
                     _castPhase = 0;
                     _swingTimer = 0f;
+
+                    simulatedHand.position = new Vector3(
+                        playerData.currentPosition.x,
+                        playerData.sittingHeight,
+                        playerData.currentPosition.z
+                    );
                 }
             }
         }

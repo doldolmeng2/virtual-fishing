@@ -254,6 +254,8 @@ MonoBehaviour:
   rodTip: {fileID: 3198625726938648957}
   hmdReference: {fileID: 0}
   onRodStateChanged: {fileID: 11400000, guid: 3c4ec41f719168543aab651331e35595, type: 2}
+  onCastingStarted: {fileID: 11400000, guid: 931ee3453910b10418c8891d3c4249f4, type: 2}
+  onReelIn: {fileID: 11400000, guid: 387441e36bd9d2742af42b6947aeda82, type: 2}
 --- !u!54 &1844425511682930925
 Rigidbody:
   m_ObjectHideFlags: 0

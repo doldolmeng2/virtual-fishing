@@ -21,6 +21,8 @@ namespace VirtualFishing.Fishing
 
         [Header("SO 이벤트 - 발행")]
         [SerializeField] private RodStateTransitionEventSO onRodStateChanged;
+        [SerializeField] private VoidEventSO onCastingStarted;
+        [SerializeField] private VoidEventSO onReelIn;
 
         // [SO 이벤트 - 구독]
         // 설계 문서의 SO Event 패턴(VoidEventListener bridge → UnityEvent → 메서드)을 따라
@@ -398,6 +400,9 @@ namespace VirtualFishing.Fishing
             var transition = new RodStateTransition(previous, newState);
             OnRodStateChanged?.Invoke(transition);
             onRodStateChanged?.Raise(transition);
+
+            if (newState == RodState.Casting)
+                onCastingStarted?.Raise();
         }
 
         /// <summary>
@@ -415,6 +420,8 @@ namespace VirtualFishing.Fishing
                 SetState(RodState.Attached);
             else
                 SetState(RodState.Idle);
+
+            onReelIn?.Raise();
         }
 
         /// <summary>

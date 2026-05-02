@@ -386,6 +386,7 @@ GameObject:
   - component: {fileID: 421315285}
   - component: {fileID: 421315284}
   - component: {fileID: 421315283}
+  - component: {fileID: 421315286}
   - component: {fileID: 421315282}
   - component: {fileID: 421315281}
   m_Layer: 0
@@ -534,6 +535,34 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &421315286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 421315280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 387441e36bd9d2742af42b6947aeda82, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1341751302}
+        m_TargetAssemblyTypeName: VirtualFishing.Core.GameFlowManager, VirtualFishing
+        m_MethodName: HandleReelIn
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1001 &466849390
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -542,6 +571,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 646306521}
     m_Modifications:
+    - target: {fileID: 7002825281827666144, guid: 8726630bce9615a47b0503efc7fa6957, type: 3}
+      propertyPath: rodController
+      value: 
+      objectReference: {fileID: 1817252841}
+    - target: {fileID: 7002825281827666144, guid: 8726630bce9615a47b0503efc7fa6957, type: 3}
+      propertyPath: reelController
+      value: 
+      objectReference: {fileID: 780115933}
     - target: {fileID: 8333342573224668438, guid: 8726630bce9615a47b0503efc7fa6957, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.25054
@@ -717,6 +754,17 @@ Transform:
   - {fileID: 466849391}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &780115933 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 792663678854595563, guid: 8ef6d7729172bad40b971ad23878eaa1, type: 3}
+  m_PrefabInstance: {fileID: 1817252838}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd6b48e297e606c4bb427aa54690eae1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Fishing.FishingReelController
 --- !u!1001 &809877357
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -985,7 +1033,7 @@ PrefabInstance:
     - target: {fileID: 6683236446780748570, guid: bb54c24d030c49044b5a44787870a793, type: 3}
       propertyPath: rodController
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1817252841}
     - target: {fileID: 6683236446780748570, guid: bb54c24d030c49044b5a44787870a793, type: 3}
       propertyPath: simulatedHand
       value: 
@@ -1435,6 +1483,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3198625726938648957, guid: 8ef6d7729172bad40b971ad23878eaa1, type: 3}
   m_PrefabInstance: {fileID: 1817252838}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1817252841 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1898307473797013342, guid: 8ef6d7729172bad40b971ad23878eaa1, type: 3}
+  m_PrefabInstance: {fileID: 1817252838}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bf69f1b7c159e741aabf6612e6e760e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Fishing.FishingRodController
 --- !u!4 &1852815760 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6419680008813081652, guid: bb54c24d030c49044b5a44787870a793, type: 3}
@@ -1630,15 +1689,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8849235234073396662, guid: 3229e6dc7f280e64f8122530c374b204, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8849235234073396662, guid: 3229e6dc7f280e64f8122530c374b204, type: 3}
-      propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8849235234073396662, guid: 3229e6dc7f280e64f8122530c374b204, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8849235234073396662, guid: 3229e6dc7f280e64f8122530c374b204, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 13.20199
+      value: -7
       objectReference: {fileID: 0}
     - target: {fileID: 8849235234073396662, guid: 3229e6dc7f280e64f8122530c374b204, type: 3}
       propertyPath: m_LocalRotation.w
