@@ -36,6 +36,7 @@ namespace VirtualFishing.Interfaces
     public interface IVisualFeedback
     {
         void ShowEffect(string effectId, Vector3 position);
+        void HideEffect(string effectId); // 추가: 효과 제거 기능
         void ShowEffect(GameObject prefab, Vector3 position);
         void FadeScreen(float targetAlpha, float duration);
         void ShowPassthrough(bool enable);

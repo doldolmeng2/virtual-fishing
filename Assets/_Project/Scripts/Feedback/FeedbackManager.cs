@@ -12,6 +12,10 @@ namespace VirtualFishing.Feedback
         [SerializeField] private TTSManager ttsManager;
         // UI 매니저는 구조에 따라 분리하거나 이곳에 통합 가능
 
+        [Header("Temporary UI References")]
+        [Tooltip("Head-Locked 경고 캔버스 게임오브젝트를 여기에 넣으세요")]
+        public GameObject safetyWarningPanel;
+
         #region 낚시, 미니게임 이벤트 수신부
 
         // 1. 낚싯대 상태 변경 이벤트 수신 (IntEventSO 등을 통해 Enum 인덱스 수신)
@@ -114,23 +118,36 @@ namespace VirtualFishing.Feedback
             switch (warningLevel)
             {
                 case SafetyWarningLevel.None:
+                    // 모든 경고 UI 끄기, 패스스루 끄기
+                    visualManager.HideEffect("BlueGrid");
                     HideUI("SafetyWarning");
-                    hapticManager.StopAll();
                     visualManager.ShowPassthrough(false);
+                    hapticManager.StopAll();
+                    visualManager.FadeScreen(0.0f, 0.5f);
                     break;
+
                 case SafetyWarningLevel.NearBoundary:
-                    ShowVisualEffect("BlueGrid", Vector3.zero);
+                    // 바닥에 파란색 격자 표시
+                    visualManager.ShowEffect("BlueGrid", Vector3.zero);
+                    hapticManager.StopAll(); 
+                    visualManager.FadeScreen(0.0f, 0.5f);
                     break;
+
                 case SafetyWarningLevel.Outside:
+                    // 시야 중앙에 붉은색 큰 팝업 및 중앙 유도 화살표 켜기
                     ShowUI("SafetyWarning");
                     PlaySound("WarningAlarm");
+                    PlayTTS("위험합니다. 발자국을 따라 가운데로 오세요.");
                     PlayHaptic(HapticPattern.RhythmicWarning, ControllerHand.Both);
-                    PlayTTS("안전 구역을 벗어났습니다. 중앙으로 돌아와 주세요.");
+                    visualManager.FadeScreen(0.0f, 0.5f);
                     break;
+
                 case SafetyWarningLevel.Emergency:
-                    visualManager.FadeScreen(0.8f, 1.0f);
+                    // 게임 화면 어둡게 페이드 아웃 후 패스스루 전환
+                    HideUI("SafetyWarning");
+                    visualManager.FadeScreen(0.9f, 1.0f); // 1초에 걸쳐 90% 어둡게
                     visualManager.ShowPassthrough(true);
-                    PlayTTS("위험합니다. 제자리로 돌아와 주세요.");
+                    PlayTTS("안전을 위해 게임을 멈춥니다. 주변을 확인하세요.");
                     break;
             }
         }
@@ -149,8 +166,28 @@ namespace VirtualFishing.Feedback
         public void PlayHaptic(HapticPattern pattern, ControllerHand hand) => hapticManager.Play(pattern, hand);
         public void ShowVisualEffect(string effectId, Vector3 position) => visualManager.ShowEffect(effectId, position);
         public void PlayTTS(string message) => ttsManager.Speak(message);
-        public void ShowUI(string uiId, object data = null) { /* 통합 UI 로직 호출 */ }
-        public void HideUI(string uiId) { /* 통합 UI 로직 호출 */ }
+        public void ShowUI(string uiId, object data = null)
+        {
+            if (uiId == "SafetyWarning")
+            {
+                if (safetyWarningPanel != null) 
+                {
+                    safetyWarningPanel.SetActive(true);
+                    Debug.Log("[UI 켜짐] 붉은색 경고 패널 활성화 성공!");
+                }
+                else 
+                {
+                    Debug.LogError("🚨 [오류] FeedbackManager의 'Safety Warning Panel' 슬롯이 비어있습니다! 하이어라키의 캔버스를 드래그해서 넣으세요.");
+                }
+            }
+        }
+        public void HideUI(string uiId)
+        {
+            if (uiId == "SafetyWarning" && safetyWarningPanel != null)
+            {
+                safetyWarningPanel.SetActive(false);
+            }
+        }
         #endregion
     }
 }

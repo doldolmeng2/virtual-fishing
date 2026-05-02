@@ -13,6 +13,7 @@ namespace VirtualFishing.Safety
         [Header("Event Broadcasters")]
         // IntEventSO: 경고 레벨을 타 시스템에 전파
         [SerializeField] private ScriptableObject safetyWarningEvent;
+        [Header("Test Settings")] public float testSafetyRadius = 1.5f;
 
         private bool isMonitoring = false;
         private SafetyWarningLevel currentLevel = SafetyWarningLevel.None; // GameEnums.cs 활용
@@ -39,7 +40,7 @@ namespace VirtualFishing.Safety
             // 실제 SO가 연결되면 아래 변수들을 SO에서 동적으로 읽어오도록 주석을 해제합니다.
             float checkInterval = 0.2f;    // 예: ((GameSettingsSO)gameSettings).safetyCheckInterval;
             float emergencyTimeout = 10f;  // 예: ((GameSettingsSO)gameSettings).emergencyTimeout;
-            float safetyRadius = 1.5f;     // 예: ((PlayerDataSO)playerData).safetyRadius;
+            float safetyRadius = testSafetyRadius;  // 예: ((PlayerDataSO)playerData).safetyRadius;
             float nearDistance = 0.3f;
 
             // 하드코딩된 Vector2.zero 대신 캘리브레이션된 중심점을 사용하도록 수정 필요

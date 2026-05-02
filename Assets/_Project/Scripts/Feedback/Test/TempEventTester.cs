@@ -38,18 +38,32 @@ namespace VirtualFishing.Feedback.Test
                 tensionEvent?.Raise(mockTension);
             }
 
-            // 4. 안전 구역 이탈 테스트 (Int) - GameEnums.SafetyWarningLevel.Outside = 2
+            // 4. 안전 구역 복귀 테스트 (None) - Level 0 : 모든 UI/효과 꺼짐
             if (Keyboard.current.digit8Key.wasPressedThisFrame)
             {
-                Debug.Log("<color=yellow>[테스트]</color> 안전 구역 이탈(Outside) 이벤트 발행");
+                Debug.Log("<color=yellow>[테스트]</color> 안전 구역 복귀(None: 0) 이벤트 발행");
+                safetyWarningEvent?.Raise(0);
+            }
+            
+            // 5. 경계 근접 테스트 (NearBoundary) - Level 1 : 바닥에 파란색 그리드 생성
+            if (Keyboard.current.digit9Key.wasPressedThisFrame)
+            {
+                Debug.Log("<color=yellow>[테스트]</color> 경계 근접(NearBoundary: 1) 이벤트 발행");
+                safetyWarningEvent?.Raise(1);
+            }
+            
+            // 6. 구역 이탈 테스트 (Outside) - Level 2 : 붉은색 경고 패널 및 진동/소리
+            if (Keyboard.current.digit0Key.wasPressedThisFrame)
+            {
+                Debug.Log("<color=yellow>[테스트]</color> 안전 구역 이탈(Outside: 2) 이벤트 발행");
                 safetyWarningEvent?.Raise(2);
             }
             
-            // 5. 안전 구역 복귀 테스트 (Int) - None = 0
-            if (Keyboard.current.digit9Key.wasPressedThisFrame)
+            // 7. 긴급 상황 테스트 (Emergency) - Level 3 : 화면 페이드아웃 및 패스스루
+            if (Keyboard.current.minusKey.wasPressedThisFrame) // 숫자 0 옆의 '-' 키
             {
-                Debug.Log("<color=yellow>[테스트]</color> 안전 구역 복귀(None) 이벤트 발행");
-                safetyWarningEvent?.Raise(0);
+                Debug.Log("<color=yellow>[테스트]</color> 긴급 상황(Emergency: 3) 이벤트 발행");
+                safetyWarningEvent?.Raise(3);
             }
         }
     }
