@@ -7,7 +7,7 @@ using VirtualFishing.Interfaces;
 
 namespace VirtualFishing.Fishing
 {
-    public class FishingRodController : MonoBehaviour, IFishingRod, IGrabbable, ICastable
+    public class FishingRodController : MonoBehaviour, IFishingRod, IGrabbable, ICastable, IVoidEventListener
     {
         [Header("설정")]
         [SerializeField] private GameSettingsSO gameSettings;
@@ -21,10 +21,13 @@ namespace VirtualFishing.Fishing
 
         [Header("SO 이벤트 - 발행")]
         [SerializeField] private RodStateTransitionEventSO onRodStateChanged;
+        [SerializeField] private VoidEventSO onCastingStarted;
+        [SerializeField] private VoidEventSO onReelIn;
+        [SerializeField] private VoidEventSO onHookingSuccess;
 
-        // [SO 이벤트 - 구독]
-        // 설계 문서의 SO Event 패턴(VoidEventListener bridge → UnityEvent → 메서드)을 따라
-        // 씬에 별도 VoidEventListener 컴포넌트가 OnBiteOccurred.asset을 듣고 HandleBiteOccurred를 호출하도록 연결.
+        [Header("SO 이벤트 - 구독")]
+        [SerializeField] private VoidEventSO onBiteOccurredEvent;
+
         // FloatController.OnWaterLanded는 같은 프리팹 내부 C# 이벤트로 직접 구독 (아래 OnEnable 참조).
 
         // 상태
@@ -153,16 +156,19 @@ namespace VirtualFishing.Fishing
 
         private void OnEnable()
         {
-            // 같은 프리팹 내 직접 참조 — 설계 다이어그램의 'FishingRodController --> FloatController' 관계에 부합.
             if (floatCtrl != null)
                 floatCtrl.OnWaterLanded += HandleWaterLanded;
+            onBiteOccurredEvent?.Register(this);
         }
 
         private void OnDisable()
         {
             if (floatCtrl != null)
                 floatCtrl.OnWaterLanded -= HandleWaterLanded;
+            onBiteOccurredEvent?.Unregister(this);
         }
+
+        void IVoidEventListener.OnEventRaised() => HandleBiteOccurred();
 
         private void LateUpdate()
         {
@@ -339,6 +345,7 @@ namespace VirtualFishing.Fishing
 
                 // Hit → MiniGame 자동 전이
                 SetState(RodState.MiniGame);
+                onHookingSuccess?.Raise();
                 return;
             }
 
@@ -398,6 +405,9 @@ namespace VirtualFishing.Fishing
             var transition = new RodStateTransition(previous, newState);
             OnRodStateChanged?.Invoke(transition);
             onRodStateChanged?.Raise(transition);
+
+            if (newState == RodState.Casting)
+                onCastingStarted?.Raise();
         }
 
         /// <summary>
@@ -415,6 +425,8 @@ namespace VirtualFishing.Fishing
                 SetState(RodState.Attached);
             else
                 SetState(RodState.Idle);
+
+            onReelIn?.Raise();
         }
 
         /// <summary>

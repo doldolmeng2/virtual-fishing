@@ -106,10 +106,7 @@ namespace VirtualFishing.Fishing
                 _castPhase = 1;
                 _swingTimer = 0f;
 
-                // 캐스팅 존 중심으로 손 이동
-                Vector3 zoneCenter = playerData.currentPosition;
-                zoneCenter.y = playerData.sittingHeight + gameSettings.castingZoneOffset.y + 0.1f;
-                simulatedHand.position = zoneCenter;
+                simulatedHand.position = rodController.CastingZoneCenter + Vector3.up * 0.05f;
             }
 
             if (_castPhase == 1)
@@ -135,6 +132,12 @@ namespace VirtualFishing.Fishing
                     Debug.Log("[TestInput] 캐스팅 시뮬레이션 종료");
                     _castPhase = 0;
                     _swingTimer = 0f;
+
+                    simulatedHand.position = new Vector3(
+                        playerData.currentPosition.x,
+                        playerData.sittingHeight,
+                        playerData.currentPosition.z
+                    );
                 }
             }
         }
@@ -178,14 +181,13 @@ namespace VirtualFishing.Fishing
                 }
             }
 
-            // H: 챔질 시뮬레이션
+            // H: 챔질 시뮬레이션 (홀드하는 동안 존 안에서 가속도 유지)
             if (_kb.hKey.wasPressedThisFrame)
             {
                 if (rodController.CurrentState == RodState.WaitingForBite)
                 {
                     Debug.Log("[TestInput] 챔질!");
-                    Vector3 hookZone = playerData.currentPosition;
-                    hookZone.y = playerData.sittingHeight + gameSettings.hookingZoneOffset.y;
+                    Vector3 hookZone = rodController.HookingZoneCenter + Vector3.up * 0.05f;
                     simulatedHand.position = hookZone;
                 }
                 else

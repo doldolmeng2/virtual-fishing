@@ -29,7 +29,6 @@ namespace VirtualFishing.Core
 
         [Header("이벤트 채널")]
         [SerializeField] private VoidEventSO onCalibrationComplete;
-        [SerializeField] private VoidEventSO onSceneLoaded;
         [SerializeField] private VoidEventSO onMiniGameResult;
         [SerializeField] private IntEventSO onSafetyWarning;
 
@@ -37,8 +36,6 @@ namespace VirtualFishing.Core
         public event Action<GameState, GameState> OnStateChanged;
 
         private GameState _stateBeforeWarning;
-        private bool _calibrationDone;
-        private bool _sceneDone;
 
         public void TransitionTo(GameState newState)
         {
@@ -76,23 +73,7 @@ namespace VirtualFishing.Core
 
         public void HandleCalibrationComplete()
         {
-            _calibrationDone = true;
-            TryTransitionToFishingReady();
-        }
-
-        public void HandleSceneLoaded()
-        {
-            _sceneDone = true;
-            TryTransitionToFishingReady();
-        }
-
-        private void TryTransitionToFishingReady()
-        {
             if (currentState != GameState.Calibration) return;
-            if (!_calibrationDone) return;
-
-            _calibrationDone = false;
-            _sceneDone = false;
             TransitionTo(GameState.FishingReady);
         }
 
@@ -102,7 +83,13 @@ namespace VirtualFishing.Core
                 TransitionTo(GameState.Fishing);
         }
 
-        public void HandleBiteOccurred()
+        public void HandleReelIn()
+        {
+            if (currentState == GameState.Fishing)
+                TransitionTo(GameState.FishingReady);
+        }
+
+        public void HandleHookingSuccess()
         {
             if (currentState == GameState.Fishing)
                 TransitionTo(GameState.MiniGame);
