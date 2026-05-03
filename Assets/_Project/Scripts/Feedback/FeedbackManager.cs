@@ -15,6 +15,12 @@ namespace VirtualFishing.Feedback
         [Header("Temporary UI References")]
         [Tooltip("Head-Locked 경고 캔버스 게임오브젝트를 여기에 넣으세요")]
         public GameObject safetyWarningPanel;
+        [Tooltip("챔질 가이드 캔버스 게임오브젝트를 여기에 넣으세요")]
+        public GameObject hookingGuidePanel;
+        [Tooltip("게임 종료 캔버스 게임오브젝트를 여기에 넣으세요")]
+        public GameObject exitSequencePanel;
+        [Tooltip("포획 결과 캔버스 게임오브젝트를 여기에 넣으세요")]
+        public GameObject catchResultPanel;
 
         #region 낚시, 미니게임 이벤트 수신부
 
@@ -33,10 +39,18 @@ namespace VirtualFishing.Feedback
                     PlaySound("LineCast");
                     PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Right);
                     break;
-                case RodState.Hit:
+                case RodState.Hit: // 챔질 성공
+                    HideUI("HookingGuide"); // 성공했으니 가이드 UI는 끕니다.
                     PlaySound("HookSuccess");
                     PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Right);
-                    ShowVisualEffect("HookSuccess", Vector3.zero); // 임시 위치(Vector3.zero)
+                    ShowVisualEffect("HookSuccess", Vector3.zero); // 실제로는 낚싯대 끝 좌표 전달 필요
+                    break;
+
+                case RodState.Idle: // 챔질 실패로 상태 롤백 시
+                    HideUI("HookingGuide");
+                    // TTS 및 물고기 도망 이펙트는 실패 이벤트(별도)에서 처리
+                    PlayTTS("아쉽습니다. 다시 도전해보세요"); // 실패 음성 안내
+                    //visualManager.ShowEffect("FishEscapeVFX", floatPosition);
                     break;
             }
             Debug.Log($"<color=green>[피드백]</color> 낚싯대 상태 변경 이벤트 수신: {state}");
@@ -49,11 +63,21 @@ namespace VirtualFishing.Feedback
             ShowVisualEffect("Splash", Vector3.zero);
         }
 
+        // 예고 입질
+        public void OnPreBiteEvent(Vector3 floatPosition)
+        {
+            visualManager.ShowEffect("Ripple", floatPosition); // 물결 이펙트
+            PlayHaptic(HapticPattern.LightPulse, ControllerHand.Right); // 약한 진동
+        }
+
         // 3. 입질 발생 이벤트 수신 (VoidEventSO)
         public void OnBiteOccurredEvent()
         {
             PlaySound("FloatSink");
             PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Right);
+            Debug.Log("<color=green>[피드백]</color> 입질 이벤트 수신: 찌가 가라앉습니다.");
+            // 챔질 존 가이드 UI를 켭니다 (플레이어에게 낚싯대를 들라고 지시)
+            ShowUI("HookingGuide"); 
         }
 
         // 4. 미니게임 시작 이벤트 수신 (VoidEventSO)
@@ -104,10 +128,12 @@ namespace VirtualFishing.Feedback
         public void OnCatchResultEvent()
         {
             PlaySound("Fanfare");
-            ShowVisualEffect("Fireworks", Vector3.zero);
-            ShowUI("FishInfoPanel");
-            PlayTTS("물고기를 잡으셨습니다.");
-            Debug.Log("<color=green>[피드백]</color> 포획 결과 이벤트 수신: 성공");
+            ShowVisualEffect("Fireworks", Vector3.zero); // 실제론 물고기 위치 전달
+            //fishdata 전달받아서 이름, 크기, 무게, 별점 등 결과 UI에 표시할 데이터도 같이 전달 필요
+            ShowUI("CatchResult"); 
+            
+            PlayTTS("물고기를 잡으셨습니다! 크기와 무게를 확인해보세요.");
+            Debug.Log("<color=green>[피드백]</color> 포획 결과 이벤트 수신: 성공 및 보상 UI 출력");
         }
 
         public void OnSafetyWarningEvent(int level)
@@ -154,7 +180,7 @@ namespace VirtualFishing.Feedback
 
         public void OnExitSequenceEvent()
         {
-            ShowUI("SavingProgress");
+            ShowUI("ExitSequence");
             PlayTTS("기록을 안전하게 저장하고 있습니다.");
             visualManager.FadeScreen(0.7f, 3.0f);
         }
@@ -173,12 +199,31 @@ namespace VirtualFishing.Feedback
                 if (safetyWarningPanel != null) 
                 {
                     safetyWarningPanel.SetActive(true);
-                    Debug.Log("[UI 켜짐] 붉은색 경고 패널 활성화 성공!");
                 }
                 else 
                 {
                     Debug.LogError("🚨 [오류] FeedbackManager의 'Safety Warning Panel' 슬롯이 비어있습니다! 하이어라키의 캔버스를 드래그해서 넣으세요.");
                 }
+            }
+            else if (uiId == "HookingGuide" && hookingGuidePanel != null) 
+            {
+                hookingGuidePanel.SetActive(true);
+            }
+            else if (uiId == "CatchResult" && catchResultPanel != null)
+            {
+                catchResultPanel.SetActive(true);
+                
+                CatchResultController controller = catchResultPanel.GetComponent<CatchResultController>();
+                if (controller != null)
+                {
+                    // 추후 data 인자값을 받아서 넘기도록 수정해야 합니다. 
+                    // 지금은 테스트용으로 참돔 데이터를 넣습니다.
+                    controller.DisplayResult("참돔", 45.2f, 3.1f, 4);
+                }
+            }
+            else if (uiId == "ExitSequence" && exitSequencePanel != null)
+            {
+                exitSequencePanel.SetActive(true);
             }
         }
         public void HideUI(string uiId)
@@ -186,6 +231,18 @@ namespace VirtualFishing.Feedback
             if (uiId == "SafetyWarning" && safetyWarningPanel != null)
             {
                 safetyWarningPanel.SetActive(false);
+            }
+            else if (uiId == "HookingGuide" && hookingGuidePanel != null) 
+            {
+                hookingGuidePanel.SetActive(false);
+            }
+            else if (uiId == "CatchResult" && catchResultPanel != null)
+            {
+                catchResultPanel.SetActive(false);
+            }
+            else if (uiId == "ExitSequence" && exitSequencePanel != null)
+            {
+                exitSequencePanel.SetActive(false);
             }
         }
         #endregion

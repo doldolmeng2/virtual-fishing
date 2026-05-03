@@ -8,6 +8,7 @@ namespace VirtualFishing.Feedback.Test
     {
         [Header("임시 이벤트 에셋 연결")]
         public VoidEventSO catchResultEvent;
+        public VoidEventSO biteOccurredEvent;
         public IntEventSO rodStateEvent;
         public FloatEventSO tensionEvent;
         public IntEventSO safetyWarningEvent;
@@ -33,9 +34,8 @@ namespace VirtualFishing.Feedback.Test
             // 3. 미니게임 위험 장력 테스트 (Float) - 80 이상일 때 경고
             if (Keyboard.current.digit7Key.wasPressedThisFrame)
             {
-                float mockTension = 85.5f;
-                Debug.Log($"<color=yellow>[테스트]</color> 장력 {mockTension} 전달");
-                tensionEvent?.Raise(mockTension);
+                Debug.Log($"<color=yellow>[테스트]</color> 입질 이벤트 발행");
+                biteOccurredEvent?.Raise();
             }
 
             // 4. 안전 구역 복귀 테스트 (None) - Level 0 : 모든 UI/효과 꺼짐
