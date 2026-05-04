@@ -4,6 +4,7 @@
     "references": [
         "Unity.InputSystem",
         "Unity.XR.Interaction.Toolkit",
+        "Unity.XR.CoreUtils",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
