@@ -1,67 +1,83 @@
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using VirtualFishing.Core.Fish;
 using VirtualFishing.Data;
 
 namespace VirtualFishing.MiniGame
 {
-    // World Space Canvas에 붙이는 컴포넌트. 물고기 위를 따라다니며 미니게임 상태를 텍스트로 표시한다.
+    /// <summary>
+    /// 물고기 위에 떠다니는 World Space UI.
+    /// 방향 화살표(Left / Center / Right)와 텐션 바를 표시한다.
+    /// MiniGameUITester 로 실행 중 더미 값을 주입해 테스트할 수 있다.
+    /// </summary>
     [RequireComponent(typeof(Canvas))]
     public class FishIndicatorUI : MonoBehaviour
     {
-        [Header("텍스트 (비워두면 Awake에서 자동 생성)")]
-        [SerializeField] private TextMeshProUGUI directionText;
-        [SerializeField] private TextMeshProUGUI tensionText;
-        [SerializeField] private TextMeshProUGUI gaugeText;
-        [SerializeField] private TextMeshProUGUI timeText;
+        // ── 방향 화살표 ─────────────────────────────
+        [Header("방향 화살표 이미지")]
+        [SerializeField] private Image arrowLeft;
+        [SerializeField] private Image arrowCenter;
+        [SerializeField] private Image arrowRight;
 
-        [Header("위치")]
-        [SerializeField] private Vector3 offset = new Vector3(0f, 1.5f, 0f);
-        [SerializeField] private float canvasScale = 0.003f;
+        [Header("방향 활성/비활성 색상")]
+        [SerializeField] private Color colorArrowActive   = Color.white;
+        [SerializeField] private Color colorArrowInactive = new Color(1f, 1f, 1f, 0.2f);
 
-        private FishController _fish;
-        private MiniGameManager _manager;
+        // ── 텐션 게이지 ─────────────────────────────
+        [Header("텐션 게이지 바")]
+        [Tooltip("Image Type = Filled, Fill Method = Horizontal 으로 설정하세요")]
+        [SerializeField] private Image tensionFill;
+        [Tooltip("선택 — 수치 숫자 표시용 TextMeshPro")]
+        [SerializeField] private TextMeshProUGUI tensionLabel;
+
+        [Header("텐션 색상")]
+        [SerializeField] private Color colorSafe     = new Color(0.2f, 0.85f, 0.3f);
+        [SerializeField] private Color colorWarning  = new Color(1f,   0.75f, 0f);
+        [SerializeField] private Color colorCritical = new Color(0.9f, 0.1f,  0.1f);
+
+        // ── SO 참조 ──────────────────────────────────
+        [Header("데이터 참조 (인스펙터에서 연결)")]
+        [SerializeField] private TensionDataSO tensionData;
+
+        // ── 위치·스케일 ──────────────────────────────
+        [Header("UI 위치")]
+        [SerializeField] private Vector3 offset     = new Vector3(0f, 1.5f, 0f);
+        [SerializeField] private float   canvasScale = 0.003f;
+
+        // ── 런타임 참조 ──────────────────────────────
+        private FishController    _fish;
         private TensionCalculator _tension;
-        private Camera _camera;
+        private Camera            _camera;
 
+        // ────────────────────────────────────────────
         private void Awake()
         {
             var canvas = GetComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
-
-            var rt = GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(200f, 130f);
             transform.localScale = Vector3.one * canvasScale;
-
-            if (directionText == null) directionText = CreateText("Direction", new Vector2(0f,  50f), 22);
-            if (tensionText   == null) tensionText   = CreateText("Tension",   new Vector2(0f,  20f), 16);
-            if (gaugeText     == null) gaugeText     = CreateText("Gauge",     new Vector2(0f, -10f), 16);
-            if (timeText      == null) timeText      = CreateText("Time",      new Vector2(0f, -40f), 16);
-
             gameObject.SetActive(false);
         }
 
+        /// <summary>미니게임 시작 시 MiniGameManager 가 호출한다.</summary>
         public void Initialize(FishController fish, MiniGameManager manager, TensionCalculator tension)
         {
             _fish    = fish;
-            _manager = manager;
             _tension = tension;
             _camera  = Camera.main;
 
             var canvas = GetComponent<Canvas>();
             if (canvas != null) canvas.worldCamera = _camera;
 
-            _tension.OnTensionChanged      += RefreshTension;
-            _manager.OnSuccessGaugeChanged += RefreshGauge;
+            _tension.OnTensionChanged += RefreshTension;
 
+            RefreshTension(_tension.CurrentTension);
             gameObject.SetActive(true);
         }
 
         public void Shutdown()
         {
-            if (_tension != null) _tension.OnTensionChanged      -= RefreshTension;
-            if (_manager != null) _manager.OnSuccessGaugeChanged -= RefreshGauge;
-
+            if (_tension != null) _tension.OnTensionChanged -= RefreshTension;
             gameObject.SetActive(false);
         }
 
@@ -70,62 +86,64 @@ namespace VirtualFishing.MiniGame
             if (_fish == null) return;
 
             transform.position = _fish.VisualTransform.position + offset;
-
-            // 항상 카메라 방향을 바라봄 (billboard)
             if (_camera != null)
                 transform.forward = _camera.transform.forward;
 
-            RefreshDirection();
-            RefreshTime();
+            RefreshDirection(_fish.CurrentMoveMode);
         }
 
-        private void RefreshDirection()
+        // ── 방향 ─────────────────────────────────────
+        private void RefreshDirection(FishMoveMode mode)
         {
-            if (directionText == null) return;
-            directionText.text = _fish.CurrentMoveMode switch
-            {
-                FishMoveMode.MoveLeft  => "<< 왼쪽",
-                FishMoveMode.MoveRight => "오른쪽 >>",
-                _                      => "● 정지"
-            };
+            SetArrow(arrowLeft,   mode == FishMoveMode.MoveLeft);
+            SetArrow(arrowCenter, mode == FishMoveMode.Stop);
+            SetArrow(arrowRight,  mode == FishMoveMode.MoveRight);
         }
 
-        private void RefreshTime()
+        private void SetArrow(Image img, bool active)
         {
-            if (timeText == null || _manager == null) return;
-            timeText.text = $"시간: {_manager.RemainingTime:F1}s";
+            if (img == null) return;
+            img.color = active ? colorArrowActive : colorArrowInactive;
         }
 
+        // ── 텐션 ─────────────────────────────────────
         private void RefreshTension(float tension)
         {
-            if (tensionText == null) return;
-            string zone = _tension.CurrentZone == TensionZone.Critical
-                ? "<color=red>위험</color>"
-                : "<color=green>안전</color>";
-            tensionText.text = $"장력: {tension:F0} / 100  {zone}";
+            float max   = tensionData != null ? tensionData.maxTension : 100f;
+            float ratio = Mathf.Clamp01(tension / max);
+
+            if (tensionFill != null)
+            {
+                tensionFill.fillAmount = ratio;
+                tensionFill.color      = GetTensionColor(tension, max);
+            }
+
+            if (tensionLabel != null)
+                tensionLabel.text = $"{tension:F0}";
         }
 
-        private void RefreshGauge(float gauge)
+        private Color GetTensionColor(float tension, float max)
         {
-            if (gaugeText == null) return;
-            gaugeText.text = $"게이지: {gauge:F0} %";
+            float dangerRatio = tensionData != null ? tensionData.dangerThreshold / max : 0.9f;
+            float ratio       = tension / max;
+
+            if (ratio < dangerRatio)
+                return Color.Lerp(colorSafe, colorWarning,
+                    Mathf.InverseLerp(0f, dangerRatio, ratio));
+            else
+                return Color.Lerp(colorWarning, colorCritical,
+                    Mathf.InverseLerp(dangerRatio, 1f, ratio));
         }
 
-        private TextMeshProUGUI CreateText(string goName, Vector2 anchoredPosition, float fontSize)
+        // ── 테스트용 (MiniGameUITester 에서 호출) ────
+        public void SimulateTension(float tension)  => RefreshTension(tension);
+        public void SimulateDirection(FishMoveMode mode) => RefreshDirection(mode);
+        public void ShowForTest()
         {
-            var go  = new GameObject(goName);
-            go.transform.SetParent(transform, false);
-
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.fontSize  = fontSize;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color     = Color.white;
-
-            var rt = tmp.GetComponent<RectTransform>();
-            rt.anchoredPosition = anchoredPosition;
-            rt.sizeDelta        = new Vector2(200f, 30f);
-
-            return tmp;
+            _camera = Camera.main;
+            var canvas = GetComponent<Canvas>();
+            if (canvas != null) canvas.worldCamera = _camera;
+            gameObject.SetActive(true);
         }
     }
 }
