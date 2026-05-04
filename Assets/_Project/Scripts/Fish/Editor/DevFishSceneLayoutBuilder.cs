@@ -27,8 +27,13 @@ namespace VirtualFishing.EditorTools
         private const string Grass15TargetMeshPath = "Assets/Art/Environment/Pond/Models/PurePoly_Selected/Meshes/PP_Grass_15.fbx";
 
         private const string Tree01Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_1_Smooth.prefab";
+        private const string Tree02Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_2_Smooth.prefab";
         private const string Tree04Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_4_Smooth.prefab";
         private const string Tree07Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_7_Smooth.prefab";
+        private const string Tree10Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_10_Smooth.prefab";
+        private const string Tree12Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_12_Smooth.prefab";
+        private const string Tree16Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_16_Smooth.prefab";
+        private const string Tree18Path = "Assets/Art/Environment/Pond/Models/Pack_FREE_Trees/Prefabs/Tree_18_Smooth.prefab";
 
         private const string GroundMaterialPath = "Assets/Art/Environment/Pond/Models/PurePoly_Selected/Materials/PP_Ground.mat";
         private const string WaterMaterialPath = "Assets/Art/Environment/Water/Simple Water Shader/Resources/Water_mat_03.mat";
@@ -194,6 +199,12 @@ namespace VirtualFishing.EditorTools
             PlacePrefab(Rock05Path, "Rock_Right_B", rockRoot.transform, new Vector3(11.8f, 0.08f, 34f), new Vector3(0f, 200f, 0f), new Vector3(1.05f, 1.05f, 1.05f));
             PlacePrefab(Rock10Path, "Rock_Right_C", rockRoot.transform, new Vector3(16.5f, 0.05f, 36.5f), new Vector3(0f, 232f, 0f), new Vector3(0.88f, 0.88f, 0.88f));
             PlacePrefab(Rock05Path, "Rock_FarRight", rockRoot.transform, new Vector3(21.8f, 0.08f, 39.5f), new Vector3(0f, 250f, 0f), new Vector3(1.15f, 1.15f, 1.15f));
+            PlacePrefab(Rock10Path, "Rock_Left_Shoulder_A", rockRoot.transform, new Vector3(-34f, 0.04f, 12f), new Vector3(0f, 35f, 0f), new Vector3(0.78f, 0.78f, 0.78f));
+            PlacePrefab(Rock05Path, "Rock_Left_Shoulder_B", rockRoot.transform, new Vector3(-39f, 0.06f, 20f), new Vector3(0f, 76f, 0f), new Vector3(1.02f, 1.02f, 1.02f));
+            PlacePrefab(Rock10Path, "Rock_Left_Shoulder_C", rockRoot.transform, new Vector3(-44f, 0.04f, 30f), new Vector3(0f, 118f, 0f), new Vector3(0.86f, 0.86f, 0.86f));
+            PlacePrefab(Rock05Path, "Rock_Right_Shoulder_A", rockRoot.transform, new Vector3(33f, 0.06f, 13f), new Vector3(0f, 150f, 0f), new Vector3(1.08f, 1.08f, 1.08f));
+            PlacePrefab(Rock10Path, "Rock_Right_Shoulder_B", rockRoot.transform, new Vector3(39f, 0.04f, 22f), new Vector3(0f, 214f, 0f), new Vector3(0.84f, 0.84f, 0.84f));
+            PlacePrefab(Rock05Path, "Rock_Right_Shoulder_C", rockRoot.transform, new Vector3(45f, 0.06f, 32f), new Vector3(0f, 255f, 0f), new Vector3(1.18f, 1.18f, 1.18f));
         }
 
         private static void CreateTrees(Transform parent)
@@ -207,37 +218,46 @@ namespace VirtualFishing.EditorTools
 
             int treeIndex = 1;
 
-            for (int row = 0; row < 5; row++)
+            for (int row = 0; row < 6; row++)
             {
-                for (int col = 0; col < 4; col++)
+                for (int col = 0; col < 5; col++)
                 {
-                    float x = -34f + col * 5.5f + (row % 2 == 0 ? 0f : 1.6f);
-                    float z = 2f + row * 5.8f;
-                    float scale = 1.1f + ((row + col) % 4) * 0.18f;
+                    float x = -43f + col * 5.8f + (row % 2 == 0 ? 0f : 1.9f);
+                    float z = -2f + row * 6.2f;
+                    float scale = 1.02f + ((row + col) % 5) * 0.14f;
                     PlaceTreeVariant(treeRoot.transform, treeIndex++, new Vector3(x, 0f, z), 25f + row * 18f + col * 21f, scale);
                 }
             }
 
-            for (int row = 0; row < 5; row++)
+            for (int row = 0; row < 6; row++)
             {
-                for (int col = 0; col < 4; col++)
+                for (int col = 0; col < 5; col++)
                 {
-                    float x = 12f + col * 5.4f + (row % 2 == 0 ? 0.8f : -1.1f);
-                    float z = 1f + row * 5.9f;
-                    float scale = 1.05f + ((row + col + 1) % 4) * 0.2f;
+                    float x = 18f + col * 5.7f + (row % 2 == 0 ? 0.8f : -1.2f);
+                    float z = -1f + row * 6.1f;
+                    float scale = 1.0f + ((row + col + 1) % 5) * 0.15f;
                     PlaceTreeVariant(treeRoot.transform, treeIndex++, new Vector3(x, 0f, z), 160f + row * 17f + col * 19f, scale);
                 }
             }
 
-            for (int row = 0; row < 2; row++)
+            for (int row = 0; row < 3; row++)
             {
-                for (int col = 0; col < 5; col++)
+                for (int col = 0; col < 8; col++)
                 {
-                    float x = -22f + col * 10f + (row == 0 ? 0f : 2.5f);
-                    float z = 33f + row * 6f;
-                    float scale = 1f + ((row + col) % 3) * 0.14f;
+                    float x = -36f + col * 10.5f + (row % 2 == 0 ? 0f : 3.5f);
+                    float z = 34f + row * 7f;
+                    float scale = 0.95f + ((row + col) % 4) * 0.13f;
                     PlaceTreeVariant(treeRoot.transform, treeIndex++, new Vector3(x, 0f, z), 70f + row * 33f + col * 14f, scale);
                 }
+            }
+
+            for (int i = 0; i < 18; i++)
+            {
+                float side = i % 2 == 0 ? -1f : 1f;
+                float x = side * (48f + (i % 3) * 4.8f);
+                float z = 4f + (i / 2) * 4.8f + Mathf.Sin(i * 0.8f) * 1.2f;
+                float scale = 0.8f + (i % 4) * 0.11f;
+                PlaceTreeVariant(treeRoot.transform, treeIndex++, new Vector3(x, 0f, z), 45f + i * 27f, scale);
             }
         }
 
@@ -254,18 +274,17 @@ namespace VirtualFishing.EditorTools
                 Grass15Path
             };
 
-            const int grassCount = 100;
+            const int grassCount = 120;
             for (int i = 0; i < grassCount; i++)
             {
                 string prefabPath = grassPrefabPaths[i % grassPrefabPaths.Length];
-                float angle = i / (float)grassCount * Mathf.PI * 2f;
-                float radiusX = 34f + Mathf.Sin(i * 0.7f) * 4.5f;
-                float radiusZ = 16f + Mathf.Cos(i * 0.5f) * 3.4f;
-                float x = Mathf.Cos(angle) * radiusX;
-                float z = 12f + Mathf.Sin(angle) * radiusZ;
+                float t = i / (float)(grassCount - 1);
+                float side = i % 2 == 0 ? -1f : 1f;
+                float x = side * (25f + (i % 18) * 1.35f);
+                float z = 8f + t * 34f + Mathf.Sin(i * 0.65f) * 1.2f;
                 Vector3 position = new Vector3(x, 0f, z);
                 Vector3 rotation = new Vector3(0f, (i * 37f) % 360f, 0f);
-                float scaleValue = 2.4f + (i % 5) * 0.28f;
+                float scaleValue = 0.475f + (i % 5) * 0.05f;
                 Vector3 scale = new Vector3(scaleValue, scaleValue, scaleValue);
 
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
@@ -275,6 +294,19 @@ namespace VirtualFishing.EditorTools
                 }
 
                 PlacePrefab(prefabPath, $"Grass_{i + 1:00}", grassRoot.transform, position, rotation, scale);
+            }
+
+            for (int i = 0; i < 72; i++)
+            {
+                float t = i / 71f;
+                float x = Mathf.Lerp(-44f, 44f, t);
+                float z = 31f + Mathf.Sin(t * Mathf.PI * 5f) * 2.1f + (i % 3) * 1.15f;
+                float scaleValue = 0.425f + (i % 4) * 0.04f;
+                CreateFallbackGrassClump(
+                    grassRoot.transform,
+                    new Vector3(x, 0f, z),
+                    new Vector3(0f, (i * 31f) % 360f, 0f),
+                    new Vector3(scaleValue, scaleValue, scaleValue));
             }
         }
 
@@ -449,11 +481,16 @@ namespace VirtualFishing.EditorTools
 
         private static void PlaceTreeVariant(Transform parent, int treeIndex, Vector3 localPosition, float yRotation, float scale)
         {
-            string prefabPath = (treeIndex % 3) switch
+            string prefabPath = (treeIndex % 8) switch
             {
                 1 => Tree01Path,
                 2 => Tree04Path,
-                _ => Tree07Path
+                3 => Tree07Path,
+                4 => Tree10Path,
+                5 => Tree12Path,
+                6 => Tree16Path,
+                7 => Tree18Path,
+                _ => Tree02Path
             };
 
             PlacePrefab(
