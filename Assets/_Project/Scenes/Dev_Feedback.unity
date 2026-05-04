@@ -833,6 +833,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5193743464019603736, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8033301774489015053, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
+      propertyPath: m_text
+      value: '!!Warning!!'
+      objectReference: {fileID: 0}
     - target: {fileID: 8033301774489015053, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
       propertyPath: m_fontAsset
       value: 
@@ -1448,6 +1456,10 @@ PrefabInstance:
     - target: {fileID: 3473865224796437876, guid: d67e4641e6258465fbe07608ae4cb515, type: 3}
       propertyPath: m_Name
       value: UI_HookingGuide
+      objectReference: {fileID: 0}
+    - target: {fileID: 3473865224796437876, guid: d67e4641e6258465fbe07608ae4cb515, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7563037008828458785, guid: d67e4641e6258465fbe07608ae4cb515, type: 3}
       propertyPath: m_Camera

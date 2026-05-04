@@ -50,6 +50,7 @@ namespace VirtualFishing.Feedback
                     HideUI("HookingGuide");
                     // TTS 및 물고기 도망 이펙트는 실패 이벤트(별도)에서 처리
                     PlayTTS("아쉽습니다. 다시 도전해보세요"); // 실패 음성 안내
+                    PlaySound("HookFail");
                     //visualManager.ShowEffect("FishEscapeVFX", floatPosition);
                     break;
             }

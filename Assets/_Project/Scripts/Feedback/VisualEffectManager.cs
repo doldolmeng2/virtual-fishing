@@ -46,7 +46,7 @@ namespace VirtualFishing.Feedback
             {
                 HideEffect(effectId);
 
-                GameObject instance = Instantiate(prefab, position, Quaternion.identity);
+                GameObject instance = Instantiate(prefab, position, prefab.transform.rotation);
                 instance.SetActive(true);
                 activeEffects[effectId] = instance;
 
