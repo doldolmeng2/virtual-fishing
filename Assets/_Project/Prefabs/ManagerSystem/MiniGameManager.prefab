@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7244064502850163835
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1301318824196378747}
+  - component: {fileID: 5467213394491797969}
+  - component: {fileID: 5377562740577891125}
+  m_Layer: 0
+  m_Name: MiniGameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1301318824196378747
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7244064502850163835}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5467213394491797969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7244064502850163835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a4e1050a2c6a334ba2bbc1c8954f9ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.MiniGame.MiniGameManager
+  tensionData: {fileID: 11400000, guid: 3778bef790677864f9441f4892151809, type: 2}
+  settings: {fileID: 11400000, guid: 0e82732872dd1604f8427c1c06e0b9ee, type: 2}
+  tensionCalculator: {fileID: 5377562740577891125}
+  onMiniGameResultEvent: {fileID: 11400000, guid: bbfd45e1d4d255b4ba9194cbc68588b3, type: 2}
+--- !u!114 &5377562740577891125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7244064502850163835}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8440ce84db7bce34b9fd94cf0322e456, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.MiniGame.TensionCalculator
+  tensionData: {fileID: 11400000, guid: 3778bef790677864f9441f4892151809, type: 2}
+  settings: {fileID: 11400000, guid: 0e82732872dd1604f8427c1c06e0b9ee, type: 2}
+  onTensionChangedEvent: {fileID: 11400000, guid: 674a2ef92fbe23645bb044e16e8a2cb6, type: 2}

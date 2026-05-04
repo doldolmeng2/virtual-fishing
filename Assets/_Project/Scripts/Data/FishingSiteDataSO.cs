@@ -19,6 +19,7 @@ namespace VirtualFishing.Data
         [SerializeField] private Material skyboxMaterial;
         [FormerlySerializedAs("backgroundImage")]
         [SerializeField] private Sprite backgroundImage;
+        [SerializeField] private GameObject environmentPrefab;
 
         [Header("Fish Spawn")]
         public List<FishSpawnEntry> spawnFishList = new();
@@ -31,6 +32,7 @@ namespace VirtualFishing.Data
         public AudioClip AmbientSound => ambientSound;
         public Material SkyboxMaterial => skyboxMaterial;
         public Sprite BackgroundImage => backgroundImage;
+        public GameObject EnvironmentPrefab => environmentPrefab;
         public IReadOnlyList<FishSpawnEntry> SpawnFishList => spawnFishList;
 
         private void OnValidate()

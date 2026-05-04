@@ -8,7 +8,7 @@ using VirtualFishing.Interfaces;
 
 namespace VirtualFishing.Core.Fish
 {
-    public class FishSpawner : MonoBehaviour, IFishSpawner
+    public class FishSpawner : MonoBehaviour, IFishSpawner, IVoidEventListener
     {
         [FormerlySerializedAs("currentSite")]
         [SerializeField] private FishingSiteDataSO siteData;
@@ -17,6 +17,9 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private MonoBehaviour fishControllerRef;
         [SerializeField] private VoidEventSO onWarningBiteEvent;
         [SerializeField] private VoidEventSO onBiteOccurredEvent;
+        [SerializeField] private FishSpeciesDataSO debugForcedSpecies;
+        [Tooltip("찌 착수 이벤트 구독 → 착수 시 StartBiteTimer() 자동 호출")]
+        [SerializeField] private VoidEventSO onWaterLandedEvent;
 
         private IFish fish;
         private Coroutine biteCoroutine;
@@ -28,6 +31,11 @@ namespace VirtualFishing.Core.Fish
         {
             fish = fishControllerRef as IFish;
         }
+
+        private void OnEnable()  => onWaterLandedEvent?.Register(this);
+        private void OnDisable() => onWaterLandedEvent?.Unregister(this);
+
+        void IVoidEventListener.OnEventRaised() => StartBiteTimer();
 
         public void StartBiteTimer()
         {
@@ -48,6 +56,23 @@ namespace VirtualFishing.Core.Fish
 
             StopCoroutine(biteCoroutine);
             biteCoroutine = null;
+        }
+
+        public void DebugForceBiteImmediately()
+        {
+            FishSpeciesDataSO species = debugForcedSpecies != null ? debugForcedSpecies : SelectFishSpecies();
+            if (species == null)
+            {
+                Debug.LogWarning("[FishSpawner] DebugForceBiteImmediately failed: no valid fish species found.");
+                return;
+            }
+
+            CancelBite();
+            fish?.Initialize(species);
+
+            Debug.Log($"[FishSpawner] Debug force bite occurred immediately: species={species.DisplayName}");
+            OnBiteOccurred?.Invoke(species);
+            onBiteOccurredEvent?.Raise();
         }
 
         private IEnumerator BiteRoutine()

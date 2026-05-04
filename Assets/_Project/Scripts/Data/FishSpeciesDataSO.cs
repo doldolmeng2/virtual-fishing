@@ -22,7 +22,6 @@ namespace VirtualFishing.Data
         [Min(0f)]
         [SerializeField] private float baseResistanceValue = 1f;
         [SerializeField] private MovementPattern movementPattern = MovementPattern.Calm;
-        [SerializeField] private FloatRange moveModeDurationRange = new FloatRange(1f, 2.5f);
         [Min(0f)]
         [SerializeField] private float minWaitTime = 2f;
         [Min(0f)]
@@ -38,17 +37,12 @@ namespace VirtualFishing.Data
         [SerializeField] private string description;
 
         public string FishId => fishId;
-        public string SpeciesName => fishId;
-        public string speciesName => displayName;
         public string DisplayName => displayName;
         public int Rarity => rarityValue;
-        public int rarity => rarityValue;
         public FloatRange SizeRangeCm => sizeRangeCm;
         public FloatRange WeightRangeKg => weightRangeKg;
         public float BaseResistance => baseResistanceValue;
-        public float baseResistance => baseResistanceValue;
         public MovementPattern MovementPattern => movementPattern;
-        public FloatRange MoveModeDurationRange => moveModeDurationRange;
         public float MinWaitTime => minWaitTime;
         public float MaxWaitTime => maxWaitTime;
         public int BaseScore => baseScore;
@@ -72,17 +66,10 @@ namespace VirtualFishing.Data
             return Random.Range(minWaitTime, maxWaitTime);
         }
 
-        public float GetRandomMoveModeDuration()
-        {
-            return moveModeDurationRange.GetRandom();
-        }
-
         private void OnValidate()
         {
             rarityValue = Mathf.Max(1, rarityValue);
             baseResistanceValue = Mathf.Max(0f, baseResistanceValue);
-            moveModeDurationRange.min = Mathf.Max(0.1f, moveModeDurationRange.min);
-            moveModeDurationRange.max = Mathf.Max(moveModeDurationRange.min, moveModeDurationRange.max);
             minWaitTime = Mathf.Max(0f, minWaitTime);
             maxWaitTime = Mathf.Max(minWaitTime, maxWaitTime);
             baseScore = Mathf.Max(0, baseScore);

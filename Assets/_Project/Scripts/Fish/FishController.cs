@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
@@ -11,10 +10,17 @@ namespace VirtualFishing.Core.Fish
         [Header("Visual Test Setup")]
         [SerializeField] private Transform spawnRoot;
         [SerializeField] private Vector3 spawnOffset = new(0f, 0.5f, 2.5f);
+        [SerializeField] private bool flipVisualForward = true;
         [SerializeField] private bool createPlaceholderWhenPrefabMissing = true;
         [SerializeField] private bool clampMovementWithinRange = true;
         [SerializeField] private float horizontalMoveLimit = 10.0f;
-        [SerializeField] private bool reverseDirectionAtHorizontalLimit = true;
+
+        [Header("Bite Splash")]
+        [SerializeField] private Transform splashRoot;
+        [SerializeField] private ParticleSystem splashPrefab;
+        [SerializeField] private bool createDefaultSplashWhenMissing = true;
+        [SerializeField] private float splashWaterHeight = 0.14f;
+        [SerializeField] private float splashFollowYOffset = 0.04f;
 
         [Header("Runtime State")]
         [SerializeField] private FishSpeciesDataSO currentSpecies;
@@ -22,15 +28,17 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float resistance;
         [SerializeField] private MovementPattern pattern;
         [SerializeField] private float sizeCm;
+        [SerializeField] private FishPhase currentPhase = FishPhase.None;
         [SerializeField] private FishMoveMode currentMoveMode = FishMoveMode.Stop;
-        [SerializeField] private float currentModeDuration;
-        [SerializeField] private bool isRandomMovementLoopRunning;
+        [SerializeField] private bool isPhaseMovementActive;
         [SerializeField] private float debugMoveSpeed = 1.5f;
         [SerializeField] private Vector3 visualSpawnPosition;
-        [SerializeField] private bool allowStopModeInRandomLoop = false;
+        [SerializeField] private bool isWaitingAtMovementLimit;
+        [SerializeField] private FishPhase inspectorDebugPhase = FishPhase.Phase2;
+        [SerializeField] private float currentDifficulty;
 
         private GameObject currentVisualInstance;
-        private Coroutine movementModeRoutine;
+        private ParticleSystem currentSplashInstance;
 
         public FishSpeciesDataSO CurrentSpecies => currentSpecies;
         public string SpeciesName => currentSpecies != null ? currentSpecies.DisplayName : string.Empty;
@@ -38,7 +46,14 @@ namespace VirtualFishing.Core.Fish
         public float Resistance => resistance;
         public MovementPattern Pattern => pattern;
         public float SizeCm => sizeCm;
+        public float CurrentDifficulty => currentDifficulty;
+        public FishPhase CurrentPhase => currentPhase;
         public FishMoveMode CurrentMoveMode => currentMoveMode;
+        public FishPhase InspectorDebugPhase
+        {
+            get => inspectorDebugPhase;
+            set => inspectorDebugPhase = value;
+        }
         // UI가 물고기 비주얼을 따라다닐 때 사용. 비주얼이 없으면 자신의 transform 반환
         public Transform VisualTransform => currentVisualInstance != null
             ? currentVisualInstance.transform
@@ -48,7 +63,7 @@ namespace VirtualFishing.Core.Fish
 
         private void Update()
         {
-            if (!isRandomMovementLoopRunning || currentVisualInstance == null)
+            if (!isPhaseMovementActive || currentVisualInstance == null)
             {
                 return;
             }
@@ -59,10 +74,11 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            float moveSpeed = GetMoveSpeedByPattern();
+            float moveSpeed = GetMoveSpeed();
             currentVisualInstance.transform.position += movementDirection * (moveSpeed * Time.deltaTime);
             ClampVisualPosition();
-            currentVisualInstance.transform.forward = movementDirection;
+            ApplyVisualDirection(movementDirection);
+            UpdateSplashPosition();
         }
 
         public void Initialize(FishSpeciesDataSO speciesData)
@@ -79,26 +95,32 @@ namespace VirtualFishing.Core.Fish
             sizeCm = speciesData.GetRandomSizeCm();
             resistance = speciesData.BaseResistance;
             pattern = speciesData.MovementPattern;
-            SetMoveMode(FishMoveMode.Stop, 0f);
+            currentDifficulty = CalculateDifficulty();
             SpawnVisual(speciesData);
+            BeginPhaseMovement();
+            StartSplashEffect();
 
             Debug.Log(
                 $"[FishController] Initialized fish: id={speciesData.FishId}, name={speciesData.DisplayName}, " +
-                $"weight={weight:F2}kg, size={sizeCm:F1}cm, resistance={resistance:F2}, pattern={pattern}, moveMode={currentMoveMode}");
+                $"weight={weight:F2}kg, size={sizeCm:F1}cm, resistance={resistance:F2}, difficulty={currentDifficulty:F2}, pattern={pattern}, phase={currentPhase}, moveMode={currentMoveMode}");
 
             // TODO: Replace this local test visual flow with the team's production fish presentation pipeline.
         }
 
         public void ResetFish()
         {
-            StopRandomMovementModeLoop();
+            StopPhaseMovement();
+            StopSplashEffect();
             ClearVisual();
             currentSpecies = null;
             weight = 0f;
             resistance = 0f;
             pattern = MovementPattern.Calm;
             sizeCm = 0f;
-            SetMoveMode(FishMoveMode.Stop, 0f);
+            currentDifficulty = 0f;
+            currentPhase = FishPhase.None;
+            currentMoveMode = FishMoveMode.Stop;
+            isWaitingAtMovementLimit = false;
 
             Debug.Log("[FishController] Fish state reset.");
         }
@@ -120,8 +142,10 @@ namespace VirtualFishing.Core.Fish
 
                 if (movementDirection != Vector3.zero)
                 {
-                    currentVisualInstance.transform.forward = movementDirection;
+                    ApplyVisualDirection(movementDirection);
                 }
+
+                UpdateSplashPosition();
             }
 
             Debug.Log($"[FishController] ExecuteMovement: mode={currentMoveMode}, direction={movementDirection}");
@@ -130,35 +154,39 @@ namespace VirtualFishing.Core.Fish
             // TODO: Replace the placeholder movement output with actual fish AI during mini-game integration.
         }
 
-        public void StartRandomMovementModeLoop()
+        public void SetPhase(FishPhase nextPhase)
         {
             if (currentSpecies == null)
             {
-                Debug.LogWarning("[FishController] StartRandomMovementModeLoop skipped: no fish has been initialized.");
+                Debug.LogWarning($"[FishController] SetPhase skipped: no fish has been initialized. requestedPhase={nextPhase}");
                 return;
             }
 
-            if (movementModeRoutine != null)
+            if (nextPhase is FishPhase.None)
             {
-                StopCoroutine(movementModeRoutine);
+                StopPhaseMovement();
+                Debug.Log("[FishController] Phase cleared. Fish movement stopped.");
+                return;
             }
 
-            isRandomMovementLoopRunning = true;
-            movementModeRoutine = StartCoroutine(RandomMovementModeRoutine());
-            Debug.Log("[FishController] Random movement mode loop started.");
+            if (nextPhase == currentPhase)
+            {
+                Debug.Log($"[FishController] SetPhase ignored: already in {currentPhase}.");
+                return;
+            }
+
+            currentPhase = nextPhase;
+            FlipDirectionForPhaseChange();
+            isPhaseMovementActive = true;
+            isWaitingAtMovementLimit = false;
+
+            Debug.Log(
+                $"[FishController] Phase changed: species={SpeciesName}, phase={currentPhase}, moveMode={currentMoveMode}, speed={GetMoveSpeed():F2}");
         }
 
-        public void StopRandomMovementModeLoop()
+        public void ApplyInspectorDebugPhase()
         {
-            if (movementModeRoutine != null)
-            {
-                StopCoroutine(movementModeRoutine);
-                movementModeRoutine = null;
-            }
-
-            isRandomMovementLoopRunning = false;
-            SetMoveMode(FishMoveMode.Stop, 0f);
-            Debug.Log("[FishController] Random movement mode loop stopped.");
+            SetPhase(inspectorDebugPhase);
         }
 
         public FishCatchData BuildCatchData(BackgroundType siteType, string caughtAt)
@@ -205,6 +233,7 @@ namespace VirtualFishing.Core.Fish
             {
                 currentVisualInstance.transform.localScale = GetPlaceholderScale(sizeCm);
                 ClampVisualPosition();
+                ApplyVisualDirection(GetMovementDirectionByMode(currentMoveMode));
             }
         }
 
@@ -219,51 +248,126 @@ namespace VirtualFishing.Core.Fish
             currentVisualInstance = null;
         }
 
+        private void StartSplashEffect()
+        {
+            StopSplashEffect();
+
+            if (currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Transform parent = splashRoot != null ? splashRoot : transform;
+            currentSplashInstance = splashPrefab != null
+                ? Instantiate(splashPrefab, parent)
+                : CreateDefaultSplash(parent);
+
+            if (currentSplashInstance == null)
+            {
+                return;
+            }
+
+            currentSplashInstance.name = $"{SpeciesName}_BiteSplash";
+            UpdateSplashPosition();
+            currentSplashInstance.Play();
+        }
+
+        private void StopSplashEffect()
+        {
+            if (currentSplashInstance == null)
+            {
+                return;
+            }
+
+            Destroy(currentSplashInstance.gameObject);
+            currentSplashInstance = null;
+        }
+
+        private ParticleSystem CreateDefaultSplash(Transform parent)
+        {
+            if (!createDefaultSplashWhenMissing)
+            {
+                return null;
+            }
+
+            GameObject splashObject = new("Generated_BiteSplash");
+            splashObject.transform.SetParent(parent);
+
+            ParticleSystem particleSystem = splashObject.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.loop = true;
+            main.startLifetime = 0.45f;
+            main.startSpeed = 0.85f;
+            main.startSize = 0.08f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 40;
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 18f;
+
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.28f;
+            shape.arc = 360f;
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.y = new ParticleSystem.MinMaxCurve(0.25f, 0.7f);
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.2f, 0.2f);
+
+            Renderer renderer = particleSystem.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = new Material(Shader.Find("Sprites/Default"))
+                {
+                    color = new Color(0.72f, 0.9f, 1f, 0.72f)
+                };
+            }
+
+            return particleSystem;
+        }
+
+        private void UpdateSplashPosition()
+        {
+            if (currentSplashInstance == null || currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Vector3 fishPosition = currentVisualInstance.transform.position;
+            currentSplashInstance.transform.position = new Vector3(
+                fishPosition.x,
+                splashWaterHeight + splashFollowYOffset,
+                fishPosition.z);
+        }
+
         private static Vector3 GetPlaceholderScale(float fishSizeCm)
         {
             float normalizedLength = Mathf.Clamp(fishSizeCm / 40f, 0.4f, 2f);
             return new Vector3(0.35f, normalizedLength, 0.35f);
         }
 
-        private IEnumerator RandomMovementModeRoutine()
+        private void BeginPhaseMovement()
         {
-            while (true)
-            {
-                FishMoveMode nextMode = GetRandomMoveMode();
-                float duration = currentSpecies != null ? currentSpecies.GetRandomMoveModeDuration() : 1f;
-
-                SetMoveMode(nextMode, duration);
-                yield return new WaitForSeconds(duration);
-            }
+            currentPhase = FishPhase.Phase1;
+            currentMoveMode = UnityEngine.Random.value < 0.5f ? FishMoveMode.MoveLeft : FishMoveMode.MoveRight;
+            isPhaseMovementActive = true;
+            isWaitingAtMovementLimit = false;
         }
 
-        private FishMoveMode GetRandomMoveMode()
+        private void StopPhaseMovement()
         {
-            if (!allowStopModeInRandomLoop)
-            {
-                return UnityEngine.Random.value < 0.5f
-                    ? FishMoveMode.MoveLeft
-                    : FishMoveMode.MoveRight;
-            }
-
-            int randomValue = UnityEngine.Random.Range(0, 5);
-            return randomValue switch
-            {
-                0 => FishMoveMode.MoveLeft,
-                1 => FishMoveMode.MoveLeft,
-                2 => FishMoveMode.Stop,
-                3 => FishMoveMode.MoveRight,
-                _ => FishMoveMode.MoveRight
-            };
+            isPhaseMovementActive = false;
+            currentMoveMode = FishMoveMode.Stop;
+            isWaitingAtMovementLimit = false;
         }
 
-        private void SetMoveMode(FishMoveMode nextMode, float duration)
+        private void FlipDirectionForPhaseChange()
         {
-            currentMoveMode = nextMode;
-            currentModeDuration = duration;
-
-            Debug.Log(
-                $"[FishController] Move mode changed: species={SpeciesName}, mode={currentMoveMode}, duration={currentModeDuration:F2}s");
+            currentMoveMode = currentMoveMode == FishMoveMode.MoveLeft
+                ? FishMoveMode.MoveRight
+                : FishMoveMode.MoveLeft;
         }
 
         private Vector3 GetMovementDirectionByMode(FishMoveMode moveMode)
@@ -276,7 +380,19 @@ namespace VirtualFishing.Core.Fish
             };
         }
 
-        private float GetMoveSpeedByPattern()
+        private void ApplyVisualDirection(Vector3 movementDirection)
+        {
+            if (currentVisualInstance == null || movementDirection == Vector3.zero)
+            {
+                return;
+            }
+
+            currentVisualInstance.transform.forward = flipVisualForward
+                ? -movementDirection
+                : movementDirection;
+        }
+
+        private float GetMoveSpeed()
         {
             float patternSpeed = pattern switch
             {
@@ -286,7 +402,35 @@ namespace VirtualFishing.Core.Fish
                 _ => 1f
             };
 
-            return patternSpeed * debugMoveSpeed;
+            float phaseSpeedMultiplier = currentPhase switch
+            {
+                FishPhase.Phase1 => 1.35f,
+                FishPhase.Phase3 => 1.15f,
+                FishPhase.Phase2 => 0.95f,
+                FishPhase.Phase4 => 0.7f,
+                _ => 0f
+            };
+
+            return patternSpeed * debugMoveSpeed * phaseSpeedMultiplier * GetDifficultySpeedMultiplier();
+        }
+
+        private float CalculateDifficulty()
+        {
+            float patternDifficulty = pattern switch
+            {
+                MovementPattern.Calm => 0.85f,
+                MovementPattern.Aggressive => 1.15f,
+                MovementPattern.Erratic => 1.35f,
+                _ => 1f
+            };
+
+            return Mathf.Max(0.1f, resistance) * patternDifficulty;
+        }
+
+        private float GetDifficultySpeedMultiplier()
+        {
+            float normalizedDifficulty = Mathf.InverseLerp(0.6f, 3.2f, currentDifficulty);
+            return Mathf.Lerp(0.85f, 1.35f, normalizedDifficulty);
         }
 
         private void ClampVisualPosition()
@@ -308,20 +452,16 @@ namespace VirtualFishing.Core.Fish
 
             currentVisualInstance.transform.position = clampedPosition;
 
-            if (!reverseDirectionAtHorizontalLimit || !isRandomMovementLoopRunning)
+            if (!hitLeftLimit && !hitRightLimit)
             {
+                isWaitingAtMovementLimit = false;
                 return;
             }
 
-            if (hitLeftLimit && currentMoveMode == FishMoveMode.MoveLeft)
+            if (!isWaitingAtMovementLimit)
             {
-                SetMoveMode(FishMoveMode.MoveRight, currentModeDuration);
-                Debug.Log("[FishController] Reached left movement limit. Reversing to MoveRight.");
-            }
-            else if (hitRightLimit && currentMoveMode == FishMoveMode.MoveRight)
-            {
-                SetMoveMode(FishMoveMode.MoveLeft, currentModeDuration);
-                Debug.Log("[FishController] Reached right movement limit. Reversing to MoveLeft.");
+                isWaitingAtMovementLimit = true;
+                Debug.Log($"[FishController] Reached movement limit while staying in {currentPhase}. Waiting for external phase change.");
             }
         }
 
@@ -348,7 +488,8 @@ namespace VirtualFishing.Core.Fish
 
         private void OnDisable()
         {
-            StopRandomMovementModeLoop();
+            StopPhaseMovement();
+            StopSplashEffect();
         }
     }
 }

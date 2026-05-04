@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a1a3e10aea642c4aad791a80f89d047, type: 3}
   m_Name: PlayerData
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.PlayerDataSO
-  sittingHeight: 0
-  armLength: 0
+  sittingHeight: 1.2
+  armLength: 0.6
   currentPosition: {x: 0, y: 0, z: 0}
-  safetyRadius: 0
+  safetyRadius: 1.5

@@ -8,11 +8,9 @@
 | 항목 | 값 |
 |------|-----|
 | Unity 버전 | 6000.3.10f1 |
-| Render Pipeline | |
-| XR Plugin | |
-| 최소 SDK / API Level | |
-
-> 이 부분 일단 유니티 버전만 적어놓을테니까 아무나 적절한 버전으로 설정해주세요. 다 설정됐다면 이 주석부분 제거 부탁드려요
+| Render Pipeline | URP |
+| XR Plugin | OpenXR 1.16.1, Meta OpenXR 2.4.0 |
+| 최소 SDK / API Level | Android 10.0 |
 
 ---
 
