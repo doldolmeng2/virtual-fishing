@@ -41,30 +41,44 @@ namespace VirtualFishing.EditorTools
         [MenuItem("VirtualFishing/Fish/Rebuild Dev_Fish Scenic Layout")]
         public static void RebuildDevFishScenicLayout()
         {
-            ConsolidateOptionalNatureAssets();
+            GenerateDevFishScenicLayout(openScene: true);
+        }
 
-            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        private static void GenerateDevFishScenicLayout(bool openScene)
+        {
+            if (openScene)
+            {
+                ConsolidateOptionalNatureAssets();
+            }
+
+            if (openScene && SceneManager.GetActiveScene().path != ScenePath)
+            {
+                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
 
             RemoveExistingEnvironmentObjects();
 
             GameObject environmentRoot = new GameObject("EnvironmentRoot");
+            environmentRoot.hideFlags = HideFlags.DontSave;
             CreateGround(environmentRoot.transform);
             CreateWater(environmentRoot.transform);
             CreateMountains(environmentRoot.transform);
             CreateRocks(environmentRoot.transform);
             CreateTrees(environmentRoot.transform);
             CreateGrass(environmentRoot.transform);
+            SetDontSaveRecursive(environmentRoot);
 
             ConfigureCamera();
             ConfigureDirectionalLight();
             ConfigureFishComponents(environmentRoot.transform);
 
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            if (openScene)
+            {
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
 
-            Debug.Log("[DevFishSceneLayoutBuilder] Dev_Fish scenic layout rebuilt with pond foreground, shore vegetation, and distant mountains.");
+            Debug.Log("[DevFishSceneLayoutBuilder] Dev_Fish scenic layout generated as non-saved runtime scenery.");
         }
 
         [MenuItem("VirtualFishing/Fish/Consolidate Pond Scenic Assets")]
@@ -274,17 +288,17 @@ namespace VirtualFishing.EditorTools
                 Grass15Path
             };
 
-            const int grassCount = 120;
+            const int grassCount = 80;
             for (int i = 0; i < grassCount; i++)
             {
                 string prefabPath = grassPrefabPaths[i % grassPrefabPaths.Length];
                 float t = i / (float)(grassCount - 1);
                 float side = i % 2 == 0 ? -1f : 1f;
-                float x = side * (25f + (i % 18) * 1.35f);
-                float z = 8f + t * 34f + Mathf.Sin(i * 0.65f) * 1.2f;
+                float x = side * (34f + (i % 12) * 1.35f);
+                float z = 24f + t * 26f + Mathf.Sin(i * 0.65f) * 1.2f;
                 Vector3 position = new Vector3(x, 0f, z);
                 Vector3 rotation = new Vector3(0f, (i * 37f) % 360f, 0f);
-                float scaleValue = 0.475f + (i % 5) * 0.05f;
+                float scaleValue = 0.22f + (i % 5) * 0.025f;
                 Vector3 scale = new Vector3(scaleValue, scaleValue, scaleValue);
 
                 if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) == null)
@@ -299,9 +313,9 @@ namespace VirtualFishing.EditorTools
             for (int i = 0; i < 72; i++)
             {
                 float t = i / 71f;
-                float x = Mathf.Lerp(-44f, 44f, t);
-                float z = 31f + Mathf.Sin(t * Mathf.PI * 5f) * 2.1f + (i % 3) * 1.15f;
-                float scaleValue = 0.425f + (i % 4) * 0.04f;
+                float x = Mathf.Lerp(-50f, 50f, t);
+                float z = 38f + Mathf.Sin(t * Mathf.PI * 5f) * 2.1f + (i % 3) * 1.15f;
+                float scaleValue = 0.2f + (i % 4) * 0.02f;
                 CreateFallbackGrassClump(
                     grassRoot.transform,
                     new Vector3(x, 0f, z),
@@ -323,9 +337,9 @@ namespace VirtualFishing.EditorTools
                 GameObject blade = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 blade.name = $"Blade_{i + 1}";
                 blade.transform.SetParent(grassRoot.transform, false);
-                blade.transform.localPosition = new Vector3((i - 3) * 0.22f, 0.9f + i * 0.07f, (i - 3) * 0.08f);
-                blade.transform.localRotation = Quaternion.Euler(0f, i * 24f, 24f - i * 4f);
-                blade.transform.localScale = new Vector3(0.18f, 1.9f, 0.18f);
+                blade.transform.localPosition = new Vector3((i - 3) * 0.22f, 0.28f + i * 0.025f, (i - 3) * 0.08f);
+                blade.transform.localRotation = Quaternion.Euler(0f, i * 24f, 16f - i * 3f);
+                blade.transform.localScale = new Vector3(0.12f, 0.55f, 0.12f);
 
                 Renderer renderer = blade.GetComponent<Renderer>();
                 if (renderer != null)
@@ -507,6 +521,22 @@ namespace VirtualFishing.EditorTools
             target.localPosition = localPosition;
             target.localRotation = Quaternion.Euler(localEulerAngles);
             target.localScale = localScale;
+        }
+
+        private static void SetDontSaveRecursive(GameObject root)
+        {
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+            {
+                child.gameObject.hideFlags = HideFlags.DontSave;
+
+                foreach (Renderer renderer in child.GetComponents<Renderer>())
+                {
+                    if (renderer.sharedMaterial != null && AssetDatabase.GetAssetPath(renderer.sharedMaterial).Length == 0)
+                    {
+                        renderer.sharedMaterial.hideFlags = HideFlags.DontSave;
+                    }
+                }
+            }
         }
 
         private static void EnsureAssetMoved(string sourcePath, string targetPath)
