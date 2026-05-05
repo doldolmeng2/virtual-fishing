@@ -55,6 +55,7 @@ namespace VirtualFishing.Core.Fish
             ApplySkybox();
             ApplyAmbientSound();
             ApplySiteEnvironmentPrefab();
+            ApplyDevFishRuntimeEnvironment();
 
             if (siteEnvironmentInstance == null && createDebugEnvironment)
             {
@@ -123,6 +124,25 @@ namespace VirtualFishing.Core.Fish
                 Destroy(debugEnvironmentInstance);
                 debugEnvironmentInstance = null;
             }
+        }
+
+        private void ApplyDevFishRuntimeEnvironment()
+        {
+#if UNITY_EDITOR
+            if (currentSite.SceneName != "Dev_Fish")
+            {
+                return;
+            }
+
+            Transform parent = environmentRoot != null ? environmentRoot : transform;
+            siteEnvironmentInstance = DevFishEnvironmentRuntimeBuilder.Build(parent);
+
+            if (siteEnvironmentInstance != null && debugEnvironmentInstance != null)
+            {
+                Destroy(debugEnvironmentInstance);
+                debugEnvironmentInstance = null;
+            }
+#endif
         }
 
         private void BuildDebugEnvironment()
