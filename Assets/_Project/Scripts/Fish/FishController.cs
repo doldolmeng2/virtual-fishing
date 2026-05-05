@@ -54,6 +54,10 @@ namespace VirtualFishing.Core.Fish
             get => inspectorDebugPhase;
             set => inspectorDebugPhase = value;
         }
+        // UI가 물고기 비주얼을 따라다닐 때 사용. 비주얼이 없으면 자신의 transform 반환
+        public Transform VisualTransform => currentVisualInstance != null
+            ? currentVisualInstance.transform
+            : transform;
 
         public event Action<Vector3> OnFishMoved;
 

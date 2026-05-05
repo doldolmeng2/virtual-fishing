@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using VirtualFishing.Core.Events;
+using VirtualFishing.Core.Fish;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
 
@@ -12,6 +13,10 @@ namespace VirtualFishing.MiniGame
         [SerializeField] private MiniGameSettingsSO settings;
         [SerializeField] private TensionCalculator tensionCalculator;
         [SerializeField] private VoidEventSO onMiniGameResultEvent;
+
+        [Header("UI")]
+        [SerializeField] private FishController fishController;
+        [SerializeField] private FishIndicatorUI fishIndicatorUI;
 
         private FishCatchData _fishData;
         private FishMoveState _currentFishMoveState = FishMoveState.Normal;
@@ -53,6 +58,9 @@ namespace VirtualFishing.MiniGame
 
             tensionCalculator.SetDifficulty(Difficulty);
             tensionCalculator.Reset();
+
+            if (fishIndicatorUI != null && fishController != null)
+                fishIndicatorUI.Initialize(fishController, this, tensionCalculator);
         }
 
         /// <summary>
@@ -74,6 +82,7 @@ namespace VirtualFishing.MiniGame
             if (!_isRunning) return;
             _isRunning = false;
 
+            fishIndicatorUI?.Shutdown();
             tensionCalculator.Reset();
             onMiniGameResultEvent?.Raise();
             OnMiniGameEnded?.Invoke(success);
