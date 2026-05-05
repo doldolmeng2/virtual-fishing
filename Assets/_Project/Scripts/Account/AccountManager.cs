@@ -10,6 +10,8 @@ namespace VirtualFishing.Account
 {
     public class AccountManager : MonoBehaviour, IAccountService
     {
+        private static AccountManager _instance;
+
         [Header("런타임 데이터 (SO)")]
         [SerializeField] private AccountDataSO accountData;
 
@@ -28,6 +30,15 @@ namespace VirtualFishing.Account
 
         private void Awake()
         {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+
             _saveFolderPath = Path.Combine(Application.persistentDataPath, "Accounts");
             if (!Directory.Exists(_saveFolderPath))
                 Directory.CreateDirectory(_saveFolderPath);
@@ -51,6 +62,12 @@ namespace VirtualFishing.Account
         private void OnDisable()
         {
             StopAutoSave();
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+                _instance = null;
         }
 
         public void LoadAccount(string accountId)

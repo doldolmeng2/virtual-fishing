@@ -130,7 +130,7 @@ MonoBehaviour:
   colorCritical: {r: 0.9, g: 0.1, b: 0.1, a: 1}
   tensionData: {fileID: 11400000, guid: 3778bef790677864f9441f4892151809, type: 2}
   offset: {x: 0, y: 1.5, z: 0}
-  canvasScale: 0.003
+  canvasScale: 0.05
 --- !u!1 &1979543934336927527
 GameObject:
   m_ObjectHideFlags: 0
