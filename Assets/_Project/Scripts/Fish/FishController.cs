@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
+using VirtualFishing.MiniGame;
 
 namespace VirtualFishing.Core.Fish
 {
@@ -36,6 +37,9 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private bool isWaitingAtMovementLimit;
         [SerializeField] private FishPhase inspectorDebugPhase = FishPhase.Phase2;
         [SerializeField] private float currentDifficulty;
+        [SerializeField] private MiniGameManager miniGameManager;
+        // 프로젝트에서 하나의 낚시터만 사용하므로 하나의 낚시터 타입만 사용 (추후 낚시터 추가시 수정 필요)
+        [SerializeField] private BackgroundType miniGameSiteType = BackgroundType.Pond;
 
         private GameObject currentVisualInstance;
         private ParticleSystem currentSplashInstance;
@@ -198,6 +202,22 @@ namespace VirtualFishing.Core.Fish
                 caughtAt = caughtAt,
                 siteType = siteType
             };
+        }
+        public void TryStartMiniGame()
+        {
+            if (miniGameManager == null)
+            {
+                Debug.LogWarning("[FishController] MiniGameManager 미할당.");
+                return;
+            }
+            if (currentSpecies == null)
+            {
+                Debug.LogWarning("[FishController] 입질 후 초기화된 물고기 없음.");
+                return;
+            }
+            string caughtAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            FishCatchData data = BuildCatchData(miniGameSiteType, caughtAt);
+            miniGameManager.StartMiniGame(data);
         }
 
         private void SpawnVisual(FishSpeciesDataSO speciesData)

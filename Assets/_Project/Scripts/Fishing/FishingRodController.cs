@@ -4,6 +4,7 @@ using VirtualFishing.Core.Events;
 using VirtualFishing.Data;
 using VirtualFishing.Fishing.Events;
 using VirtualFishing.Interfaces;
+using VirtualFishing.MiniGame;
 
 namespace VirtualFishing.Fishing
 {
@@ -27,6 +28,9 @@ namespace VirtualFishing.Fishing
 
         [Header("SO 이벤트 - 구독")]
         [SerializeField] private VoidEventSO onBiteOccurredEvent;
+
+        [Header("미니게임")]
+        [SerializeField] private MiniGameManager miniGameManager;
 
         // FloatController.OnWaterLanded는 같은 프리팹 내부 C# 이벤트로 직접 구독 (아래 OnEnable 참조).
 
@@ -172,9 +176,16 @@ namespace VirtualFishing.Fishing
 
         private void LateUpdate()
         {
-            if (!_isGrabbed) return;
-
             UpdateAcceleration();
+
+            // 미니게임 중에는 그랩 여부와 무관하게 텐션 계산 진행.
+            if (_currentState == RodState.MiniGame)
+            {
+                miniGameManager?.UpdateReeling(ReelingSpeed, _direction);
+                return;
+            }
+
+            if (!_isGrabbed) return;
 
             switch (_currentState)
             {
