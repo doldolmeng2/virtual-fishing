@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace VirtualFishing.Fishing
 {
@@ -61,6 +62,28 @@ namespace VirtualFishing.Fishing
 
         public bool IsEngaged => _isEngaged;
         public bool IsBeingReeled => _isEngaged && _smoothedReelInput > 0.01f;
+
+        private void Awake()
+        {
+            // handTransform 미할당 시: 씬의 XRBaseInteractor 중 Handedness=Left 자동 검색
+            // (prefab은 씬의 Left Controller를 알 수 없어 인스펙터 wiring이 누락되기 쉬움)
+            if (handTransform == null)
+            {
+                var interactors = FindObjectsByType<XRBaseInteractor>(FindObjectsSortMode.None);
+                foreach (var it in interactors)
+                {
+                    if (it.handedness == UnityEngine.XR.Interaction.Toolkit.Interactors.InteractorHandedness.Left)
+                    {
+                        handTransform = it.transform;
+                        if (verboseLog)
+                            Debug.Log($"[Reel] handTransform 자동 등록: {it.name}");
+                        break;
+                    }
+                }
+                if (handTransform == null && verboseLog)
+                    Debug.LogWarning("[Reel] handTransform 미할당 + Left Controller 자동 검색 실패");
+            }
+        }
 
         private void Update()
         {
