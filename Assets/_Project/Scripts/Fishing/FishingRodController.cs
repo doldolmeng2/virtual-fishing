@@ -109,6 +109,15 @@ namespace VirtualFishing.Fishing
 
         public void OnRelease()
         {
+            // [미니게임/챔질 직후 그랩 해제 차단]
+            // 이 단계에서 사용자가 트리거를 떼도 게임 로직상 낚싯대를 놓치면 안 됨.
+            // XR system은 select가 풀렸지만 _isGrabbed/_attachedHand는 유지하여 미니게임 진행 보장.
+            if (_currentState == RodState.MiniGame || _currentState == RodState.Hit)
+            {
+                Debug.Log($"[Rod] {_currentState} 상태 — 그랩 해제 무시 (미니게임 진행 유지)");
+                return;
+            }
+
             _isGrabbed = false;
 
             // 캐스팅 후 그랩 해제 시 찌가 수면에 방치되지 않도록 회수.
