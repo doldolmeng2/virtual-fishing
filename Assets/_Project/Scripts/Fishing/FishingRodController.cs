@@ -25,6 +25,7 @@ namespace VirtualFishing.Fishing
         [SerializeField] private VoidEventSO onCastingStarted;
         [SerializeField] private VoidEventSO onReelIn;
         [SerializeField] private VoidEventSO onHookingSuccess;
+        [SerializeField] private VoidEventSO onHookingFailed;
 
         [Header("SO 이벤트 - 구독")]
         [SerializeField] private VoidEventSO onBiteOccurredEvent;
@@ -374,6 +375,7 @@ namespace VirtualFishing.Fishing
             {
                 _isBiteActive = false;
                 IsInHookingZone = false;
+                onHookingFailed?.Raise();
                 ReelIn();
             }
         }

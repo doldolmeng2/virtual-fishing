@@ -1,0 +1,596 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7978888137421189082
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2440605220239647849}
+  - component: {fileID: 7997095423358676560}
+  - component: {fileID: 2240294762449024464}
+  - component: {fileID: 3900383874231372365}
+  - component: {fileID: 5298934684470508113}
+  - component: {fileID: 8277206099637214307}
+  - component: {fileID: 5824973346101039324}
+  - component: {fileID: 8572650231492563151}
+  - component: {fileID: 6111082388245473592}
+  - component: {fileID: 6310740773175012825}
+  - component: {fileID: 373388121982693040}
+  - component: {fileID: 3696128292134711244}
+  - component: {fileID: 4178837964373756445}
+  - component: {fileID: 1225145711002943979}
+  - component: {fileID: 4534298043935088430}
+  - component: {fileID: 240580559706201318}
+  - component: {fileID: 5160020982776345292}
+  - component: {fileID: 1812561179945368868}
+  - component: {fileID: 1722795566631664915}
+  - component: {fileID: 875469904273387712}
+  - component: {fileID: 2031830768503025633}
+  - component: {fileID: 2167682182402523335}
+  m_Layer: 0
+  m_Name: FeedbackManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2440605220239647849
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7997095423358676560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb1831525109bf498d07908ab8b76c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.FeedbackManager
+  soundManager: {fileID: 2240294762449024464}
+  hapticManager: {fileID: 3900383874231372365}
+  visualManager: {fileID: 5298934684470508113}
+  ttsManager: {fileID: 8277206099637214307}
+  fishingRodController: {fileID: 0}
+  safetyWarningPanel: {fileID: 0}
+  hookingGuidePanel: {fileID: 0}
+  catchResultPanel: {fileID: 0}
+  exitSequencePanel: {fileID: 0}
+  miniGamePanel: {fileID: 0}
+  tensionWarningPanel: {fileID: 0}
+  loadingPanel: {fileID: 0}
+--- !u!114 &2240294762449024464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c67102a33967a34cb3378a25dd0d2b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.SoundManager
+  soundLibrary:
+  - id: FloatSink
+    clip: {fileID: 8300000, guid: d83875db910b0481da29cce1cf806902, type: 3}
+  - id: HookFail
+    clip: {fileID: 8300000, guid: d3a327b5fc45f4976a19206ca7332172, type: 3}
+  - id: HookSucces
+    clip: {fileID: 8300000, guid: a6f58723466714bc88bf2af300f28a0d, type: 3}
+  - id: LineCast
+    clip: {fileID: 8300000, guid: c63dc6a6743d34bc1a2099774003b031, type: 3}
+  - id: RodoAttach
+    clip: {fileID: 8300000, guid: 9ad75b523447e46fb835f5a9a508340d, type: 3}
+  - id: WaterSplash
+    clip: {fileID: 8300000, guid: 36427fab1e4664db387297ba9c6efb91, type: 3}
+  - id: ZoneEnter
+    clip: {fileID: 8300000, guid: ac5a6817dbe094befaaefd8c0702805f, type: 3}
+  sfxSource: {fileID: 0}
+  bgmSource: {fileID: 0}
+--- !u!114 &3900383874231372365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fb1b6185ee24684eb0c8a525c403550, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.HapticManager
+--- !u!114 &5298934684470508113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ed62fcacd94a0a4fab44a14eafe30ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.VisualEffectManager
+  effectLibrary:
+  - id: BlueGrid
+    prefab: {fileID: 0}
+  fadeOverlay: {fileID: 0}
+  testSafetyRadius: 1.5
+--- !u!114 &8277206099637214307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 96f5ca31769c4f043bb79e168c3eb752, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.TTSManager
+--- !u!114 &5824973346101039324
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: b20fcac126f7a4c45b5c562b4ea33c4b, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnAccountLoadedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &8572650231492563151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 7c4487fbe747d944b90cfa3c6f97eca2, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnAccountSavedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &6111082388245473592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 00e12910434feb94881f1feee9a7d2e0, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnBiteOccurredEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &6310740773175012825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 7b7958dd3e7dec7449647667934a14a9, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnCalibrationCompleteEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &373388121982693040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 931ee3453910b10418c8891d3c4249f4, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnCastStartedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &3696128292134711244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1b7c640ae33cd478811d9643e36c76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.FloatEventListener
+  gameEvent: {fileID: 11400000, guid: f84003fc9cd16a24ebd44e0fbca6ca1e, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnSuccessGaugeChangedEvent
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &4178837964373756445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 067804c037044ae498eb2f501c6f7a4b, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnHookFailedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &1225145711002943979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: a7688af099690cf4ba832c1e180b72d3, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnHookSuccessEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &4534298043935088430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: bbfd45e1d4d255b4ba9194cbc68588b3, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnMiniGameResultEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &240580559706201318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 082e4c847ba2c404cb5d6d8d9faedc81, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnRodGrabbedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &5160020982776345292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 0}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnRodStateChangedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &1812561179945368868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11947e97420f17e48bccee29d823a9bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.IntEventListener
+  gameEvent: {fileID: 11400000, guid: 5cdaccb8942faec439c90413951574ec, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnSafetyWarningEvent
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &1722795566631664915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 35d43d5921a423a40b678cd0f735d686, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnSceneLoadedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &875469904273387712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1b7c640ae33cd478811d9643e36c76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.FloatEventListener
+  gameEvent: {fileID: 11400000, guid: 674a2ef92fbe23645bb044e16e8a2cb6, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnTensionChangedEvent
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &2031830768503025633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: 2ca19fde3a3afb2498892190d4c9aeec, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnTrackingLostEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &2167682182402523335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7978888137421189082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
+  gameEvent: {fileID: 11400000, guid: d07781636769ac04d8e401ddcb72dea0, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7997095423358676560}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnWaterLandedEvent
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
