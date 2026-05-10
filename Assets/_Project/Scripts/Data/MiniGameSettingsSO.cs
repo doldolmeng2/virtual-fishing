@@ -24,5 +24,9 @@ namespace VirtualFishing.Data
         public float biteMinTime = 10f;                // 본 입질 최소 대기 시간 (초)
         public float biteMaxTime = 20f;                // 본 입질 최대 대기 시간 (초)
         public float biteGapMinTime = 1f;              // 예고 입질과 본 입질 사이 최소 간격 (초)
+
+        [Header("Phase Completion")]
+        public float phaseHoldDuration = 2f;           // 반대 방향 유지 시간 (초)
+        public float phaseDirectionThreshold = 0.3f;   // 낚싯대 X축 방향 감지 임계값
     }
 }
