@@ -45,8 +45,16 @@ namespace VirtualFishing.MiniGame
         [SerializeField] private Vector3 offset     = new Vector3(0f, 1.5f, 0f);
         [SerializeField] private float   canvasScale = 0.003f;
 
+        // ── 페이즈 유지 게이지 ───────────────────────
+        [Header("페이즈 유지 게이지")]
+        [Tooltip("Image Type = Filled, Fill Method = Horizontal")]
+        [SerializeField] private Image phaseHoldFill;
+        [SerializeField] private Color colorPhaseHolding = new Color(0.3f, 0.8f, 1f);
+        [SerializeField] private Color colorPhaseComplete = new Color(1f, 1f, 0.2f);
+
         // ── 런타임 참조 ──────────────────────────────
         private FishController    _fish;
+        private MiniGameManager   _manager;
         private TensionCalculator _tension;
         private Camera            _camera;
 
@@ -63,6 +71,7 @@ namespace VirtualFishing.MiniGame
         public void Initialize(FishController fish, MiniGameManager manager, TensionCalculator tension)
         {
             _fish    = fish;
+            _manager = manager;
             _tension = tension;
             _camera  = Camera.main;
 
@@ -72,12 +81,14 @@ namespace VirtualFishing.MiniGame
             _tension.OnTensionChanged += RefreshTension;
 
             RefreshTension(_tension.CurrentTension);
+            RefreshPhaseHold(0f);
             gameObject.SetActive(true);
         }
 
         public void Shutdown()
         {
             if (_tension != null) _tension.OnTensionChanged -= RefreshTension;
+            _manager = null;
             gameObject.SetActive(false);
         }
 
@@ -90,14 +101,18 @@ namespace VirtualFishing.MiniGame
                 transform.forward = _camera.transform.forward;
 
             RefreshDirection(_fish.CurrentMoveMode);
+
+            if (_manager != null)
+                RefreshPhaseHold(_manager.PhaseHoldProgress);
         }
 
         // ── 방향 ─────────────────────────────────────
+        // 플레이어가 당겨야 할 방향(물고기 반대)을 강조
         private void RefreshDirection(FishMoveMode mode)
         {
-            SetArrow(arrowLeft,   mode == FishMoveMode.MoveLeft);
+            SetArrow(arrowLeft,   mode == FishMoveMode.MoveRight); // 물고기→오른쪽이면 왼쪽으로 당겨야
             SetArrow(arrowCenter, mode == FishMoveMode.Stop);
-            SetArrow(arrowRight,  mode == FishMoveMode.MoveRight);
+            SetArrow(arrowRight,  mode == FishMoveMode.MoveLeft);  // 물고기→왼쪽이면 오른쪽으로 당겨야
         }
 
         private void SetArrow(Image img, bool active)
@@ -133,6 +148,14 @@ namespace VirtualFishing.MiniGame
             else
                 return Color.Lerp(colorWarning, colorCritical,
                     Mathf.InverseLerp(dangerRatio, 1f, ratio));
+        }
+
+        // ── 페이즈 유지 ──────────────────────────────
+        private void RefreshPhaseHold(float progress)
+        {
+            if (phaseHoldFill == null) return;
+            phaseHoldFill.fillAmount = progress;
+            phaseHoldFill.color = progress >= 1f ? colorPhaseComplete : colorPhaseHolding;
         }
 
         // ── 테스트용 (MiniGameUITester 에서 호출) ────
