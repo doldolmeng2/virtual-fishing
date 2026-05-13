@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using VirtualFishing.Core.Events;
 
 namespace VirtualFishing.Safety
 {
@@ -95,8 +96,7 @@ namespace VirtualFishing.Safety
 
         private void BroadcastWarning(SafetyWarningLevel level)
         {
-            // TODO: 실제 병합 시 주석 해제하여 이벤트 발행
-            // ((IntEventSO)safetyWarningEvent).Raise((int)level); 
+            ((IntEventSO)safetyWarningEvent).Raise((int)level); 
             
             if (level == SafetyWarningLevel.Emergency)
                 Debug.Log($"<color=red>[SafetyMonitor] 이탈 시간이 초과되어 Emergency 상태로 전환됩니다.</color>");
