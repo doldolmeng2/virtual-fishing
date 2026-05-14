@@ -87,6 +87,13 @@ namespace VirtualFishing.Fishing
         public void UpdateReelingInput(float rotationDelta)
         {
             ReelingSpeed = rotationDelta;
+
+            // 미니게임 중에는 릴 입력이 SuccessGauge 진행에만 쓰이고
+            // 찌(낚싯줄)는 실제로 당겨지지 않아야 함. 그렇지 않으면 미니게임이 끝나기 전에
+            // 줄이 다 감겨버려 사용자가 결과를 확인하기도 전에 회수 상태로 빠짐.
+            // 미니게임 종료 후 ReelIn() 경로에서 floatCtrl.ResetFloat()이 자동 호출되어 회수됨.
+            if (_currentState == RodState.MiniGame) return;
+
             floatCtrl?.SetReelSpeed(rotationDelta);
         }
 
