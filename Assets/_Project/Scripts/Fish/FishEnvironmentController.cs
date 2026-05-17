@@ -56,6 +56,7 @@ namespace VirtualFishing.Core.Fish
             ApplyAmbientSound();
             ApplySiteEnvironmentPrefab();
             ApplyDevFishRuntimeEnvironment();
+            ApplyDevFishCameraPose();
 
             if (siteEnvironmentInstance == null && createDebugEnvironment)
             {
@@ -143,6 +144,19 @@ namespace VirtualFishing.Core.Fish
                 debugEnvironmentInstance = null;
             }
 #endif
+        }
+
+        private void ApplyDevFishCameraPose()
+        {
+            if (currentSite.SceneName != "Dev_Fish" || targetCamera == null)
+            {
+                return;
+            }
+
+            targetCamera.transform.SetPositionAndRotation(
+                new Vector3(0f, 1.65f, -2.8f),
+                Quaternion.Euler(8f, 0f, 0f));
+            targetCamera.fieldOfView = 58f;
         }
 
         private void BuildDebugEnvironment()

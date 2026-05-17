@@ -27,6 +27,16 @@ namespace VirtualFishing.EditorTools
                     fishController.ApplyInspectorDebugPhase();
                 }
 
+                if (GUILayout.Button("Trigger Random Move Mode"))
+                {
+                    fishController.TriggerRandomMoveMode();
+                }
+
+                if (GUILayout.Button("Preview Hook Success"))
+                {
+                    fishController.PreviewHookSuccess();
+                }
+
                 if (GUILayout.Button("Reset Fish"))
                 {
                     fishController.ResetFish();

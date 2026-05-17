@@ -17,6 +17,7 @@ namespace VirtualFishing.Core.Fish
         private const string Grass15Path = "Assets/Art/Environment/Pond/Models/PurePoly_Selected/Prefabs/PP_Grass_15.prefab";
         private const string GroundMaterialPath = "Assets/Art/Environment/Pond/Models/PurePoly_Selected/Materials/PP_Ground.mat";
         private const string WaterMaterialPath = "Assets/Art/Environment/Water/Simple Water Shader/Resources/Water_mat_03.mat";
+        private const float ScenicForwardOffset = -9f;
 
         private static readonly string[] TreePaths =
         {
@@ -50,6 +51,8 @@ namespace VirtualFishing.Core.Fish
                 Object.Destroy(existing);
             }
 
+            CleanupLegacySceneScenery();
+
             DevFishEnvironmentLayoutSO layout = Resources.Load<DevFishEnvironmentLayoutSO>(LayoutResourcePath);
             if (layout == null)
             {
@@ -76,8 +79,8 @@ namespace VirtualFishing.Core.Fish
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Pond_Ground";
             ground.transform.SetParent(parent, false);
-            ground.transform.localPosition = new Vector3(0f, -0.02f, 20f);
-            ground.transform.localScale = new Vector3(15f, 1f, 10.5f);
+            ground.transform.localPosition = OffsetForward(new Vector3(0f, -0.02f, 18f));
+            ground.transform.localScale = new Vector3(17f, 1f, 11.5f);
             AssignMaterial(ground, GroundMaterialPath);
         }
 
@@ -85,7 +88,7 @@ namespace VirtualFishing.Core.Fish
         {
             GameObject water = new("Pond_Water");
             water.transform.SetParent(parent, false);
-            water.transform.localPosition = new Vector3(0f, 0.14f, 11.2f);
+            water.transform.localPosition = OffsetForward(new Vector3(0f, 0.14f, 11.2f));
             water.AddComponent<MeshFilter>();
             MeshRenderer renderer = water.AddComponent<MeshRenderer>();
             water.AddComponent<MeshCollider>();
@@ -98,33 +101,34 @@ namespace VirtualFishing.Core.Fish
         private static void CreateMountains(Transform parent)
         {
             Transform root = NewRoot("Pond_Mountains", parent).transform;
-            PlacePrefab(Mountain01Path, "Mountain_Center", root, new Vector3(-38f, -8f, 160f), Vector3.zero, Vector3.one * 2.6f);
-            PlacePrefab(Mountain02Path, "Mountain_Left", root, new Vector3(-74f, -12f, 148f), new Vector3(0f, 18f, 0f), Vector3.one * 3.6f);
-            PlacePrefab(Mountain02Path, "Mountain_Right", root, new Vector3(-4f, -10f, 154f), new Vector3(0f, -14f, 0f), Vector3.one * 2.7f);
-            PlacePrefab(Mountain01Path, "Mountain_FarLeft", root, new Vector3(-102f, -16f, 170f), new Vector3(0f, 10f, 0f), Vector3.one * 4.2f);
-            PlacePrefab(Mountain01Path, "Mountain_FarRight", root, new Vector3(26f, -13f, 174f), new Vector3(0f, -12f, 0f), Vector3.one * 3.2f);
+            PlacePrefab(Mountain01Path, "Mountain_BackCenter", root, new Vector3(-20f, -11f, 68f), new Vector3(0f, 6f, 0f), Vector3.one * 1.65f);
+            PlacePrefab(Mountain02Path, "Mountain_BackLeft", root, new Vector3(-70f, -14f, 66f), new Vector3(0f, 18f, 0f), Vector3.one * 2.25f);
+            PlacePrefab(Mountain02Path, "Mountain_BackRight", root, new Vector3(42f, -13f, 67f), new Vector3(0f, -16f, 0f), Vector3.one * 2.05f);
+            PlacePrefab(Mountain01Path, "Mountain_FarLeft", root, new Vector3(-108f, -18f, 86f), new Vector3(0f, 12f, 0f), Vector3.one * 2.85f);
+            PlacePrefab(Mountain01Path, "Mountain_FarRight", root, new Vector3(92f, -17f, 88f), new Vector3(0f, -10f, 0f), Vector3.one * 2.65f);
+            PlacePrefab(Mountain02Path, "Mountain_FarCenter", root, new Vector3(6f, -19f, 100f), new Vector3(0f, -4f, 0f), Vector3.one * 2.75f);
         }
 
         private static void CreateRocks(Transform parent)
         {
             Transform root = NewRoot("Pond_Rocks", parent).transform;
-            for (int i = 0; i < 28; i++)
+            for (int i = 0; i < 40; i++)
             {
                 float side = i % 2 == 0 ? -1f : 1f;
-                float band = (i % 7) / 6f;
-                float x = side * (11f + band * 39f + Mathf.Sin(i * 1.3f) * 2.4f);
-                float z = 25f + (i % 6) * 3.7f + Mathf.Cos(i * 0.71f) * 2.2f;
-                float scale = 0.58f + (i % 5) * 0.11f;
+                float band = (i % 10) / 9f;
+                float x = side * (13f + band * 48f + Mathf.Sin(i * 1.3f) * 3.4f);
+                float z = 5f + (i % 8) * 4.2f + Mathf.Cos(i * 0.71f) * 2.4f;
+                float scale = 0.5f + (i % 6) * 0.1f;
                 string path = i % 3 == 0 ? Rock05Path : Rock10Path;
                 PlacePrefab(path, $"Rock_{i + 1:00}", root, new Vector3(x, 0.05f, z), new Vector3(0f, i * 37f, 0f), Vector3.one * scale);
             }
 
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < 28; i++)
             {
-                float t = i / 15f;
-                float x = Mathf.Lerp(-48f, 48f, t) + Mathf.Sin(i * 1.9f) * 3.8f;
-                float z = 39f + Mathf.Sin(t * Mathf.PI * 5f) * 2.8f;
-                float scale = 0.48f + (i % 4) * 0.1f;
+                float t = i / 27f;
+                float x = Mathf.Lerp(-68f, 68f, t) + Mathf.Sin(i * 1.9f) * 4.8f;
+                float z = 27f + Mathf.Sin(t * Mathf.PI * 6f) * 3.4f + Mathf.Cos(i * 0.46f) * 1.8f;
+                float scale = 0.46f + (i % 5) * 0.09f;
                 string path = i % 2 == 0 ? Rock10Path : Rock05Path;
                 PlacePrefab(path, $"RearRock_{i + 1:00}", root, new Vector3(x, 0.04f, z), new Vector3(0f, 19f + i * 41f, 0f), Vector3.one * scale);
             }
@@ -135,34 +139,34 @@ namespace VirtualFishing.Core.Fish
             Transform root = NewRoot("Pond_Trees", parent).transform;
             int index = 0;
 
-            for (int row = 0; row < 7; row++)
+            for (int row = 0; row < 8; row++)
             {
-                for (int col = 0; col < 6; col++)
+                for (int col = 0; col < 7; col++)
                 {
-                    float leftX = -48f + col * 5.7f + Mathf.Sin((row + col) * 1.4f) * 1.8f;
-                    float rightX = 18f + col * 5.6f + Mathf.Cos((row + col) * 1.2f) * 1.5f;
-                    float z = 21f + row * 5.7f + Mathf.Sin(col * 1.7f) * 1.4f;
-                    PlaceTree(root, index++, new Vector3(leftX, 0f, z), 0.86f + (index % 5) * 0.05f);
-                    PlaceTree(root, index++, new Vector3(rightX, 0f, z + 0.8f), 0.84f + (index % 6) * 0.045f);
+                    float leftX = -58f + col * 6.4f + Mathf.Sin((row + col) * 1.4f) * 2.4f;
+                    float rightX = 20f + col * 6.2f + Mathf.Cos((row + col) * 1.2f) * 2f;
+                    float z = 8f + row * 5.1f + Mathf.Sin(col * 1.7f) * 1.8f;
+                    PlaceTree(root, index++, new Vector3(leftX, 0f, z), 0.78f + (index % 6) * 0.055f);
+                    PlaceTree(root, index++, new Vector3(rightX, 0f, z + 0.8f), 0.78f + (index % 6) * 0.055f);
                 }
             }
 
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < 44; i++)
             {
                 float side = i % 2 == 0 ? -1f : 1f;
-                float t = i / 31f;
-                float x = side * (Mathf.Lerp(layout.SideTreeXRange.x, layout.SideTreeXRange.y + 9f, (i % 5) / 4f) + Mathf.Sin(i * 1.61f) * 2.1f);
-                float z = Mathf.Lerp(layout.SideTreeZRange.x, layout.SideTreeZRange.y + 8f, t) + Mathf.Cos(i * 0.83f) * 2.2f;
+                float t = i / 43f;
+                float x = side * (Mathf.Lerp(48f, 73f, (i % 6) / 5f) + Mathf.Sin(i * 1.61f) * 2.8f);
+                float z = Mathf.Lerp(-2f, 47f, t) + Mathf.Cos(i * 0.83f) * 3f;
                 float scale = Mathf.Lerp(layout.SideTreeScaleRange.x, layout.SideTreeScaleRange.y, (i % 4) / 3f);
                 PlaceTree(root, index++, new Vector3(x, 0f, z), scale);
             }
 
-            for (int i = 0; i < 22; i++)
+            for (int i = 0; i < 34; i++)
             {
-                float t = i / 21f;
-                float x = Mathf.Lerp(-58f, 58f, t) + Mathf.Sin(i * 2.05f) * 3.4f;
-                float z = 47f + Mathf.Sin(t * Mathf.PI * 6f) * 3.3f + Mathf.Cos(i * 0.64f) * 1.8f;
-                float scale = 0.72f + (i % 5) * 0.07f;
+                float t = i / 33f;
+                float x = Mathf.Lerp(-76f, 76f, t) + Mathf.Sin(i * 2.05f) * 4.4f;
+                float z = 36f + Mathf.Sin(t * Mathf.PI * 7f) * 4.2f + Mathf.Cos(i * 0.64f) * 2f;
+                float scale = 0.68f + (i % 6) * 0.065f;
                 PlaceTree(root, index++, new Vector3(x, 0f, z), scale);
             }
         }
@@ -177,8 +181,8 @@ namespace VirtualFishing.Core.Fish
                 float t = i / Mathf.Max(1f, layout.SideGrassCount - 1f);
                 float side = i % 2 == 0 ? -1f : 1f;
                 float clump = (i % 9) / 8f;
-                float x = side * (layout.SideGrassMinX + Mathf.Sin(i * 1.73f) * 5.5f + clump * 18f);
-                float z = layout.SideGrassStartZ + t * 29f + Mathf.Sin(i * 0.65f) * 2.4f + Mathf.Cos(i * 1.17f) * 1.2f;
+                float x = side * (24f + Mathf.Sin(i * 1.73f) * 6.2f + clump * 38f);
+                float z = 1f + t * 46f + Mathf.Sin(i * 0.65f) * 3.1f + Mathf.Cos(i * 1.17f) * 1.8f;
                 float scale = Mathf.Lerp(layout.SideGrassScaleRange.x, layout.SideGrassScaleRange.y, (i % 5) / 4f);
                 PlacePrefab(grassPaths[i % grassPaths.Length], $"Grass_{i + 1:00}", root, new Vector3(x, 0f, z), new Vector3(0f, i * 37f, 0f), Vector3.one * scale);
             }
@@ -186,8 +190,8 @@ namespace VirtualFishing.Core.Fish
             for (int i = 0; i < layout.RearGrassCount; i++)
             {
                 float t = i / Mathf.Max(1f, layout.RearGrassCount - 1f);
-                float x = Mathf.Lerp(-layout.RearGrassHalfWidth, layout.RearGrassHalfWidth, t) + Mathf.Sin(i * 1.91f) * 2.8f;
-                float z = layout.RearGrassZ + Mathf.Sin(t * Mathf.PI * 7f) * 2.8f + Mathf.Cos(i * 0.77f) * 1.4f;
+                float x = Mathf.Lerp(-72f, 72f, t) + Mathf.Sin(i * 1.91f) * 4.8f;
+                float z = 27f + Mathf.Sin(t * Mathf.PI * 9f) * 4f + Mathf.Cos(i * 0.77f) * 2.2f;
                 float scale = Mathf.Lerp(layout.RearGrassScaleRange.x, layout.RearGrassScaleRange.y, (i % 4) / 3f);
                 CreateFallbackGrass(root, layout, new Vector3(x, 0f, z), new Vector3(0f, i * 31f, 0f), Vector3.one * scale);
             }
@@ -195,11 +199,41 @@ namespace VirtualFishing.Core.Fish
             for (int i = 0; i < layout.AquaticGrassCount; i++)
             {
                 float t = i / Mathf.Max(1f, layout.AquaticGrassCount - 1f);
-                float x = Mathf.Lerp(-layout.AquaticGrassHalfWidth, layout.AquaticGrassHalfWidth, t) + Mathf.Sin(i * 2.11f) * 2.2f;
-                float z = layout.AquaticGrassZ + Mathf.Sin(t * Mathf.PI * 8f) * 2.1f + Mathf.Cos(i * 0.93f) * 0.9f;
+                float x = Mathf.Lerp(-53f, 53f, t) + Mathf.Sin(i * 2.11f) * 3.5f;
+                float z = 4.5f + Mathf.Sin(t * Mathf.PI * 10f) * 2.8f + Mathf.Cos(i * 0.93f) * 1.2f;
                 float scale = Mathf.Lerp(layout.AquaticGrassScaleRange.x, layout.AquaticGrassScaleRange.y, (i % 5) / 4f);
                 CreateFallbackGrass(root, layout, new Vector3(x, -0.05f, z), new Vector3(0f, i * 43f, 0f), Vector3.one * scale);
             }
+        }
+
+        private static void CleanupLegacySceneScenery()
+        {
+            string[] names =
+            {
+                "Pond_BackMountain",
+                "Pond_LeftHill",
+                "Pond_RightHill",
+                "Pond_Mountains",
+                "Pond_Trees",
+                "Pond_Rocks",
+                "Pond_Ground",
+                "Pond_Water"
+            };
+
+            foreach (string name in names)
+            {
+                GameObject legacy = GameObject.Find(name);
+                if (legacy != null)
+                {
+                    Object.Destroy(legacy);
+                }
+            }
+        }
+
+        private static Vector3 OffsetForward(Vector3 position)
+        {
+            position.z += ScenicForwardOffset;
+            return position;
         }
 
         private static void PlaceTree(Transform parent, int index, Vector3 position, float scale = 1f)
