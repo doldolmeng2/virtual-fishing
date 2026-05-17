@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f3e2709fdac4a9abd06c8655a5fe215, type: 3}
   m_Name: DevFishReservoirLayout
   m_EditorClassIdentifier: 
-  sideGrassCount: 190
-  rearGrassCount: 170
+  sideGrassCount: 260
+  rearGrassCount: 230
   sideGrassStartZ: 24
   rearGrassZ: 38
   sideGrassMinX: 34
   rearGrassHalfWidth: 50
   sideGrassScaleRange: {x: 0.42, y: 0.58}
   rearGrassScaleRange: {x: 0.38, y: 0.52}
-  aquaticGrassCount: 150
+  aquaticGrassCount: 210
   aquaticGrassZ: 13.5
   aquaticGrassHalfWidth: 43
   aquaticGrassScaleRange: {x: 0.42, y: 0.56}

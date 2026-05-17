@@ -6,15 +6,15 @@ namespace VirtualFishing.Core.Fish
     public class DevFishEnvironmentLayoutSO : ScriptableObject
     {
         [Header("Grass")]
-        [SerializeField] private int sideGrassCount = 190;
-        [SerializeField] private int rearGrassCount = 170;
+        [SerializeField] private int sideGrassCount = 260;
+        [SerializeField] private int rearGrassCount = 230;
         [SerializeField] private float sideGrassStartZ = 24f;
         [SerializeField] private float rearGrassZ = 38f;
         [SerializeField] private float sideGrassMinX = 34f;
         [SerializeField] private float rearGrassHalfWidth = 50f;
         [SerializeField] private Vector2 sideGrassScaleRange = new(0.42f, 0.58f);
         [SerializeField] private Vector2 rearGrassScaleRange = new(0.38f, 0.52f);
-        [SerializeField] private int aquaticGrassCount = 150;
+        [SerializeField] private int aquaticGrassCount = 210;
         [SerializeField] private float aquaticGrassZ = 13.5f;
         [SerializeField] private float aquaticGrassHalfWidth = 43f;
         [SerializeField] private Vector2 aquaticGrassScaleRange = new(0.42f, 0.56f);
