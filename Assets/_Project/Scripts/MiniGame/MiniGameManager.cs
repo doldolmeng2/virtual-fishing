@@ -38,6 +38,8 @@ namespace VirtualFishing.MiniGame
         private FishMoveState _currentFishMoveState = FishMoveState.Normal;
         private bool _isRunning;
         private float _phaseHoldTimer;
+        private float _normalPhaseTimer;     // Normal 상태에서 누적되는 타이머
+        private float _normalPhaseDuration;  // 이번 Normal 사이클의 랜덤 목표 시간 (초)
 
         public float Difficulty { get; private set; }
         public float RemainingTime { get; private set; }
@@ -85,6 +87,8 @@ namespace VirtualFishing.MiniGame
             tensionCalculator.Reset();
 
             _phaseHoldTimer = 0f;
+            _normalPhaseTimer = 0f;
+            PickNormalPhaseDuration();
 
             if (fishIndicatorUI != null && fishController != null)
                 fishIndicatorUI.Initialize(fishController, this, tensionCalculator);
@@ -102,6 +106,7 @@ namespace VirtualFishing.MiniGame
             tensionCalculator.Calculate(resistance, reelingSpeed, _currentFishMoveState, rodDirection);
 
             UpdatePhaseHold(rodDirection);
+            UpdateNormalPhase();
             UpdateSuccessGauge(reelingSpeed);
         }
 
