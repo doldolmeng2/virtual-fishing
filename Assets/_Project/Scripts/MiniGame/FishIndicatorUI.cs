@@ -36,10 +36,10 @@ namespace VirtualFishing.MiniGame
         [SerializeField] private RectTransform fishImageRoot;
         [Tooltip("좌→우 또는 우→좌 회전에 걸리는 시간(초). 0 이면 즉시 전환.")]
         [SerializeField] private float flipDuration = 0.25f;
-        [Tooltip("물고기 그림이 '좌측을 향하는' 상태의 localEulerAngles.y")]
-        [SerializeField] private float facingLeftYRotation = 0f;
-        [Tooltip("물고기 그림이 '우측을 향하는' 상태의 localEulerAngles.y")]
-        [SerializeField] private float facingRightYRotation = 180f;
+        [Tooltip("물고기 그림이 '좌측을 향하는' 상태의 localEulerAngles.y. 기본 이미지가 우측을 향하면 180.")]
+        [SerializeField] private float facingLeftYRotation = 180f;
+        [Tooltip("물고기 그림이 '우측을 향하는' 상태의 localEulerAngles.y. 기본 이미지가 우측을 향하면 0.")]
+        [SerializeField] private float facingRightYRotation = 0f;
 
         // ── 텐션 게이지 ─────────────────────────────
         [Header("텐션 게이지")]

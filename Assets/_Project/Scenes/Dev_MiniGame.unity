@@ -242,8 +242,10 @@ MonoBehaviour:
   autoSimulate: 1
   tensionSpeed: 15
   directionChangeInterval: 2
+  phaseHoldFillTime: 2
   tension: 20
   moveMode: 0
+  phaseHoldProgress: 0
 --- !u!4 &1895366572
 Transform:
   m_ObjectHideFlags: 0
@@ -270,6 +272,10 @@ PrefabInstance:
     - target: {fileID: 149485981324758101, guid: 8b88efba90934954cab50e929be821dd, type: 3}
       propertyPath: m_Name
       value: FishIndicatorUI
+      objectReference: {fileID: 0}
+    - target: {fileID: 233465911162230039, guid: 8b88efba90934954cab50e929be821dd, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 1674109947819849078, guid: 8b88efba90934954cab50e929be821dd, type: 3}
       propertyPath: m_Camera
@@ -305,11 +311,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2101296471861602699, guid: 8b88efba90934954cab50e929be821dd, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 1080
+      value: 700
       objectReference: {fileID: 0}
     - target: {fileID: 2101296471861602699, guid: 8b88efba90934954cab50e929be821dd, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 1920
+      value: 680
       objectReference: {fileID: 0}
     - target: {fileID: 2101296471861602699, guid: 8b88efba90934954cab50e929be821dd, type: 3}
       propertyPath: m_LocalScale.x
@@ -374,6 +380,14 @@ PrefabInstance:
     - target: {fileID: 4042990503641420953, guid: 8b88efba90934954cab50e929be821dd, type: 3}
       propertyPath: canvasScale
       value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 4042990503641420953, guid: 8b88efba90934954cab50e929be821dd, type: 3}
+      propertyPath: facingLeftYRotation
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 4042990503641420953, guid: 8b88efba90934954cab50e929be821dd, type: 3}
+      propertyPath: facingRightYRotation
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7291860500799439521, guid: 8b88efba90934954cab50e929be821dd, type: 3}
       propertyPath: m_PresetInfoIsWorld
