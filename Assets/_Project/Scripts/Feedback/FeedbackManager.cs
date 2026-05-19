@@ -109,7 +109,7 @@ namespace VirtualFishing.Feedback
         {
             HideUI("HookingGuide");
             PlaySound("HookFail");
-            PlayTTS("물고기가 미끼만 먹고 도망갔습니다.");
+            PlayTTS("물고기가 도망갔습니다.");
             ShowVisualEffect("FishEscape", Vector3.zero);
             Debug.Log("<color=green>[피드백]</color> 챔질 실패");
         }
@@ -182,7 +182,7 @@ namespace VirtualFishing.Feedback
                     // 시야 중앙에 붉은색 큰 팝업 및 중앙 유도 화살표 켜기
                     ShowUI("SafetyWarning");
                     PlaySound("WarningAlarm");
-                    PlayTTS("위험합니다. 발자국을 따라 가운데로 오세요.");
+                    PlayTTS("이동하시면 위험합니다. 가운데로 돌아가주세요.");
                     PlayHaptic(HapticPattern.RhythmicWarning, ControllerHand.Both);
                     visualManager.FadeScreen(0.0f, 0.5f);
                     break;
@@ -192,7 +192,7 @@ namespace VirtualFishing.Feedback
                     HideUI("SafetyWarning");
                     visualManager.FadeScreen(0.9f, 1.0f); // 1초에 걸쳐 90% 어둡게
                     visualManager.ShowPassthrough(true);
-                    PlayTTS("안전을 위해 게임을 멈춥니다. 주변을 확인하세요.");
+                    PlayTTS("안전을 위해 게임을 멈춥니다. 장비를 벗고 주변을 확인해주세요.");
                     break;
             }
             Debug.Log($"<color=green>[피드백]</color> 안전 경고 단계 변경: {warningLevel}");
