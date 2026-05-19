@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using VirtualFishing.Core.Events;
+using VirtualFishing.Core.Fish;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
 
@@ -13,9 +14,14 @@ namespace VirtualFishing.MiniGame
         [SerializeField] private TensionCalculator tensionCalculator;
         [SerializeField] private VoidEventSO onMiniGameResultEvent;
 
+        [Header("UI")]
+        [SerializeField] private FishController fishController;
+        [SerializeField] private FishIndicatorUI fishIndicatorUI;
+
         private FishCatchData _fishData;
         private FishMoveState _currentFishMoveState = FishMoveState.Normal;
         private bool _isRunning;
+        private float _phaseHoldTimer;
 
         public float Difficulty { get; private set; }
         public float RemainingTime { get; private set; }
@@ -23,6 +29,11 @@ namespace VirtualFishing.MiniGame
 
         public event Action<bool> OnMiniGameEnded;
         public event Action<float> OnSuccessGaugeChanged;
+        public event Action OnPhaseComplete;
+
+        public float PhaseHoldProgress => settings != null
+            ? Mathf.Clamp01(_phaseHoldTimer / settings.phaseHoldDuration)
+            : 0f;
 
         private void OnEnable()
         {
@@ -53,6 +64,11 @@ namespace VirtualFishing.MiniGame
 
             tensionCalculator.SetDifficulty(Difficulty);
             tensionCalculator.Reset();
+
+            _phaseHoldTimer = 0f;
+
+            if (fishIndicatorUI != null && fishController != null)
+                fishIndicatorUI.Initialize(fishController, this, tensionCalculator);
         }
 
         /// <summary>
@@ -66,6 +82,7 @@ namespace VirtualFishing.MiniGame
             float resistance = _fishData.species != null ? _fishData.species.BaseResistance : 1f;
             tensionCalculator.Calculate(resistance, reelingSpeed, _currentFishMoveState, rodDirection);
 
+            UpdatePhaseHold(rodDirection);
             UpdateSuccessGauge(reelingSpeed);
         }
 
@@ -74,6 +91,7 @@ namespace VirtualFishing.MiniGame
             if (!_isRunning) return;
             _isRunning = false;
 
+            fishIndicatorUI?.Shutdown();
             tensionCalculator.Reset();
             onMiniGameResultEvent?.Raise();
             OnMiniGameEnded?.Invoke(success);
@@ -86,6 +104,34 @@ namespace VirtualFishing.MiniGame
         public void SetFishMoveState(FishMoveState fishMoveState)
         {
             _currentFishMoveState = fishMoveState;
+            _phaseHoldTimer = 0f;
+        }
+
+        private void UpdatePhaseHold(Vector3 rodDirection)
+        {
+            if (!IsRodInOppositeDirection(rodDirection))
+            {
+                _phaseHoldTimer = Mathf.Max(0f, _phaseHoldTimer - Time.deltaTime);
+                return;
+            }
+
+            _phaseHoldTimer += Time.deltaTime;
+            if (_phaseHoldTimer >= settings.phaseHoldDuration)
+            {
+                _phaseHoldTimer = 0f;
+                OnPhaseComplete?.Invoke();
+            }
+        }
+
+        private bool IsRodInOppositeDirection(Vector3 rodDirection)
+        {
+            float threshold = settings != null ? settings.phaseDirectionThreshold : 0.3f;
+            return _currentFishMoveState switch
+            {
+                FishMoveState.Left  => rodDirection.x >  threshold,
+                FishMoveState.Right => rodDirection.x < -threshold,
+                _                   => false
+            };
         }
 
         private void UpdateSuccessGauge(float reelingSpeed)

@@ -13,8 +13,8 @@ namespace VirtualFishing.EditorTools
         private const string ArtPondTextureFolder = "Assets/Art/Environment/Pond/Textures";
         private const string ArtPondAudioFolder = "Assets/Art/Audio/Ambience/Pond";
 
-        private const string ProjectMaterialFolder = "Assets/_Project/Materials/Environment";
-        private const string ProjectPrefabFolder = "Assets/_Project/Prefabs/Environment";
+        private const string EnvironmentMaterialFolder = "Assets/Art/Environment/Materials";
+        private const string EnvironmentPrefabFolder = "Assets/Art/Environment/Pond/Prefabs";
         private const string SitePondAssetPath = "Assets/_Project/SO/FishDB/Test/Site_Pond.asset";
 
         [MenuItem("VirtualFishing/Fish/Build Site Pond Environment")]
@@ -29,8 +29,8 @@ namespace VirtualFishing.EditorTools
             EnsureFolder("Assets/Art/Audio", "Ambience");
             EnsureFolder("Assets/Art/Audio/Ambience", "Pond");
 
-            EnsureFolder("Assets/_Project/Materials", "Environment");
-            EnsureFolder("Assets/_Project/Prefabs", "Environment");
+            EnsureFolder("Assets/Art/Environment", "Materials");
+            EnsureFolder("Assets/Art/Environment/Pond", "Prefabs");
 
             Material groundMaterial = CreateOrUpdateMaterial("MAT_Pond_Ground", new Color(0.41f, 0.48f, 0.28f), 0f);
             Material waterMaterial = CreateOrUpdateMaterial("MAT_Pond_Water", new Color(0.22f, 0.52f, 0.67f), 0.25f);
@@ -237,7 +237,7 @@ namespace VirtualFishing.EditorTools
 
         private static Material CreateOrUpdateMaterial(string materialName, Color color, float alpha)
         {
-            string materialPath = $"{ProjectMaterialFolder}/{materialName}.mat";
+            string materialPath = $"{EnvironmentMaterialFolder}/{materialName}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
 
             if (material == null)
@@ -267,7 +267,7 @@ namespace VirtualFishing.EditorTools
 
         private static GameObject SaveAsPrefab(GameObject source, string prefabName)
         {
-            string prefabPath = $"{ProjectPrefabFolder}/{prefabName}.prefab";
+            string prefabPath = $"{EnvironmentPrefabFolder}/{prefabName}.prefab";
             GameObject prefabAsset = PrefabUtility.SaveAsPrefabAsset(source, prefabPath);
             Object.DestroyImmediate(source);
             return prefabAsset;

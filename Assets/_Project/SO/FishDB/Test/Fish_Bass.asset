@@ -14,21 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishSpeciesDataSO
   fishId: Fish_Bass
   displayName: Bass
-  rarity: 3
+  rarityValue: 3
   sizeRangeCm:
     min: 28
     max: 45
   weightRangeKg:
     min: 1.2
     max: 3.8
-  baseResistance: 1.5
+  baseResistanceValue: 1.5
   movementPattern: 1
-  moveModeDurationRange:
-    min: 1.8
-    max: 3
   minWaitTime: 3
   maxWaitTime: 6
   baseScore: 220
-  fishPrefab: {fileID: 0}
+  fishPrefab: {fileID: 1809855982420343196, guid: c8332bb896c977b4cbd4bc368ef59c50, type: 3}
   icon: {fileID: 0}
   description: Balanced predator fish for medium difficulty testing.

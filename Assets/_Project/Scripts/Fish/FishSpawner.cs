@@ -8,7 +8,7 @@ using VirtualFishing.Interfaces;
 
 namespace VirtualFishing.Core.Fish
 {
-    public class FishSpawner : MonoBehaviour, IFishSpawner
+    public class FishSpawner : MonoBehaviour, IFishSpawner, IVoidEventListener
     {
         [FormerlySerializedAs("currentSite")]
         [SerializeField] private FishingSiteDataSO siteData;
@@ -18,6 +18,8 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private VoidEventSO onWarningBiteEvent;
         [SerializeField] private VoidEventSO onBiteOccurredEvent;
         [SerializeField] private FishSpeciesDataSO debugForcedSpecies;
+        [Tooltip("찌 착수 이벤트 구독 → 착수 시 StartBiteTimer() 자동 호출")]
+        [SerializeField] private VoidEventSO onWaterLandedEvent;
 
         private IFish fish;
         private Coroutine biteCoroutine;
@@ -29,6 +31,11 @@ namespace VirtualFishing.Core.Fish
         {
             fish = fishControllerRef as IFish;
         }
+
+        private void OnEnable()  => onWaterLandedEvent?.Register(this);
+        private void OnDisable() => onWaterLandedEvent?.Unregister(this);
+
+        void IVoidEventListener.OnEventRaised() => StartBiteTimer();
 
         public void StartBiteTimer()
         {

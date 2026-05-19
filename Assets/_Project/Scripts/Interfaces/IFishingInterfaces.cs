@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using VirtualFishing.Fishing.Events;
 
 namespace VirtualFishing.Interfaces
 {
@@ -29,7 +30,9 @@ namespace VirtualFishing.Interfaces
         void UpdateCastingInput(Vector3 controllerVelocity, Vector3 controllerDirection);
         void UpdateReelingInput(float rotationDelta);
 
-        event Action<RodState> OnRodStateChanged;
+        // 페이로드: (Previous, Current) 두 상태를 함께 전달.
+        // 구독자는 특정 전이(예: 챔질 실패 = WaitingForBite→Attached)를 정확히 식별 가능.
+        event Action<RodStateTransition> OnRodStateChanged;
     }
 
     public interface ICastable

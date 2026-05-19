@@ -2,11 +2,13 @@ using System;
 using UnityEngine;
 using VirtualFishing.Core.Events;
 using VirtualFishing.Data;
+using VirtualFishing.Fishing.Events;
 using VirtualFishing.Interfaces;
+using VirtualFishing.MiniGame;
 
 namespace VirtualFishing.Fishing
 {
-    public class FishingRodController : MonoBehaviour, IFishingRod, IGrabbable, ICastable
+    public class FishingRodController : MonoBehaviour, IFishingRod, IGrabbable, ICastable, IVoidEventListener
     {
         [Header("설정")]
         [SerializeField] private GameSettingsSO gameSettings;
@@ -15,13 +17,22 @@ namespace VirtualFishing.Fishing
         [Header("참조")]
         [SerializeField] private FloatController floatCtrl;
         [SerializeField] private Transform rodTip;
+        [Tooltip("VR 헤드셋(Main Camera) Transform. 할당 시 캐스팅·챔질 존이 헤드셋 위치를 실시간 추적. 미할당 시 playerData 기반(테스트·시뮬레이션용).")]
+        [SerializeField] private Transform hmdReference;
 
         [Header("SO 이벤트 - 발행")]
-        [SerializeField] private VoidEventSO onRodStateChanged;
+        [SerializeField] private RodStateTransitionEventSO onRodStateChanged;
+        [SerializeField] private VoidEventSO onCastingStarted;
+        [SerializeField] private VoidEventSO onReelIn;
+        [SerializeField] private VoidEventSO onHookingSuccess;
+        [SerializeField] private VoidEventSO onHookingFailed;
 
-        // [SO 이벤트 - 구독]
-        // 설계 문서의 SO Event 패턴(VoidEventListener bridge → UnityEvent → 메서드)을 따라
-        // 씬에 별도 VoidEventListener 컴포넌트가 OnBiteOccurred.asset을 듣고 HandleBiteOccurred를 호출하도록 연결.
+        [Header("SO 이벤트 - 구독")]
+        [SerializeField] private VoidEventSO onBiteOccurredEvent;
+
+        [Header("미니게임")]
+        [SerializeField] private MiniGameManager miniGameManager;
+
         // FloatController.OnWaterLanded는 같은 프리팹 내부 C# 이벤트로 직접 구독 (아래 OnEnable 참조).
 
         // 상태
@@ -51,7 +62,7 @@ namespace VirtualFishing.Fishing
         public float ReelingSpeed { get; private set; }
         public bool IsInCastingZone { get; private set; }
         public bool IsInHookingZone { get; private set; }
-        public event Action<RodState> OnRodStateChanged;
+        public event Action<RodStateTransition> OnRodStateChanged;
 
         public void Attach(Transform hand)
         {
@@ -76,6 +87,13 @@ namespace VirtualFishing.Fishing
         public void UpdateReelingInput(float rotationDelta)
         {
             ReelingSpeed = rotationDelta;
+
+            // 미니게임 중에는 릴 입력이 SuccessGauge 진행에만 쓰이고
+            // 찌(낚싯줄)는 실제로 당겨지지 않아야 함. 그렇지 않으면 미니게임이 끝나기 전에
+            // 줄이 다 감겨버려 사용자가 결과를 확인하기도 전에 회수 상태로 빠짐.
+            // 미니게임 종료 후 ReelIn() 경로에서 floatCtrl.ResetFloat()이 자동 호출되어 회수됨.
+            if (_currentState == RodState.MiniGame) return;
+
             floatCtrl?.SetReelSpeed(rotationDelta);
         }
 
@@ -99,6 +117,15 @@ namespace VirtualFishing.Fishing
 
         public void OnRelease()
         {
+            // [미니게임/챔질 직후 그랩 해제 차단]
+            // 이 단계에서 사용자가 트리거를 떼도 게임 로직상 낚싯대를 놓치면 안 됨.
+            // XR system은 select가 풀렸지만 _isGrabbed/_attachedHand는 유지하여 미니게임 진행 보장.
+            if (_currentState == RodState.MiniGame || _currentState == RodState.Hit)
+            {
+                Debug.Log($"[Rod] {_currentState} 상태 — 그랩 해제 무시 (미니게임 진행 유지)");
+                return;
+            }
+
             _isGrabbed = false;
 
             // 캐스팅 후 그랩 해제 시 찌가 수면에 방치되지 않도록 회수.
@@ -121,32 +148,61 @@ namespace VirtualFishing.Fishing
 
         public void Cast(float power, Vector3 direction)
         {
+            // 방향 보정: 뒤로 날아가지 않도록 HMD(또는 rod) 앞쪽으로 강제 + 최소 위쪽 아크
+            Vector3 castDir = direction;
+            Vector3 forwardFlat;
+            if (hmdReference != null)
+                forwardFlat = new Vector3(hmdReference.forward.x, 0f, hmdReference.forward.z).normalized;
+            else
+                forwardFlat = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
+
+            // XZ는 항상 HMD 앞쪽 + 입력 방향의 측면 성분 약간 반영
+            Vector3 dirFlat = new Vector3(direction.x, 0f, direction.z);
+            float forwardComp = Vector3.Dot(dirFlat, forwardFlat);
+            // 입력의 앞쪽 성분이 음수(뒤로 휘두름)면 forward만 사용
+            if (forwardComp < 0f) dirFlat = forwardFlat;
+            else dirFlat = (forwardFlat + dirFlat * 0.3f).normalized; // 측면 약간 반영
+
+            // 위쪽 아크: 최소 0.4 (포물선 비행 보장)
+            float upY = Mathf.Max(0.4f, direction.y);
+            castDir = (dirFlat + Vector3.up * upY).normalized;
+
             float clampedPower = Mathf.Clamp(power, gameSettings.minCastingPower, gameSettings.maxCastingPower);
-            Debug.Log($"[Rod] Cast! power={clampedPower:F2}, dir={direction}");
+            Debug.Log($"[Rod] Cast! power={clampedPower:F2}, dir={castDir}");
             SetState(RodState.Casting);
-            floatCtrl.Launch(clampedPower, direction);
+            floatCtrl.Launch(clampedPower, castDir);
         }
 
         #endregion
 
         private void OnEnable()
         {
-            // 같은 프리팹 내 직접 참조 — 설계 다이어그램의 'FishingRodController --> FloatController' 관계에 부합.
             if (floatCtrl != null)
                 floatCtrl.OnWaterLanded += HandleWaterLanded;
+            onBiteOccurredEvent?.Register(this);
         }
 
         private void OnDisable()
         {
             if (floatCtrl != null)
                 floatCtrl.OnWaterLanded -= HandleWaterLanded;
+            onBiteOccurredEvent?.Unregister(this);
         }
+
+        void IVoidEventListener.OnEventRaised() => HandleBiteOccurred();
 
         private void LateUpdate()
         {
-            if (!_isGrabbed) return;
-
             UpdateAcceleration();
+
+            // 미니게임 중에는 그랩 여부와 무관하게 텐션 계산 진행.
+            if (_currentState == RodState.MiniGame)
+            {
+                miniGameManager?.UpdateReeling(ReelingSpeed, _direction);
+                return;
+            }
+
+            if (!_isGrabbed) return;
 
             switch (_currentState)
             {
@@ -176,16 +232,35 @@ namespace VirtualFishing.Fishing
             // 손(컨트롤러) 위치를 사용 — 낚싯대가 아닌 부착된 손 기준
             Vector3 controllerPos = _attachedHand != null ? _attachedHand.position : transform.position;
             float distance = Vector3.Distance(controllerPos, zoneCenter);
-            bool isAboveCenter = controllerPos.y > zoneCenter.y;
 
-            IsInCastingZone = distance < gameSettings.castingZoneRadius && isAboveCenter;
+            // Hysteresis: 진입은 엄격(원래 기준), 이탈은 너그럽게(반경 1.5배 + Y는 중심에서 0.5R 아래까지 허용)
+            // → 손 떨림 / 짧은 탈선으로 인한 IN/OUT 깜빡임 방지, 자연스러운 스윙 유지
+            float effectiveRadius;
+            float yThreshold;
+            if (_wasInCastingZone)
+            {
+                effectiveRadius = gameSettings.castingZoneRadius * 1.5f;
+                yThreshold = zoneCenter.y - gameSettings.castingZoneRadius * 0.5f;
+            }
+            else
+            {
+                effectiveRadius = gameSettings.castingZoneRadius;
+                yThreshold = zoneCenter.y;
+            }
 
-            // 주기적 디버그 로그
+            bool inSphere = distance < effectiveRadius;
+            bool isAboveYThreshold = controllerPos.y > yThreshold;
+
+            // 이지 모드: Y 조건 무시 / 일반 모드: Y 임계값 (히스테리시스 적용된) 위쪽만 활성
+            IsInCastingZone = gameSettings.easyCastingEnabled
+                ? inSphere
+                : (inSphere && isAboveYThreshold);
+
             _debugLogTimer += Time.deltaTime;
             if (_debugLogTimer > 0.5f)
             {
                 _debugLogTimer = 0f;
-                Debug.Log($"[Rod:Zone] hand={controllerPos:F2} center={zoneCenter:F2} dist={distance:F2} radius={gameSettings.castingZoneRadius} above={isAboveCenter} inZone={IsInCastingZone} hold={_castingZoneHoldTime:F2} accel={_acceleration:F2}");
+                Debug.Log($"[Rod:Zone] hand={controllerPos:F2} center={zoneCenter:F2} dist={distance:F2}/R={effectiveRadius:F2} y>{yThreshold:F2}? {isAboveYThreshold} inZone={IsInCastingZone} (was={_wasInCastingZone}) hold={_castingZoneHoldTime:F2} accel={_acceleration:F2}");
             }
 
             if (IsInCastingZone)
@@ -221,12 +296,40 @@ namespace VirtualFishing.Fishing
             _wasInCastingZone = IsInCastingZone;
         }
 
+        /// <summary>
+        /// 캐스팅 존 중심 (월드 좌표). 시각화 컴포넌트 등 외부에서도 참조.
+        /// </summary>
+        public Vector3 CastingZoneCenter => GetCastingZoneCenter();
+
+        /// <summary>현재 캐스팅 존 체류 시간 (초). minCastingHoldTime 비교용.</summary>
+        public float CastingHoldTime => _castingZoneHoldTime;
+
+        /// <summary>현재 가속도(=속도 크기) 기준 예상 캐스팅 파워. clamp 적용됨.</summary>
+        public float PredictedCastingPower
+        {
+            get
+            {
+                if (gameSettings == null) return 0f;
+                return Mathf.Clamp(
+                    _acceleration * gameSettings.castingPowerMultiplier,
+                    gameSettings.minCastingPower,
+                    gameSettings.maxCastingPower);
+            }
+        }
+
         private Vector3 GetCastingZoneCenter()
         {
-            // 하이브리드: y축은 캘리 고정, x/z는 HMD 실시간
-            // HMD 위치를 직접 가져올 수 없는 경우 playerData 사용
-            Vector3 center = playerData.currentPosition;
-            center.y = playerData.sittingHeight;
+            // hmdReference 할당 시 헤드셋 실시간 위치 추적, 미할당 시 playerData 기반 (테스트용)
+            Vector3 center;
+            if (hmdReference != null)
+            {
+                center = hmdReference.position;
+            }
+            else
+            {
+                center = playerData.currentPosition;
+                center.y = playerData.sittingHeight;
+            }
             return center + gameSettings.castingZoneOffset;
         }
 
@@ -270,6 +373,7 @@ namespace VirtualFishing.Fishing
 
                 // Hit → MiniGame 자동 전이
                 SetState(RodState.MiniGame);
+                onHookingSuccess?.Raise();
                 return;
             }
 
@@ -278,14 +382,28 @@ namespace VirtualFishing.Fishing
             {
                 _isBiteActive = false;
                 IsInHookingZone = false;
+                onHookingFailed?.Raise();
                 ReelIn();
             }
         }
 
+        /// <summary>
+        /// 챔질 존 중심 (월드 좌표).
+        /// </summary>
+        public Vector3 HookingZoneCenter => GetHookingZoneCenter();
+
         private Vector3 GetHookingZoneCenter()
         {
-            Vector3 center = playerData.currentPosition;
-            center.y = playerData.sittingHeight;
+            Vector3 center;
+            if (hmdReference != null)
+            {
+                center = hmdReference.position;
+            }
+            else
+            {
+                center = playerData.currentPosition;
+                center.y = playerData.sittingHeight;
+            }
             return center + gameSettings.hookingZoneOffset;
         }
 
@@ -310,10 +428,15 @@ namespace VirtualFishing.Fishing
         private void SetState(RodState newState)
         {
             if (_currentState == newState) return;
-            Debug.Log($"[Rod] {_currentState} → {newState}");
+            var previous = _currentState;
+            Debug.Log($"[Rod] {previous} → {newState}");
             _currentState = newState;
-            OnRodStateChanged?.Invoke(newState);
-            onRodStateChanged?.Raise();
+            var transition = new RodStateTransition(previous, newState);
+            OnRodStateChanged?.Invoke(transition);
+            onRodStateChanged?.Raise(transition);
+
+            if (newState == RodState.Casting)
+                onCastingStarted?.Raise();
         }
 
         /// <summary>
@@ -331,6 +454,8 @@ namespace VirtualFishing.Fishing
                 SetState(RodState.Attached);
             else
                 SetState(RodState.Idle);
+
+            onReelIn?.Raise();
         }
 
         /// <summary>
@@ -350,11 +475,10 @@ namespace VirtualFishing.Fishing
         /// <summary>
         /// 미니게임 종료 시 호출되는 외부 진입점. ReelIn으로 위임.
         ///
-        /// [통합 미정 — 10주차 회의 결정 사항]
-        /// 설계 다이어그램은 OnMiniGameResult SO의 흐름을 MiniGameManager → GameFlowManager로만 명시.
-        /// rod 리셋 트리거 경로가 미정이므로 본 메서드는 직접 호출(GameFlowManager가 IFishingRod 참조로 호출)
-        /// 또는 신규 SO 채널(예: OnRodResetRequested) 도입 후 wiring될 예정.
-        /// 단독으로 OnMiniGameResult.asset에 wiring하지 말 것 — D/A 도메인과 충돌 가능.
+        /// [Wiring — PR #14 통합 결정]
+        /// MiniGameManager가 OnMiniGameResult.asset(VoidEventSO)을 Raise하면
+        /// 같은 프리팹의 자식 GameObject(MiniGameResultBridge)에 부착된 VoidEventListener가 받아
+        /// 본 메서드를 호출. (BiteEventBridge와 동일한 SO Event Bridge 패턴)
         /// </summary>
         public void OnMiniGameEnded()
         {
