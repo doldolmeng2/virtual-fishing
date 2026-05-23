@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using VirtualFishing.Data;
 using VirtualFishing.Fishing;
@@ -30,6 +31,14 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private Vector3 hookSuccessLocalEuler = new(90f, 85f, 0f);
         [SerializeField] private bool hideVisualUntilHookSuccess = true;
         [SerializeField] private float reelingPullMinDistanceFromFloat = 0.15f;
+        [SerializeField] private bool moveFloatDuringReelingPreview = true;
+        [SerializeField] private bool createPreviewFloatWhenMissing = true;
+        [SerializeField] private float previewFloatWaterHeight = 0.2f;
+        [SerializeField] private float previewFloatAirDistance = 1.8f;
+        [SerializeField] private float previewFloatAirDrop = 0.55f;
+        [SerializeField] private float previewFloatFlyDuration = 1.2f;
+        [SerializeField] private float hookSuccessSplashScale = 2f;
+        [SerializeField] private float hookedVisualScaleMultiplier = 1f;
         [SerializeField] private float hookedFlopAngle = 18f;
         [SerializeField] private float hookedFlopSpeed = 11f;
         [SerializeField] private float hookedFlopVerticalAmount = 0.035f;
@@ -58,6 +67,11 @@ namespace VirtualFishing.Core.Fish
 
         private GameObject currentVisualInstance;
         private ParticleSystem currentSplashInstance;
+        private Vector3 visualBaseLocalScale = Vector3.one;
+        private Transform previewFloatTransform;
+        private Vector3 previewFloatStartPosition;
+        private bool hasPreviewFloatStartPosition;
+        private Coroutine previewFloatFlyCoroutine;
         private bool isHookSuccessPreviewActive;
         private Vector3 hookedBaseLocalPosition;
         private Quaternion hookedBaseLocalRotation;
@@ -165,6 +179,7 @@ namespace VirtualFishing.Core.Fish
             phaseCompleteCount = 0;
             isWaitingAtMovementLimit = false;
             isHookSuccessPreviewActive = false;
+            ClearPreviewFloat();
 
             Debug.Log("[FishController] Fish state reset.");
         }
@@ -278,7 +293,7 @@ namespace VirtualFishing.Core.Fish
             }
 
             MoveFishTowardFloat(successGauge);
-            SetVisualRenderersEnabled(true);
+            MoveFloatForReelingPreview(successGauge);
             Debug.Log($"[FishController] Reeling pull preview applied: successGauge={successGauge:F1}");
         }
 
@@ -291,7 +306,7 @@ namespace VirtualFishing.Core.Fish
 
             Transform target = hookSuccessAttachTarget != null
                 ? hookSuccessAttachTarget
-                : FindFloatTransform();
+                : FindFloatOrPreviewTransform();
 
             if (target == null)
             {
@@ -299,17 +314,34 @@ namespace VirtualFishing.Core.Fish
             }
 
             StopPhaseMovement();
+            Vector3 hookWaterPosition = currentVisualInstance.transform.position;
+            hookWaterPosition.y = splashWaterHeight + splashFollowYOffset;
             StopSplashEffect();
+
             currentPhase = FishPhase.None;
             phaseCompleteCount = 0;
             currentVisualInstance.transform.SetParent(target, false);
-            currentVisualInstance.transform.localPosition = hookSuccessLocalOffset;
+            currentVisualInstance.transform.localPosition = target == previewFloatTransform
+                ? new Vector3(0f, -0.12f, 0.08f)
+                : hookSuccessLocalOffset;
             currentVisualInstance.transform.localRotation = Quaternion.Euler(hookSuccessLocalEuler);
+            currentVisualInstance.transform.localScale = GetHookedLocalScale(target);
             hookedBaseLocalPosition = currentVisualInstance.transform.localPosition;
             hookedBaseLocalRotation = currentVisualInstance.transform.localRotation;
             isHookSuccessPreviewActive = true;
             SetVisualRenderersEnabled(true);
-            UpdateSplashPosition();
+
+            PlayHookSuccessSplash(hookWaterPosition);
+
+            FloatController floatController = target.GetComponent<FloatController>();
+            if (floatController != null)
+            {
+                floatController.ResetFloat();
+            }
+            else if (target == previewFloatTransform)
+            {
+                StartPreviewFloatFlyToUser(target);
+            }
         }
 
         public FishCatchData BuildCatchData(BackgroundType siteType, string caughtAt)
@@ -342,6 +374,7 @@ namespace VirtualFishing.Core.Fish
         private void SpawnVisual(FishSpeciesDataSO speciesData)
         {
             ClearVisual();
+            ClearPreviewFloat();
 
             Transform parent = spawnRoot != null ? spawnRoot : transform;
             Vector3 spawnPosition = parent.position + spawnOffset;
@@ -370,7 +403,12 @@ namespace VirtualFishing.Core.Fish
 
             if (currentVisualInstance != null)
             {
-                currentVisualInstance.transform.localScale = GetPlaceholderScale(sizeCm);
+                if (speciesData.FishPrefab == null)
+                {
+                    currentVisualInstance.transform.localScale = GetPlaceholderScale(sizeCm);
+                }
+
+                visualBaseLocalScale = currentVisualInstance.transform.localScale;
                 SetVisualRenderersEnabled(!hideVisualUntilHookSuccess);
                 ClampVisualPosition();
                 ApplyVisualDirection(GetMovementDirectionByMode(currentMoveMode));
@@ -386,7 +424,25 @@ namespace VirtualFishing.Core.Fish
 
             Destroy(currentVisualInstance);
             currentVisualInstance = null;
+            visualBaseLocalScale = Vector3.one;
             isHookSuccessPreviewActive = false;
+        }
+
+        private void ClearPreviewFloat()
+        {
+            if (previewFloatFlyCoroutine != null)
+            {
+                StopCoroutine(previewFloatFlyCoroutine);
+                previewFloatFlyCoroutine = null;
+            }
+
+            if (previewFloatTransform != null)
+            {
+                Destroy(previewFloatTransform.gameObject);
+                previewFloatTransform = null;
+            }
+
+            hasPreviewFloatStartPosition = false;
         }
 
         private void StartSplashEffect()
@@ -430,6 +486,47 @@ namespace VirtualFishing.Core.Fish
             return floatController != null ? floatController.transform : null;
         }
 
+        private Transform FindFloatOrPreviewTransform()
+        {
+            Transform floatTransform = FindFloatTransform();
+            return floatTransform != null ? floatTransform : EnsurePreviewFloatTransform();
+        }
+
+        private Transform EnsurePreviewFloatTransform()
+        {
+            if (!createPreviewFloatWhenMissing)
+            {
+                return null;
+            }
+
+            if (previewFloatTransform != null)
+            {
+                return previewFloatTransform;
+            }
+
+            GameObject previewFloat = new("Generated_PreviewFloat");
+            previewFloat.name = "Generated_PreviewFloat";
+            previewFloat.transform.SetParent(spawnRoot != null ? spawnRoot : transform, false);
+            previewFloat.transform.position = GetPreviewFloatStartPosition();
+            previewFloat.transform.localScale = Vector3.one;
+
+            GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            marker.name = "PreviewFloatMarker";
+            marker.transform.SetParent(previewFloat.transform, false);
+            marker.transform.localPosition = Vector3.zero;
+            marker.transform.localScale = Vector3.one * 0.18f;
+
+            Renderer renderer = marker.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                renderer.material = new Material(shader) { color = new Color(1f, 0.18f, 0.12f) };
+            }
+
+            previewFloatTransform = previewFloat.transform;
+            return previewFloatTransform;
+        }
+
         private void SetVisualRenderersEnabled(bool isEnabled)
         {
             if (currentVisualInstance == null)
@@ -441,6 +538,26 @@ namespace VirtualFishing.Core.Fish
             {
                 renderer.enabled = isEnabled;
             }
+        }
+
+        private Vector3 GetHookedLocalScale(Transform target)
+        {
+            Vector3 desiredWorldScale = visualBaseLocalScale * hookedVisualScaleMultiplier;
+            if (target == null)
+            {
+                return desiredWorldScale;
+            }
+
+            Vector3 parentScale = target.lossyScale;
+            return new Vector3(
+                SafeDivide(desiredWorldScale.x, parentScale.x),
+                SafeDivide(desiredWorldScale.y, parentScale.y),
+                SafeDivide(desiredWorldScale.z, parentScale.z));
+        }
+
+        private static float SafeDivide(float value, float divisor)
+        {
+            return Mathf.Abs(divisor) > 0.0001f ? value / divisor : value;
         }
 
         private ParticleSystem CreateDefaultSplash(Transform parent)
@@ -457,24 +574,24 @@ namespace VirtualFishing.Core.Fish
             ParticleSystem.MainModule main = particleSystem.main;
             main.loop = true;
             main.startLifetime = 0.45f;
-            main.startSpeed = 1.6f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.24f);
+            main.startSpeed = 3.2f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.24f, 0.48f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 120;
+            main.maxParticles = 240;
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
-            emission.rateOverTime = 48f;
+            emission.rateOverTime = 96f;
 
             ParticleSystem.ShapeModule shape = particleSystem.shape;
             shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = 0.42f;
+            shape.radius = 0.84f;
             shape.arc = 360f;
 
             ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
             velocity.enabled = true;
-            velocity.y = new ParticleSystem.MinMaxCurve(0.45f, 1.3f);
-            velocity.x = new ParticleSystem.MinMaxCurve(-0.45f, 0.45f);
-            velocity.z = new ParticleSystem.MinMaxCurve(-0.45f, 0.45f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.9f, 2.6f);
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.9f, 0.9f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.9f, 0.9f);
 
             Renderer renderer = particleSystem.GetComponent<Renderer>();
             if (renderer != null)
@@ -482,6 +599,67 @@ namespace VirtualFishing.Core.Fish
                 renderer.material = new Material(Shader.Find("Sprites/Default"))
                 {
                     color = new Color(0.72f, 0.9f, 1f, 0.72f)
+                };
+            }
+
+            return particleSystem;
+        }
+
+        private void PlayHookSuccessSplash(Vector3 position)
+        {
+            Transform parent = splashRoot != null ? splashRoot : transform;
+            ParticleSystem splash = CreateHookSuccessSplash(parent);
+            if (splash == null)
+            {
+                return;
+            }
+
+            splash.transform.position = position;
+            splash.Play();
+            Destroy(splash.gameObject, 2.5f);
+        }
+
+        private ParticleSystem CreateHookSuccessSplash(Transform parent)
+        {
+            GameObject splashObject = new("Generated_HookSuccessSplash");
+            splashObject.transform.SetParent(parent);
+            splashObject.transform.localScale = Vector3.one * hookSuccessSplashScale;
+
+            ParticleSystem particleSystem = splashObject.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.loop = false;
+            main.duration = 1.1f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 0.9f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.8f, 3.6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.24f, 0.58f);
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = 180;
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[]
+            {
+                new ParticleSystem.Burst(0f, 70),
+                new ParticleSystem.Burst(0.12f, 35)
+            });
+
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.55f;
+            shape.arc = 360f;
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.y = new ParticleSystem.MinMaxCurve(0.8f, 2.4f);
+            velocity.x = new ParticleSystem.MinMaxCurve(-1.1f, 1.1f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-1.1f, 1.1f);
+
+            Renderer renderer = particleSystem.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = new Material(Shader.Find("Sprites/Default"))
+                {
+                    color = new Color(0.72f, 0.92f, 1f, 0.78f)
                 };
             }
 
@@ -529,19 +707,99 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            Transform target = FindFloatTransform();
+            float progress = Mathf.Clamp01(successGauge / 100f);
+            Vector3 currentPosition = currentVisualInstance.transform.position;
+            currentPosition.y = visualSpawnPosition.y;
+            currentPosition.z = Mathf.Lerp(visualSpawnPosition.z, GetUserNearWaterZ(visualSpawnPosition.z), progress);
+            currentVisualInstance.transform.position = currentPosition;
+            UpdateSplashPosition();
+        }
+
+        private void MoveFloatForReelingPreview(float successGauge)
+        {
+            if (!moveFloatDuringReelingPreview)
+            {
+                return;
+            }
+
+            Transform floatTransform = FindFloatTransform();
+            floatTransform ??= EnsurePreviewFloatTransform();
+            if (floatTransform == null) return;
+
+            if (!hasPreviewFloatStartPosition)
+            {
+                previewFloatStartPosition = floatTransform.position;
+                previewFloatStartPosition.y = previewFloatWaterHeight;
+                hasPreviewFloatStartPosition = true;
+            }
+
+            float progress = Mathf.Clamp01(successGauge / 100f);
+            Vector3 floatPosition = previewFloatStartPosition;
+            floatPosition.z = Mathf.Lerp(previewFloatStartPosition.z, GetUserNearWaterZ(previewFloatStartPosition.z), progress);
+            floatTransform.position = floatPosition;
+            UpdateSplashPosition();
+        }
+
+        private Vector3 GetPreviewFloatStartPosition()
+        {
+            Vector3 position = currentVisualInstance != null
+                ? currentVisualInstance.transform.position
+                : visualSpawnPosition;
+            position.y = previewFloatWaterHeight;
+            return position;
+        }
+
+        private float GetUserNearWaterZ(float startZ)
+        {
+            Camera camera = Camera.main;
+            if (camera == null)
+            {
+                return startZ - 8f;
+            }
+
+            return Mathf.Min(startZ - reelingPullMinDistanceFromFloat, camera.transform.position.z + 3f);
+        }
+
+        private void StartPreviewFloatFlyToUser(Transform target)
+        {
             if (target == null)
             {
                 return;
             }
 
-            float progress = Mathf.Clamp01(successGauge / 100f);
-            Vector3 targetPosition = Vector3.MoveTowards(target.position, visualSpawnPosition, reelingPullMinDistanceFromFloat);
-            Vector3 currentPosition = currentVisualInstance.transform.position;
-            currentPosition.y = visualSpawnPosition.y;
-            currentPosition.z = Mathf.Lerp(visualSpawnPosition.z, targetPosition.z, progress);
-            currentVisualInstance.transform.position = currentPosition;
-            UpdateSplashPosition();
+            if (previewFloatFlyCoroutine != null)
+            {
+                StopCoroutine(previewFloatFlyCoroutine);
+            }
+
+            Camera camera = Camera.main;
+            Vector3 destination = camera != null
+                ? camera.transform.position + camera.transform.forward * previewFloatAirDistance + Vector3.down * previewFloatAirDrop
+                : target.position + new Vector3(0f, 1.2f, -2f);
+
+            previewFloatFlyCoroutine = StartCoroutine(AnimatePreviewFloatToUser(target, destination));
+        }
+
+        private IEnumerator AnimatePreviewFloatToUser(Transform target, Vector3 destination)
+        {
+            Vector3 start = target.position;
+            float elapsed = 0f;
+
+            while (target != null && elapsed < previewFloatFlyDuration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, previewFloatFlyDuration));
+                t = t * t * (3f - 2f * t);
+                target.position = Vector3.Lerp(start, destination, t);
+                yield return null;
+            }
+
+            if (target != null)
+            {
+                target.position = destination;
+            }
+
+            previewFloatFlyCoroutine = null;
         }
 
         private void NotifyMiniGameMoveState()
