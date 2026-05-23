@@ -58,9 +58,10 @@ namespace VirtualFishing.MiniGame
             }
 
             tensionData.currentTension += totalDelta;
+            // 0 까지 내려갈 수 있음(0 도달 시 MiniGameManager 가 도망 실패로 판정)
             tensionData.currentTension = Mathf.Clamp(
                 tensionData.currentTension,
-                tensionData.tooLowThreshold,
+                0f,
                 tensionData.maxTension
             );
 
