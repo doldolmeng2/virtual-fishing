@@ -124,39 +124,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 3260793237806834840, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
   m_PrefabInstance: {fileID: 1515888570}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &215748459
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 215748460}
-  m_Layer: 0
-  m_Name: FeedbackSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &215748460
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 215748459}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: -0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1811668390}
-  - {fileID: 1613278272}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &353540377 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5426746678072244175, guid: 112e4dc1c008b4201a0aaf3ab4bc3368, type: 3}
@@ -247,38 +214,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &535876225
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 535876226}
-  m_Layer: 0
-  m_Name: UISystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &535876226
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 535876225}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.28077, y: -0, z: 10.54143}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1043385522}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!224 &784109280 stripped
@@ -425,54 +360,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!1 &1043385521
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1043385522}
-  - component: {fileID: 1043385523}
-  m_Layer: 0
-  m_Name: UIManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1043385522
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1043385521}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 535876226}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1043385523
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1043385521}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d6bc0d259e9774573b322c28de8618a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.UI.UIManager
-  mainPanel: {fileID: 0}
-  resultPanel: {fileID: 353540377}
-  warningPanel: {fileID: 4844941027721338246, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-  feedbackManager: {fileID: 1811668395}
 --- !u!1 &1109129940 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3473865224796437876, guid: d67e4641e6258465fbe07608ae4cb515, type: 3}
@@ -625,69 +512,6 @@ Transform:
   - {fileID: 895790007}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1259685355
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1259685357}
-  - component: {fileID: 1259685356}
-  m_Layer: 0
-  m_Name: Tester
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1259685356
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1259685355}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: efab85d762c034c5281a8fd6689a7d4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.Test.TempEventTester
-  onAccountLoaded: {fileID: 11400000, guid: b20fcac126f7a4c45b5c562b4ea33c4b, type: 2}
-  onCalibrationComplete: {fileID: 11400000, guid: 7b7958dd3e7dec7449647667934a14a9, type: 2}
-  onRodGrabbed: {fileID: 11400000, guid: 082e4c847ba2c404cb5d6d8d9faedc81, type: 2}
-  onCastStarted: {fileID: 11400000, guid: 931ee3453910b10418c8891d3c4249f4, type: 2}
-  onWaterLanded: {fileID: 11400000, guid: d07781636769ac04d8e401ddcb72dea0, type: 2}
-  onBiteOccurred: {fileID: 11400000, guid: 00e12910434feb94881f1feee9a7d2e0, type: 2}
-  onHookSuccess: {fileID: 11400000, guid: a7688af099690cf4ba832c1e180b72d3, type: 2}
-  onHookFailed: {fileID: 11400000, guid: 067804c037044ae498eb2f501c6f7a4b, type: 2}
-  onMiniGameResult: {fileID: 11400000, guid: bbfd45e1d4d255b4ba9194cbc68588b3, type: 2}
-  onAccountSaved: {fileID: 11400000, guid: 7c4487fbe747d944b90cfa3c6f97eca2, type: 2}
-  onRodStateChanged: {fileID: 11400000, guid: 3c4ec41f719168543aab651331e35595, type: 2}
-  onSceneLoaded: {fileID: 11400000, guid: 35d43d5921a423a40b678cd0f735d686, type: 2}
-  onTrackingLost: {fileID: 11400000, guid: 2ca19fde3a3afb2498892190d4c9aeec, type: 2}
-  onTensionChanged: {fileID: 11400000, guid: 674a2ef92fbe23645bb044e16e8a2cb6, type: 2}
-  tensionValue: 85
-  onSuccessGaugeChanged: {fileID: 11400000, guid: f84003fc9cd16a24ebd44e0fbca6ca1e, type: 2}
-  successGaugeValue: 50
-  onSafetyWarning: {fileID: 11400000, guid: 5cdaccb8942faec439c90413951574ec, type: 2}
-  safetyLevelValue: 1
---- !u!4 &1259685357
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1259685355}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: -0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1382803186 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4844941027721338246, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
@@ -715,10 +539,6 @@ PrefabInstance:
     - target: {fileID: 3260793237806834840, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
       propertyPath: m_Name
       value: SafetyCanvas_WorldLocked
-      objectReference: {fileID: 0}
-    - target: {fileID: 3260793237806834840, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5255272251467060643, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
       propertyPath: m_Pivot.x
@@ -751,18 +571,6 @@ PrefabInstance:
     - target: {fileID: 5255272251467060643, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
       propertyPath: m_SizeDelta.y
       value: 837
-      objectReference: {fileID: 0}
-    - target: {fileID: 5255272251467060643, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5255272251467060643, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5255272251467060643, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5255272251467060643, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
       propertyPath: m_LocalPosition.x
@@ -816,67 +624,11 @@ PrefabInstance:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 1203152184}
-    - target: {fileID: 8288636028966822562, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
-      propertyPath: m_Color.g
-      value: 0.9411765
-      objectReference: {fileID: 0}
-    - target: {fileID: 8288636028966822562, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
-      propertyPath: m_Color.r
-      value: 0.3882353
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
---- !u!1 &1613278271
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1613278272}
-  - component: {fileID: 1613278273}
-  m_Layer: 0
-  m_Name: PlayerSafetyMonitor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1613278272
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1613278271}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 215748460}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1613278273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1613278271}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 52e6e6813e1b7a3458c44cfd09ef6c73, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Safety.PlayerSafetyMonitor
-  playerData: {fileID: 0}
-  gameSettings: {fileID: 0}
-  safetyWarningEvent: {fileID: 0}
-  testSafetyRadius: 1.5
 --- !u!1001 &1675636763
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -973,26 +725,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: SafetyCanvas_HeadLocked
       objectReference: {fileID: 0}
-    - target: {fileID: 4844941027721338246, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5193743464019603736, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8033301774489015053, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-      propertyPath: m_text
-      value: '!!Warning!!'
-      objectReference: {fileID: 0}
-    - target: {fileID: 8033301774489015053, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-      propertyPath: m_fontAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-    - target: {fileID: 8033301774489015053, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-      propertyPath: m_hasFontAssetChanged
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1003,617 +735,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4285875112705442828, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
   m_PrefabInstance: {fileID: 1675636763}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1811668389
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1811668390}
-  - component: {fileID: 1811668395}
-  - component: {fileID: 1811668394}
-  - component: {fileID: 1811668393}
-  - component: {fileID: 1811668392}
-  - component: {fileID: 1811668391}
-  - component: {fileID: 1811668411}
-  - component: {fileID: 1811668410}
-  - component: {fileID: 1811668409}
-  - component: {fileID: 1811668408}
-  - component: {fileID: 1811668407}
-  - component: {fileID: 1811668406}
-  - component: {fileID: 1811668405}
-  - component: {fileID: 1811668404}
-  - component: {fileID: 1811668403}
-  - component: {fileID: 1811668402}
-  - component: {fileID: 1811668401}
-  - component: {fileID: 1811668400}
-  - component: {fileID: 1811668399}
-  - component: {fileID: 1811668398}
-  - component: {fileID: 1811668397}
-  - component: {fileID: 1811668396}
-  m_Layer: 0
-  m_Name: FeedbackManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1811668390
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 215748460}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1811668391
+--- !u!114 &1811668395 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 8078747790575405315, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+  m_PrefabInstance: {fileID: 4790862282829614014}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96f5ca31769c4f043bb79e168c3eb752, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.TTSManager
-  audioSource: {fileID: 895790008}
-  ttsList:
-  - textMessage: "\uD658\uACBD \uC124\uC815\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
-      \uC774\uC81C \uB09A\uC2DC\uB97C \uC2DC\uC791\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
-    clip: {fileID: 8300000, guid: f45343008b1244f948f4fdab4f166949, type: 3}
-  - textMessage: "\uCEE8\uD2B8\uB864\uB7EC \uC5F0\uACB0\uC744 \uD655\uC778\uD574\uC8FC\uC138\uC694."
-    clip: {fileID: 8300000, guid: 7321ea559ded5409db12aebd774df8d3, type: 3}
-  - textMessage: "\uBB3C\uACE0\uAE30\uAC00 \uB3C4\uB9DD\uAC14\uC2B5\uB2C8\uB2E4."
-    clip: {fileID: 8300000, guid: 27468945fcd4b425783172c62d017572, type: 3}
-  - textMessage: "\uCD95\uD558\uD569\uB2C8\uB2E4! \uBB3C\uACE0\uAE30\uB97C \uB09A\uC73C\uC168\uC2B5\uB2C8\uB2E4."
-    clip: {fileID: 8300000, guid: c3cd13e8a31fc4e1ba010482ef5c58ca, type: 3}
-  - textMessage: "\uC774\uB3D9\uD558\uC2DC\uBA74 \uC704\uD5D8\uD569\uB2C8\uB2E4.
-      \uAC00\uC6B4\uB370\uB85C \uB3CC\uC544\uAC00\uC8FC\uC138\uC694."
-    clip: {fileID: 8300000, guid: 7dda0bb5a8267418faf7edb16ef1bf1d, type: 3}
-  - textMessage: "\uC548\uC804\uC744 \uC704\uD574 \uAC8C\uC784\uC744 \uBA48\uCDA5\uB2C8\uB2E4.
-      \uC7A5\uBE44\uB97C \uBC97\uACE0 \uC8FC\uBCC0\uC744 \uD655\uC778\uD574\uC8FC\uC138\uC694."
-    clip: {fileID: 8300000, guid: 647a73b1949a6423ca36cafbd9a09849, type: 3}
---- !u!114 &1811668392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ed62fcacd94a0a4fab44a14eafe30ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.VisualEffectManager
-  effectLibrary:
-  - id: BlueGrid
-    prefab: {fileID: 187482196}
-  fadeOverlay: {fileID: 1426438527}
-  testSafetyRadius: 1.5
---- !u!114 &1811668393
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3fb1b6185ee24684eb0c8a525c403550, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.HapticManager
---- !u!114 &1811668394
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c67102a33967a34cb3378a25dd0d2b9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.SoundManager
-  soundLibrary:
-  - id: FloatSink
-    clip: {fileID: 8300000, guid: d83875db910b0481da29cce1cf806902, type: 3}
-  - id: HookFail
-    clip: {fileID: 8300000, guid: d3a327b5fc45f4976a19206ca7332172, type: 3}
-  - id: HookSuccess
-    clip: {fileID: 8300000, guid: a6f58723466714bc88bf2af300f28a0d, type: 3}
-  - id: LineCast
-    clip: {fileID: 8300000, guid: c63dc6a6743d34bc1a2099774003b031, type: 3}
-  - id: RodAttach
-    clip: {fileID: 8300000, guid: 9ad75b523447e46fb835f5a9a508340d, type: 3}
-  - id: WaterSplash
-    clip: {fileID: 8300000, guid: b4803028daa6c4dcb95b88b5a83b4714, type: 3}
-  - id: ZoneEnter
-    clip: {fileID: 8300000, guid: ac5a6817dbe094befaaefd8c0702805f, type: 3}
-  sfxSource: {fileID: 0}
-  bgmSource: {fileID: 0}
---- !u!114 &1811668395
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ceb1831525109bf498d07908ab8b76c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.FeedbackManager
-  soundManager: {fileID: 1811668394}
-  hapticManager: {fileID: 1811668393}
-  visualManager: {fileID: 1811668392}
-  ttsManager: {fileID: 1811668391}
-  fishingRodController: {fileID: 0}
-  safetyWarningPanel: {fileID: 1382803186}
-  hookingGuidePanel: {fileID: 1109129940}
-  catchResultPanel: {fileID: 353540377}
-  exitSequencePanel: {fileID: 789344532}
-  miniGamePanel: {fileID: 0}
-  tensionWarningPanel: {fileID: 0}
-  loadingPanel: {fileID: 0}
---- !u!114 &1811668396
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: d07781636769ac04d8e401ddcb72dea0, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnWaterLandedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668397
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 2ca19fde3a3afb2498892190d4c9aeec, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnTrackingLostEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b1b7c640ae33cd478811d9643e36c76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.FloatEventListener
-  gameEvent: {fileID: 11400000, guid: 674a2ef92fbe23645bb044e16e8a2cb6, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnTensionChangedEvent
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668399
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 35d43d5921a423a40b678cd0f735d686, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnSceneLoadedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668400
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11947e97420f17e48bccee29d823a9bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.IntEventListener
-  gameEvent: {fileID: 11400000, guid: 5cdaccb8942faec439c90413951574ec, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnSafetyWarningEvent
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668401
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 3c4ec41f719168543aab651331e35595, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnRodStateChangedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668402
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 082e4c847ba2c404cb5d6d8d9faedc81, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnRodGrabbedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668403
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: bbfd45e1d4d255b4ba9194cbc68588b3, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnMiniGameResultEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668404
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: a7688af099690cf4ba832c1e180b72d3, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnHookSuccessEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668405
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 067804c037044ae498eb2f501c6f7a4b, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnHookFailedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668406
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b1b7c640ae33cd478811d9643e36c76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.FloatEventListener
-  gameEvent: {fileID: 11400000, guid: f84003fc9cd16a24ebd44e0fbca6ca1e, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnSuccessGaugeChangedEvent
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668407
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 931ee3453910b10418c8891d3c4249f4, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnCastStartedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668408
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 7b7958dd3e7dec7449647667934a14a9, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnCalibrationCompleteEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668409
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 00e12910434feb94881f1feee9a7d2e0, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnBiteOccurredEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668410
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: 7c4487fbe747d944b90cfa3c6f97eca2, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnAccountSavedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
---- !u!114 &1811668411
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1811668389}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a3c2366eb95db048ad023a888fcf148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.Events.VoidEventListener
-  gameEvent: {fileID: 11400000, guid: b20fcac126f7a4c45b5c562b4ea33c4b, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1811668395}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnAccountLoadedEvent
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!1001 &1348134736156474806
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1710,23 +842,76 @@ PrefabInstance:
       propertyPath: m_Name
       value: UI_CatchResult
       objectReference: {fileID: 0}
-    - target: {fileID: 5426746678072244175, guid: 112e4dc1c008b4201a0aaf3ab4bc3368, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7239990912670272606, guid: 112e4dc1c008b4201a0aaf3ab4bc3368, type: 3}
-      propertyPath: onConfirmEvent.m_PersistentCalls.m_Calls.Array.size
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7239990912670272606, guid: 112e4dc1c008b4201a0aaf3ab4bc3368, type: 3}
-      propertyPath: onConfirmEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 112e4dc1c008b4201a0aaf3ab4bc3368, type: 3}
+--- !u!1001 &1567454743094395403
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 207421149538431849, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: resultPanel
+      value: 
+      objectReference: {fileID: 353540377}
+    - target: {fileID: 207421149538431849, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: feedbackManager
+      value: 
+      objectReference: {fileID: 1811668395}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.28077
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.54143
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6615413007959440722, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
+      propertyPath: m_Name
+      value: UISystem
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
 --- !u!1001 &4747865631187485759
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1738,10 +923,6 @@ PrefabInstance:
     - target: {fileID: 1134311652507387715, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
       propertyPath: m_Name
       value: UI_ExitSquence
-      objectReference: {fileID: 0}
-    - target: {fileID: 1134311652507387715, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5261655093875130642, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
       propertyPath: m_Camera
@@ -1832,6 +1013,148 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
+--- !u!1001 &4790862282829614014
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5390258252888135031, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: fadeOverlay
+      value: 
+      objectReference: {fileID: 1426438527}
+    - target: {fileID: 5390258252888135031, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: effectLibrary.Array.data[0].prefab
+      value: 
+      objectReference: {fileID: 187482196}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6110863504917805415, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8078747790575405315, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: catchResultPanel
+      value: 
+      objectReference: {fileID: 353540377}
+    - target: {fileID: 8078747790575405315, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: exitSequencePanel
+      value: 
+      objectReference: {fileID: 789344532}
+    - target: {fileID: 8078747790575405315, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: hookingGuidePanel
+      value: 
+      objectReference: {fileID: 1109129940}
+    - target: {fileID: 8078747790575405315, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: safetyWarningPanel
+      value: 
+      objectReference: {fileID: 1382803186}
+    - target: {fileID: 8631416207550898152, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: audioSource
+      value: 
+      objectReference: {fileID: 895790008}
+    - target: {fileID: 8689917105399289365, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: m_Name
+      value: FeedbackSystem
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+--- !u!1001 &8051623763434924034
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353910078895384409, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5298434835740102475, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
+      propertyPath: m_Name
+      value: Tester
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7786a21af849f1f4aaf04b4824fc8c19, type: 3}
 --- !u!1001 &8284569189543697395
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1846,11 +1169,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_Pivot.x
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_Pivot.y
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1870,11 +1193,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 1811
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 837
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1886,7 +1221,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1894,15 +1229,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6888707556089723205, guid: 7ec466a11b18245399cbc3eca03f0cdf, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -1940,10 +1275,6 @@ PrefabInstance:
     - target: {fileID: 3473865224796437876, guid: d67e4641e6258465fbe07608ae4cb515, type: 3}
       propertyPath: m_Name
       value: UI_HookingGuide
-      objectReference: {fileID: 0}
-    - target: {fileID: 3473865224796437876, guid: d67e4641e6258465fbe07608ae4cb515, type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7563037008828458785, guid: d67e4641e6258465fbe07608ae4cb515, type: 3}
       propertyPath: m_Camera
@@ -2038,10 +1369,10 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 215748460}
-  - {fileID: 1259685357}
+  - {fileID: 4790862282829614014}
+  - {fileID: 8051623763434924034}
   - {fileID: 356495721}
   - {fileID: 1203152185}
-  - {fileID: 535876226}
+  - {fileID: 1567454743094395403}
   - {fileID: 1515888570}
   - {fileID: 1348134736156474806}

@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5298434835740102475
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3353910078895384409}
+  - component: {fileID: 1930606145295155786}
+  m_Layer: 0
+  m_Name: Tester
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3353910078895384409
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5298434835740102475}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0, y: 0, z: -0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1930606145295155786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5298434835740102475}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efab85d762c034c5281a8fd6689a7d4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.Test.TempEventTester
+  onAccountLoaded: {fileID: 11400000, guid: b20fcac126f7a4c45b5c562b4ea33c4b, type: 2}
+  onCalibrationComplete: {fileID: 11400000, guid: 7b7958dd3e7dec7449647667934a14a9, type: 2}
+  onRodGrabbed: {fileID: 11400000, guid: 082e4c847ba2c404cb5d6d8d9faedc81, type: 2}
+  onCastStarted: {fileID: 11400000, guid: 931ee3453910b10418c8891d3c4249f4, type: 2}
+  onWaterLanded: {fileID: 11400000, guid: d07781636769ac04d8e401ddcb72dea0, type: 2}
+  onBiteOccurred: {fileID: 11400000, guid: 00e12910434feb94881f1feee9a7d2e0, type: 2}
+  onHookSuccess: {fileID: 11400000, guid: a7688af099690cf4ba832c1e180b72d3, type: 2}
+  onHookFailed: {fileID: 11400000, guid: 067804c037044ae498eb2f501c6f7a4b, type: 2}
+  onMiniGameResult: {fileID: 11400000, guid: bbfd45e1d4d255b4ba9194cbc68588b3, type: 2}
+  onAccountSaved: {fileID: 11400000, guid: 7c4487fbe747d944b90cfa3c6f97eca2, type: 2}
+  onRodStateChanged: {fileID: 0}
+  onSceneLoaded: {fileID: 11400000, guid: 35d43d5921a423a40b678cd0f735d686, type: 2}
+  onTrackingLost: {fileID: 11400000, guid: 2ca19fde3a3afb2498892190d4c9aeec, type: 2}
+  onTensionChanged: {fileID: 11400000, guid: 674a2ef92fbe23645bb044e16e8a2cb6, type: 2}
+  tensionValue: 85
+  onSuccessGaugeChanged: {fileID: 11400000, guid: f84003fc9cd16a24ebd44e0fbca6ca1e, type: 2}
+  successGaugeValue: 50
+  onSafetyWarning: {fileID: 11400000, guid: 5cdaccb8942faec439c90413951574ec, type: 2}
+  safetyLevelValue: 1
