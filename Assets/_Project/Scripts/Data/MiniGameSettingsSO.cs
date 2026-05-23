@@ -28,5 +28,7 @@ namespace VirtualFishing.Data
         [Header("Phase Completion")]
         public float phaseHoldDuration = 2f;           // 반대 방향 유지 시간 (초)
         public float phaseDirectionThreshold = 0.3f;   // 낚싯대 X축 방향 감지 임계값
+        public float normalPhaseDurationMin = 3f;      // Normal 상태에서 자동 phase 완료까지 최소 시간 (초)
+        public float normalPhaseDurationMax = 5f;      // Normal 상태에서 자동 phase 완료까지 최대 시간 (초)
     }
 }
