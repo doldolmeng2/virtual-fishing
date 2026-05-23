@@ -47,6 +47,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float phaseCompleteSlowdownStep = 0.15f;
         [SerializeField] private float minimumPhaseCompleteSpeedMultiplier = 0.45f;
         [SerializeField] private Vector3 visualSpawnPosition;
+        [SerializeField, Range(0f, 100f)] private float inspectorDebugSuccessGauge = 50f;
         [SerializeField] private bool isWaitingAtMovementLimit;
         [SerializeField] private int phaseCompleteCount;
         [SerializeField] private FishPhase inspectorDebugPhase = FishPhase.Phase2;
@@ -261,6 +262,24 @@ namespace VirtualFishing.Core.Fish
             AttachHookedFishToFloat();
 
             Debug.Log("[FishController] Hook success preview applied.");
+        }
+
+        public void PreviewReelingPull()
+        {
+            PreviewReelingPull(inspectorDebugSuccessGauge);
+        }
+
+        public void PreviewReelingPull(float successGauge)
+        {
+            if (currentVisualInstance == null)
+            {
+                Debug.LogWarning("[FishController] PreviewReelingPull skipped: no active fish visual. Start a bite first.");
+                return;
+            }
+
+            MoveFishTowardFloat(successGauge);
+            SetVisualRenderersEnabled(true);
+            Debug.Log($"[FishController] Reeling pull preview applied: successGauge={successGauge:F1}");
         }
 
         private void AttachHookedFishToFloat()
@@ -518,7 +537,10 @@ namespace VirtualFishing.Core.Fish
 
             float progress = Mathf.Clamp01(successGauge / 100f);
             Vector3 targetPosition = Vector3.MoveTowards(target.position, visualSpawnPosition, reelingPullMinDistanceFromFloat);
-            currentVisualInstance.transform.position = Vector3.Lerp(visualSpawnPosition, targetPosition, progress);
+            Vector3 currentPosition = currentVisualInstance.transform.position;
+            currentPosition.y = visualSpawnPosition.y;
+            currentPosition.z = Mathf.Lerp(visualSpawnPosition.z, targetPosition.z, progress);
+            currentVisualInstance.transform.position = currentPosition;
             UpdateSplashPosition();
         }
 
