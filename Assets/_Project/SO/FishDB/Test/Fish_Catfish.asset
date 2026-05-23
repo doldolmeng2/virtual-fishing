@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fish_Catfish
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishSpeciesDataSO
   fishId: Fish_Catfish
-  displayName: Catfish
+  displayName: 메기
   rarityValue: 5
   sizeRangeCm:
     min: 40
@@ -28,4 +28,4 @@ MonoBehaviour:
   baseScore: 420
   fishPrefab: {fileID: 8264218793534278510, guid: ce4ab8efe9a308b4ab2e4d40c6347445, type: 3}
   icon: {fileID: 0}
-  description: Heavy erratic fish for hard bite-flow testing.
+  description: 한국 호수와 저수지에서 볼 수 있는 힘 좋은 야행성 담수어.

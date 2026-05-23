@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80aa74d180c32af4482c0e010d4b09ff, type: 3}
-  m_Name: Fish_Crucian
+  m_Name: Fish_Carp
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishSpeciesDataSO
-  fishId: Fish_Crucian
-  displayName: 붕어
-  rarityValue: 1
+  fishId: Fish_Carp
+  displayName: 잉어
+  rarityValue: 2
   sizeRangeCm:
-    min: 18
-    max: 32
+    min: 35
+    max: 75
   weightRangeKg:
-    min: 0.4
-    max: 1.2
-  baseResistanceValue: 0.8
-  movementPattern: 0
-  minWaitTime: 2
-  maxWaitTime: 5
-  baseScore: 100
+    min: 1.8
+    max: 6.5
+  baseResistanceValue: 1.8
+  movementPattern: 1
+  minWaitTime: 3
+  maxWaitTime: 7
+  baseScore: 260
   fishPrefab: {fileID: 7660056815385157646, guid: 74e9af0b829b51242b0efbce201004e7, type: 3}
   icon: {fileID: 0}
-  description: 한국 저수지에서 흔한 담수어. 잔잔한 움직임으로 기본 테스트에 사용.
+  description: 한국 호수와 저수지에서 대표적인 대형 담수어. 무게감 있는 저항 테스트용.

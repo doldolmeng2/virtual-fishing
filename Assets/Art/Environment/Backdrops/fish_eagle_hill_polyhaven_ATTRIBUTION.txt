@@ -1,0 +1,5 @@
+Kloppenheim 05 Pure Sky - tonemapped JPG resized/imported as Dev_Fish VR sky backdrop
+Authors: Greg Zaal, Jarod Guest
+Source: https://polyhaven.com/a/kloppenheim_05_puresky
+License: CC0 https://polyhaven.com/license
+Usage: Dev_Fish far-distance VR panorama backdrop. Sky-only direction; no mountain/water/ground photo layer.

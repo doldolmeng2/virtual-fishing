@@ -29,6 +29,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private Vector3 hookSuccessLocalOffset = new(0f, -0.05f, 0f);
         [SerializeField] private Vector3 hookSuccessLocalEuler = new(90f, 85f, 0f);
         [SerializeField] private bool hideVisualUntilHookSuccess = true;
+        [SerializeField] private float reelingPullMinDistanceFromFloat = 0.15f;
         [SerializeField] private float hookedFlopAngle = 18f;
         [SerializeField] private float hookedFlopSpeed = 11f;
         [SerializeField] private float hookedFlopVerticalAmount = 0.035f;
@@ -43,8 +44,11 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private FishMoveMode currentMoveMode = FishMoveMode.Stop;
         [SerializeField] private bool isPhaseMovementActive;
         [SerializeField] private float debugMoveSpeed = 1.5f;
+        [SerializeField] private float phaseCompleteSlowdownStep = 0.15f;
+        [SerializeField] private float minimumPhaseCompleteSpeedMultiplier = 0.45f;
         [SerializeField] private Vector3 visualSpawnPosition;
         [SerializeField] private bool isWaitingAtMovementLimit;
+        [SerializeField] private int phaseCompleteCount;
         [SerializeField] private FishPhase inspectorDebugPhase = FishPhase.Phase2;
         [SerializeField] private float currentDifficulty;
         [SerializeField] private MiniGameManager miniGameManager;
@@ -56,6 +60,7 @@ namespace VirtualFishing.Core.Fish
         private bool isHookSuccessPreviewActive;
         private Vector3 hookedBaseLocalPosition;
         private Quaternion hookedBaseLocalRotation;
+        private bool miniGameEventsSubscribed;
 
         public FishSpeciesDataSO CurrentSpecies => currentSpecies;
         public string SpeciesName => currentSpecies != null ? currentSpecies.DisplayName : string.Empty;
@@ -78,8 +83,19 @@ namespace VirtualFishing.Core.Fish
 
         public event Action<Vector3> OnFishMoved;
 
+        private void OnEnable()
+        {
+            SubscribeMiniGameEvents();
+        }
+
+        private void Start()
+        {
+            SubscribeMiniGameEvents();
+        }
+
         private void OnDisable()
         {
+            UnsubscribeMiniGameEvents();
             StopPhaseMovement();
             StopSplashEffect();
         }
@@ -145,6 +161,7 @@ namespace VirtualFishing.Core.Fish
             currentDifficulty = 0f;
             currentPhase = FishPhase.None;
             currentMoveMode = FishMoveMode.Stop;
+            phaseCompleteCount = 0;
             isWaitingAtMovementLimit = false;
             isHookSuccessPreviewActive = false;
 
@@ -190,7 +207,9 @@ namespace VirtualFishing.Core.Fish
 
             if (nextPhase is FishPhase.None)
             {
+                currentPhase = FishPhase.None;
                 StopPhaseMovement();
+                NotifyMiniGameMoveState();
                 Debug.Log("[FishController] Phase cleared. Fish movement stopped.");
                 return;
             }
@@ -202,8 +221,10 @@ namespace VirtualFishing.Core.Fish
             }
 
             currentPhase = nextPhase;
+            currentMoveMode = GetWeightedRandomMoveMode();
             isPhaseMovementActive = true;
             isWaitingAtMovementLimit = false;
+            NotifyMiniGameMoveState();
 
             Debug.Log(
                 $"[FishController] Phase changed: species={SpeciesName}, phase={currentPhase}, moveMode={currentMoveMode}, speed={GetMoveSpeed():F2}");
@@ -216,7 +237,7 @@ namespace VirtualFishing.Core.Fish
 
         public void TriggerRandomMoveMode()
         {
-            SetMoveMode((FishMoveMode)UnityEngine.Random.Range(0, 3));
+            SetMoveMode(GetWeightedRandomMoveMode());
             Debug.Log($"[FishController] Random move trigger applied: mode={currentMoveMode}");
         }
 
@@ -225,6 +246,7 @@ namespace VirtualFishing.Core.Fish
             currentMoveMode = nextMoveMode;
             isPhaseMovementActive = currentSpecies != null;
             isWaitingAtMovementLimit = false;
+            NotifyMiniGameMoveState();
             Debug.Log($"[FishController] Move mode changed by external trigger: mode={currentMoveMode}");
         }
 
@@ -233,6 +255,18 @@ namespace VirtualFishing.Core.Fish
             if (currentVisualInstance == null)
             {
                 Debug.LogWarning("[FishController] PreviewHookSuccess skipped: no active fish visual. Start a bite first.");
+                return;
+            }
+
+            AttachHookedFishToFloat();
+
+            Debug.Log("[FishController] Hook success preview applied.");
+        }
+
+        private void AttachHookedFishToFloat()
+        {
+            if (currentVisualInstance == null)
+            {
                 return;
             }
 
@@ -246,7 +280,9 @@ namespace VirtualFishing.Core.Fish
             }
 
             StopPhaseMovement();
+            StopSplashEffect();
             currentPhase = FishPhase.None;
+            phaseCompleteCount = 0;
             currentVisualInstance.transform.SetParent(target, false);
             currentVisualInstance.transform.localPosition = hookSuccessLocalOffset;
             currentVisualInstance.transform.localRotation = Quaternion.Euler(hookSuccessLocalEuler);
@@ -255,8 +291,6 @@ namespace VirtualFishing.Core.Fish
             isHookSuccessPreviewActive = true;
             SetVisualRenderersEnabled(true);
             UpdateSplashPosition();
-
-            Debug.Log($"[FishController] Hook success preview applied. attachTarget={target.name}");
         }
 
         public FishCatchData BuildCatchData(BackgroundType siteType, string caughtAt)
@@ -449,6 +483,103 @@ namespace VirtualFishing.Core.Fish
                 fishPosition.z);
         }
 
+        private void HandleMiniGamePhaseComplete()
+        {
+            phaseCompleteCount++;
+            TriggerRandomMoveMode();
+            Debug.Log($"[FishController] Phase complete count updated: count={phaseCompleteCount}, speed={GetMoveSpeed():F2}");
+        }
+
+        private void HandleSuccessGaugeChanged(float successGauge)
+        {
+            MoveFishTowardFloat(successGauge);
+        }
+
+        private void HandleMiniGameEnded(bool success)
+        {
+            if (success)
+            {
+                AttachHookedFishToFloat();
+            }
+        }
+
+        private void MoveFishTowardFloat(float successGauge)
+        {
+            if (currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Transform target = FindFloatTransform();
+            if (target == null)
+            {
+                return;
+            }
+
+            float progress = Mathf.Clamp01(successGauge / 100f);
+            Vector3 targetPosition = Vector3.MoveTowards(target.position, visualSpawnPosition, reelingPullMinDistanceFromFloat);
+            currentVisualInstance.transform.position = Vector3.Lerp(visualSpawnPosition, targetPosition, progress);
+            UpdateSplashPosition();
+        }
+
+        private void NotifyMiniGameMoveState()
+        {
+            if (miniGameManager == null)
+            {
+                return;
+            }
+
+            FishMoveState moveState = currentMoveMode switch
+            {
+                FishMoveMode.MoveLeft => FishMoveState.Left,
+                FishMoveMode.MoveRight => FishMoveState.Right,
+                _ => FishMoveState.Normal
+            };
+            miniGameManager.SetFishMoveState(moveState);
+        }
+
+        private void SubscribeMiniGameEvents()
+        {
+            if (miniGameManager == null)
+            {
+                miniGameManager = FindObjectOfType<MiniGameManager>();
+            }
+
+            if (miniGameManager == null || miniGameEventsSubscribed)
+            {
+                return;
+            }
+
+            miniGameManager.OnPhaseComplete += HandleMiniGamePhaseComplete;
+            miniGameManager.OnSuccessGaugeChanged += HandleSuccessGaugeChanged;
+            miniGameManager.OnMiniGameEnded += HandleMiniGameEnded;
+            miniGameEventsSubscribed = true;
+        }
+
+        private void UnsubscribeMiniGameEvents()
+        {
+            if (miniGameManager == null || !miniGameEventsSubscribed)
+            {
+                return;
+            }
+
+            miniGameManager.OnPhaseComplete -= HandleMiniGamePhaseComplete;
+            miniGameManager.OnSuccessGaugeChanged -= HandleSuccessGaugeChanged;
+            miniGameManager.OnMiniGameEnded -= HandleMiniGameEnded;
+            miniGameEventsSubscribed = false;
+        }
+
+        private static FishMoveMode GetWeightedRandomMoveMode()
+        {
+            int roll = UnityEngine.Random.Range(0, 5);
+            return roll switch
+            {
+                0 => FishMoveMode.MoveLeft,
+                1 => FishMoveMode.MoveRight,
+                _ => FishMoveMode.Stop
+            };
+        }
+
         private static Vector3 GetPlaceholderScale(float fishSizeCm)
         {
             float normalizedLength = Mathf.Clamp(fishSizeCm / 40f, 0.4f, 2f);
@@ -458,9 +589,11 @@ namespace VirtualFishing.Core.Fish
         private void BeginPhaseMovement()
         {
             currentPhase = FishPhase.Phase1;
-            currentMoveMode = (FishMoveMode)UnityEngine.Random.Range(0, 3);
+            phaseCompleteCount = 0;
+            currentMoveMode = GetWeightedRandomMoveMode();
             isPhaseMovementActive = true;
             isWaitingAtMovementLimit = false;
+            NotifyMiniGameMoveState();
         }
 
         private void StopPhaseMovement()
@@ -518,14 +651,9 @@ namespace VirtualFishing.Core.Fish
                 _ => 1f
             };
 
-            float phaseSpeedMultiplier = currentPhase switch
-            {
-                FishPhase.Phase1 => 1.35f,
-                FishPhase.Phase3 => 1.15f,
-                FishPhase.Phase2 => 0.95f,
-                FishPhase.Phase4 => 0.7f,
-                _ => 0f
-            };
+            float phaseSpeedMultiplier = Mathf.Max(
+                minimumPhaseCompleteSpeedMultiplier,
+                1f - phaseCompleteCount * phaseCompleteSlowdownStep);
 
             return patternSpeed * debugMoveSpeed * phaseSpeedMultiplier * GetDifficultySpeedMultiplier();
         }
@@ -600,6 +728,8 @@ namespace VirtualFishing.Core.Fish
             }
 
             horizontalMoveLimit = Mathf.Max(0.1f, horizontalMoveLimit);
+            phaseCompleteSlowdownStep = Mathf.Max(0f, phaseCompleteSlowdownStep);
+            minimumPhaseCompleteSpeedMultiplier = Mathf.Clamp01(minimumPhaseCompleteSpeedMultiplier);
         }
 
     }
