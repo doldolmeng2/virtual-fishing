@@ -45,6 +45,9 @@ namespace VirtualFishing.MiniGame
         public float RemainingTime { get; private set; }
         public float SuccessGauge { get; private set; }
 
+        // FeedbackManager에서 현재 잡은 물고기 데이터를 읽어갈 수 있게함
+        public FishCatchData CurrentFishData => _fishData;
+
         public event Action<bool> OnMiniGameEnded;
         public event Action<MiniGameResult> OnMiniGameResultDetailed; // 종료 사유까지 포함된 신호
         public event Action<float> OnSuccessGaugeChanged;
