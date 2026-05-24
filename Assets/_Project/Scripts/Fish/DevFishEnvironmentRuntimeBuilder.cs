@@ -17,7 +17,15 @@ namespace VirtualFishing.Core.Fish
         private const string Grass15Path = "Assets/Art/Environment/Pond/Models/PurePoly_Selected/Prefabs/PP_Grass_15.prefab";
         private const string GroundMaterialPath = "Assets/Art/Environment/Pond/Models/PurePoly_Selected/Materials/PP_Ground.mat";
         private const string WaterMaterialPath = "Assets/Art/Environment/Water/Simple Water Shader/Resources/Water_mat_03.mat";
+        private const string KoreanReservoirBackdropPath = "Assets/Art/Environment/Backdrops/fish_eagle_hill_polyhaven_4k.jpg";
         private const float ScenicForwardOffset = -9f;
+        private const float BackdropRadius = 155f;
+
+        private static readonly Color EarthColor = new(0.34f, 0.31f, 0.26f);
+        private static readonly Color ShoreMudColor = new(0.42f, 0.39f, 0.31f);
+        private static readonly Color SoftGrassColor = new(0.36f, 0.47f, 0.25f);
+        private static readonly Color ReedColor = new(0.45f, 0.5f, 0.25f);
+        private static readonly Color FarRidgeColor = new(0.28f, 0.39f, 0.29f);
 
         private static readonly string[] TreePaths =
         {
@@ -64,8 +72,11 @@ namespace VirtualFishing.Core.Fish
             root.hideFlags = HideFlags.DontSave;
             root.transform.SetParent(parent, false);
 
+            ApplySoftReservoirAtmosphere();
             CreateGround(root.transform);
             CreateWater(root.transform);
+            CreateWaterDepthBands(root.transform);
+            CreateKoreanFishingSiteBackdrop(root.transform);
             CreateMountains(root.transform);
             CreateRocks(root.transform);
             CreateTrees(root.transform, layout);
@@ -81,7 +92,7 @@ namespace VirtualFishing.Core.Fish
             ground.transform.SetParent(parent, false);
             ground.transform.localPosition = OffsetForward(new Vector3(0f, -0.02f, 18f));
             ground.transform.localScale = new Vector3(17f, 1f, 11.5f);
-            AssignMaterial(ground, GroundMaterialPath);
+            AssignMaterial(ground, GroundMaterialPath, EarthColor);
         }
 
         private static void CreateWater(Transform parent)
@@ -98,77 +109,348 @@ namespace VirtualFishing.Core.Fish
             AssignMaterial(water, WaterMaterialPath);
         }
 
+        private static void ApplySoftReservoirAtmosphere()
+        {
+            RenderSettings.fog = false;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.62f, 0.7f, 0.72f);
+            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.47f, 0.42f);
+            RenderSettings.ambientGroundColor = new Color(0.28f, 0.25f, 0.22f);
+
+            Light[] lights = Object.FindObjectsOfType<Light>();
+            foreach (Light sun in lights)
+            {
+                if (sun.type != LightType.Directional)
+                {
+                    continue;
+                }
+
+                sun.transform.rotation = Quaternion.Euler(38f, -32f, 0f);
+                sun.color = new Color(1f, 0.92f, 0.78f);
+                sun.intensity = 0.92f;
+                break;
+            }
+        }
+
+        private static void CreateWaterDepthBands(Transform parent)
+        {
+            Transform root = NewRoot("Pond_WaterDepthBands", parent).transform;
+            CreateFlatTint(root, "Shallow_Edge_Left", OffsetForward(new Vector3(-44f, 0.16f, 11.4f)), new Vector3(5.5f, 1f, 5.8f), new Color(0.47f, 0.66f, 0.62f, 0.24f));
+            CreateFlatTint(root, "Shallow_Edge_Right", OffsetForward(new Vector3(44f, 0.16f, 11.8f)), new Vector3(5.5f, 1f, 5.8f), new Color(0.47f, 0.66f, 0.62f, 0.24f));
+            CreateFlatTint(root, "Shallow_Rear", OffsetForward(new Vector3(0f, 0.165f, 30f)), new Vector3(13f, 1f, 2.4f), new Color(0.48f, 0.66f, 0.58f, 0.18f));
+            CreateFlatTint(root, "Deep_Center", OffsetForward(new Vector3(0f, 0.155f, 13.4f)), new Vector3(8.5f, 1f, 4.8f), new Color(0.18f, 0.34f, 0.42f, 0.16f));
+        }
+
+        private static void CreateFlatTint(Transform parent, string name, Vector3 position, Vector3 scale, Color color)
+        {
+            GameObject plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            plane.name = name;
+            plane.transform.SetParent(parent, false);
+            plane.transform.localPosition = position;
+            plane.transform.localScale = scale;
+
+            Renderer renderer = plane.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.sharedMaterial = CreateTransparentMaterial(color);
+            }
+        }
+
+        private static void CreateKoreanFishingSiteBackdrop(Transform parent)
+        {
+            Transform root = NewRoot("Pond_KoreanFishingSiteBackdrop", parent).transform;
+            Texture2D backdrop = AssetDatabase.LoadAssetAtPath<Texture2D>(KoreanReservoirBackdropPath);
+
+            if (backdrop != null)
+            {
+                CreatePanoramaRing(root, backdrop);
+                return;
+            }
+
+            CreateFallbackHorizonRing(root);
+        }
+
+        private static void CreatePanoramaRing(Transform parent, Texture2D backdrop)
+        {
+            const int segmentCount = 64;
+            const float bottom = -18f;
+            const float height = 76f;
+
+            GameObject ring = new("Far_Panorama_Ring");
+            ring.transform.SetParent(parent, false);
+            ring.transform.localPosition = Vector3.zero;
+
+            Mesh mesh = new();
+            Vector3[] vertices = new Vector3[(segmentCount + 1) * 2];
+            Vector2[] uv = new Vector2[vertices.Length];
+            int[] triangles = new int[segmentCount * 6];
+
+            for (int i = 0; i <= segmentCount; i++)
+            {
+                float t = i / (float)segmentCount;
+                float angle = t * Mathf.PI * 2f;
+                float x = Mathf.Sin(angle) * BackdropRadius;
+                float z = Mathf.Cos(angle) * BackdropRadius;
+                vertices[i * 2] = new Vector3(x, bottom, z);
+                vertices[i * 2 + 1] = new Vector3(x, height, z);
+                uv[i * 2] = new Vector2(t, 0.08f);
+                uv[i * 2 + 1] = new Vector2(t, 0.92f);
+            }
+
+            for (int i = 0; i < segmentCount; i++)
+            {
+                int vertex = i * 2;
+                int triangle = i * 6;
+                triangles[triangle] = vertex;
+                triangles[triangle + 1] = vertex + 3;
+                triangles[triangle + 2] = vertex + 1;
+                triangles[triangle + 3] = vertex;
+                triangles[triangle + 4] = vertex + 2;
+                triangles[triangle + 5] = vertex + 3;
+            }
+
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
+
+            MeshFilter filter = ring.AddComponent<MeshFilter>();
+            MeshRenderer renderer = ring.AddComponent<MeshRenderer>();
+            filter.sharedMesh = mesh;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.sharedMaterial = CreateBackdropImageMaterial(backdrop, new Color(0.82f, 0.9f, 0.92f));
+        }
+
+        private static void CreateFallbackHorizonRing(Transform parent)
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = i * 45f;
+                float radian = angle * Mathf.Deg2Rad;
+                Vector3 position = new(Mathf.Sin(radian) * BackdropRadius, 17f, Mathf.Cos(radian) * BackdropRadius);
+                CreateRidgeStrip(parent, $"Far_Fallback_Horizon_{i + 1:00}", position, 82f, 12f, new Vector3(0f, angle, 0f), new Color(0.52f, 0.61f, 0.58f), 1.1f);
+            }
+        }
+
+        private static void CreateBackdropImagePanel(Transform parent, string name, Vector3 position, Vector2 size, Vector3 euler, Texture2D texture, Color tint)
+        {
+            GameObject panel = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            panel.name = name;
+            panel.transform.SetParent(parent, false);
+            panel.transform.localPosition = position;
+            panel.transform.localRotation = Quaternion.Euler(euler);
+            panel.transform.localScale = new Vector3(size.x, size.y, 1f);
+
+            Renderer renderer = panel.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.sharedMaterial = CreateBackdropImageMaterial(texture, tint);
+            }
+        }
+
+        private static void CreateBackdropCube(Transform parent, string name, Vector3 position, Vector3 scale, Vector3 euler, Color color)
+        {
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = name;
+            cube.transform.SetParent(parent, false);
+            cube.transform.localPosition = position;
+            cube.transform.localRotation = Quaternion.Euler(euler);
+            cube.transform.localScale = scale;
+
+            Renderer renderer = cube.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.sharedMaterial = CreateLitMaterial(color);
+            }
+        }
+
+        private static void CreateRidgeStrip(Transform parent, string name, Vector3 center, float width, float height, Vector3 euler, Color color, float roughness)
+        {
+            const int segmentCount = 18;
+            GameObject ridge = new(name);
+            ridge.transform.SetParent(parent, false);
+            ridge.transform.localPosition = center;
+            ridge.transform.localRotation = Quaternion.Euler(euler);
+
+            Mesh mesh = new();
+            Vector3[] vertices = new Vector3[(segmentCount + 1) * 2];
+            int[] triangles = new int[segmentCount * 6];
+
+            for (int i = 0; i <= segmentCount; i++)
+            {
+                float t = i / (float)segmentCount;
+                float x = Mathf.Lerp(-width * 0.5f, width * 0.5f, t);
+                float noise = Mathf.Sin(i * 1.37f) * roughness + Mathf.Cos(i * 0.61f) * roughness * 0.45f;
+                float top = height + noise;
+                vertices[i * 2] = new Vector3(x, 0f, 0f);
+                vertices[i * 2 + 1] = new Vector3(x, Mathf.Max(0.4f, top), Mathf.Sin(i * 0.9f) * 0.7f);
+            }
+
+            for (int i = 0; i < segmentCount; i++)
+            {
+                int vertex = i * 2;
+                int triangle = i * 6;
+                triangles[triangle] = vertex;
+                triangles[triangle + 1] = vertex + 1;
+                triangles[triangle + 2] = vertex + 3;
+                triangles[triangle + 3] = vertex;
+                triangles[triangle + 4] = vertex + 3;
+                triangles[triangle + 5] = vertex + 2;
+            }
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
+
+            MeshFilter filter = ridge.AddComponent<MeshFilter>();
+            MeshRenderer renderer = ridge.AddComponent<MeshRenderer>();
+            filter.sharedMesh = mesh;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.sharedMaterial = CreateLitMaterial(color);
+        }
+
+        private static void CreateFarRidges(Transform parent)
+        {
+            Transform root = NewRoot("Pond_FarRidges", parent).transform;
+
+            CreateRidgeStrip(root, "Rear_LowForest_Ridge", new Vector3(0f, 1.2f, 94f), 176f, 13f, Vector3.zero, FarRidgeColor, 1.6f);
+            CreateRidgeStrip(root, "Rear_Earth_Shoreline", new Vector3(0f, 0.08f, 38f), 134f, 2.8f, Vector3.zero, ShoreMudColor, 0.45f);
+            CreateRidgeStrip(root, "Left_LowForest_Ridge", new Vector3(-86f, 1.1f, 32f), 92f, 10f, new Vector3(0f, 90f, 0f), new Color(0.26f, 0.37f, 0.26f), 1.2f);
+            CreateRidgeStrip(root, "Right_LowForest_Ridge", new Vector3(86f, 1.1f, 32f), 92f, 10f, new Vector3(0f, 90f, 0f), new Color(0.26f, 0.37f, 0.26f), 1.2f);
+        }
+
         private static void CreateMountains(Transform parent)
         {
             Transform root = NewRoot("Pond_Mountains", parent).transform;
-            PlacePrefab(Mountain01Path, "Mountain_BackCenter", root, new Vector3(-20f, -11f, 68f), new Vector3(0f, 6f, 0f), Vector3.one * 1.65f);
-            PlacePrefab(Mountain02Path, "Mountain_BackLeft", root, new Vector3(-70f, -14f, 66f), new Vector3(0f, 18f, 0f), Vector3.one * 2.25f);
-            PlacePrefab(Mountain02Path, "Mountain_BackRight", root, new Vector3(42f, -13f, 67f), new Vector3(0f, -16f, 0f), Vector3.one * 2.05f);
-            PlacePrefab(Mountain01Path, "Mountain_FarLeft", root, new Vector3(-108f, -18f, 86f), new Vector3(0f, 12f, 0f), Vector3.one * 2.85f);
-            PlacePrefab(Mountain01Path, "Mountain_FarRight", root, new Vector3(92f, -17f, 88f), new Vector3(0f, -10f, 0f), Vector3.one * 2.65f);
-            PlacePrefab(Mountain02Path, "Mountain_FarCenter", root, new Vector3(6f, -19f, 100f), new Vector3(0f, -4f, 0f), Vector3.one * 2.75f);
+            PlacePrefab(Mountain01Path, "Mountain_BackLeft", root, new Vector3(-54f, -10f, 70f), new Vector3(0f, 13f, 0f), Vector3.one * 1.82f);
+            PlacePrefab(Mountain02Path, "Mountain_BackRight", root, new Vector3(54f, -10f, 72f), new Vector3(0f, -13f, 0f), Vector3.one * 1.78f);
+            PlacePrefab(Mountain02Path, "Mountain_BackMidLeft", root, new Vector3(-24f, -16f, 92f), new Vector3(0f, 5f, 0f), Vector3.one * 1.42f);
+            PlacePrefab(Mountain01Path, "Mountain_BackMidRight", root, new Vector3(27f, -16f, 94f), new Vector3(0f, -6f, 0f), Vector3.one * 1.36f);
+            PlacePrefab(Mountain01Path, "Mountain_BackLowCenter", root, new Vector3(0f, -19f, 105f), new Vector3(0f, 0f, 0f), Vector3.one * 1.22f);
+            PlacePrefab(Mountain02Path, "Mountain_FarLayer_Left", root, new Vector3(-82f, -22f, 124f), new Vector3(0f, 18f, 0f), Vector3.one * 1.52f);
+            PlacePrefab(Mountain01Path, "Mountain_FarLayer_MidLeft", root, new Vector3(-38f, -24f, 138f), new Vector3(0f, 8f, 0f), Vector3.one * 1.26f);
+            PlacePrefab(Mountain02Path, "Mountain_FarLayer_Center", root, new Vector3(8f, -25f, 146f), new Vector3(0f, -2f, 0f), Vector3.one * 1.18f);
+            PlacePrefab(Mountain01Path, "Mountain_FarLayer_MidRight", root, new Vector3(43f, -24f, 137f), new Vector3(0f, -8f, 0f), Vector3.one * 1.28f);
+            PlacePrefab(Mountain02Path, "Mountain_FarLayer_Right", root, new Vector3(86f, -22f, 124f), new Vector3(0f, -18f, 0f), Vector3.one * 1.5f);
+            PlacePrefab(Mountain01Path, "Mountain_Distant_Silhouette_Left", root, new Vector3(-118f, -30f, 160f), new Vector3(0f, 24f, 0f), Vector3.one * 1.65f);
+            PlacePrefab(Mountain02Path, "Mountain_Distant_Silhouette_Right", root, new Vector3(120f, -30f, 162f), new Vector3(0f, -24f, 0f), Vector3.one * 1.62f);
+            PlacePrefab(Mountain01Path, "Mountain_LeftWrap", root, new Vector3(-98f, -15f, 62f), new Vector3(0f, 30f, 0f), Vector3.one * 1.7f);
+            PlacePrefab(Mountain02Path, "Mountain_RightWrap", root, new Vector3(98f, -15f, 62f), new Vector3(0f, -30f, 0f), Vector3.one * 1.66f);
         }
 
         private static void CreateRocks(Transform parent)
         {
             Transform root = NewRoot("Pond_Rocks", parent).transform;
-            for (int i = 0; i < 40; i++)
+            CreateShoreMudPatches(root);
+
+            Vector3[] clusterCenters =
             {
-                float side = i % 2 == 0 ? -1f : 1f;
-                float band = (i % 10) / 9f;
-                float x = side * (13f + band * 48f + Mathf.Sin(i * 1.3f) * 3.4f);
-                float z = 5f + (i % 8) * 4.2f + Mathf.Cos(i * 0.71f) * 2.4f;
-                float scale = 0.5f + (i % 6) * 0.1f;
-                string path = i % 3 == 0 ? Rock05Path : Rock10Path;
-                PlacePrefab(path, $"Rock_{i + 1:00}", root, new Vector3(x, 0.05f, z), new Vector3(0f, i * 37f, 0f), Vector3.one * scale);
+                new(-52f, 0.03f, 10f),
+                new(-35f, 0.03f, 29f),
+                new(31f, 0.03f, 31f),
+                new(55f, 0.03f, 11f),
+                new(-10f, 0.03f, 34f),
+                new(15f, 0.03f, 35f),
+                new(-22f, 0.03f, 15f),
+                new(22f, 0.03f, 15f),
+                new(-12f, 0.03f, 24f),
+                new(12f, 0.03f, 24f),
+                new(-64f, 0.03f, 27f),
+                new(64f, 0.03f, 27f)
+            };
+
+            int index = 0;
+            foreach (Vector3 center in clusterCenters)
+            {
+                int count = Mathf.Abs(center.x) > 45f ? 9 : 7;
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = (i * 137f + index * 19f) * Mathf.Deg2Rad;
+                    float radius = 1.2f + (i % 4) * 0.9f;
+                    Vector3 position = center + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius * 0.65f);
+                    float scale = 0.36f + (i % 5) * 0.08f;
+                    string path = (i + index) % 3 == 0 ? Rock05Path : Rock10Path;
+                    PlacePrefab(path, $"ShoreRock_{index + 1:00}", root, position, new Vector3(0f, index * 41f, 0f), Vector3.one * scale);
+                    index++;
+                }
+            }
+        }
+
+        private static void CreateShoreMudPatches(Transform parent)
+        {
+            CreateShorePatch(parent, "Rear_Shore_MudBand", OffsetForward(new Vector3(0f, 0.035f, 39f)), 132f, 5f, Vector3.zero, ShoreMudColor, 0.9f);
+            CreateShorePatch(parent, "Left_Shore_MudPatch", OffsetForward(new Vector3(-55f, 0.035f, 18f)), 24f, 14f, new Vector3(0f, -8f, 0f), new Color(0.39f, 0.36f, 0.29f), 0.7f);
+            CreateShorePatch(parent, "Right_Shore_MudPatch", OffsetForward(new Vector3(55f, 0.035f, 18f)), 24f, 14f, new Vector3(0f, 8f, 0f), new Color(0.39f, 0.36f, 0.29f), 0.7f);
+        }
+
+        private static void CreateShorePatch(Transform parent, string name, Vector3 center, float width, float depth, Vector3 euler, Color color, float roughness)
+        {
+            const int segmentCount = 18;
+            GameObject shore = new(name);
+            shore.transform.SetParent(parent, false);
+            shore.transform.localPosition = center;
+            shore.transform.localRotation = Quaternion.Euler(euler);
+
+            Mesh mesh = new();
+            Vector3[] vertices = new Vector3[(segmentCount + 1) * 2];
+            Vector2[] uv = new Vector2[vertices.Length];
+            int[] triangles = new int[segmentCount * 6];
+
+            for (int i = 0; i <= segmentCount; i++)
+            {
+                float t = i / (float)segmentCount;
+                float x = Mathf.Lerp(-width * 0.5f, width * 0.5f, t);
+                float wobble = Mathf.Sin(i * 1.17f) * roughness + Mathf.Cos(i * 0.73f) * roughness * 0.55f;
+                vertices[i * 2] = new Vector3(x, 0f, -depth * 0.5f + wobble);
+                vertices[i * 2 + 1] = new Vector3(x, 0f, depth * 0.5f + wobble * 0.35f);
+                uv[i * 2] = new Vector2(t, 0f);
+                uv[i * 2 + 1] = new Vector2(t, 1f);
             }
 
-            for (int i = 0; i < 28; i++)
+            for (int i = 0; i < segmentCount; i++)
             {
-                float t = i / 27f;
-                float x = Mathf.Lerp(-68f, 68f, t) + Mathf.Sin(i * 1.9f) * 4.8f;
-                float z = 27f + Mathf.Sin(t * Mathf.PI * 6f) * 3.4f + Mathf.Cos(i * 0.46f) * 1.8f;
-                float scale = 0.46f + (i % 5) * 0.09f;
-                string path = i % 2 == 0 ? Rock10Path : Rock05Path;
-                PlacePrefab(path, $"RearRock_{i + 1:00}", root, new Vector3(x, 0.04f, z), new Vector3(0f, 19f + i * 41f, 0f), Vector3.one * scale);
+                int vertex = i * 2;
+                int triangle = i * 6;
+                triangles[triangle] = vertex;
+                triangles[triangle + 1] = vertex + 1;
+                triangles[triangle + 2] = vertex + 3;
+                triangles[triangle + 3] = vertex;
+                triangles[triangle + 4] = vertex + 3;
+                triangles[triangle + 5] = vertex + 2;
             }
+
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
+
+            MeshFilter filter = shore.AddComponent<MeshFilter>();
+            MeshRenderer renderer = shore.AddComponent<MeshRenderer>();
+            filter.sharedMesh = mesh;
+            renderer.sharedMaterial = CreateLitMaterial(color);
         }
 
         private static void CreateTrees(Transform parent, DevFishEnvironmentLayoutSO layout)
         {
             Transform root = NewRoot("Pond_Trees", parent).transform;
             int index = 0;
-
-            for (int row = 0; row < 8; row++)
-            {
-                for (int col = 0; col < 7; col++)
-                {
-                    float leftX = -58f + col * 6.4f + Mathf.Sin((row + col) * 1.4f) * 2.4f;
-                    float rightX = 20f + col * 6.2f + Mathf.Cos((row + col) * 1.2f) * 2f;
-                    float z = 8f + row * 5.1f + Mathf.Sin(col * 1.7f) * 1.8f;
-                    PlaceTree(root, index++, new Vector3(leftX, 0f, z), 0.78f + (index % 6) * 0.055f);
-                    PlaceTree(root, index++, new Vector3(rightX, 0f, z + 0.8f), 0.78f + (index % 6) * 0.055f);
-                }
-            }
-
-            for (int i = 0; i < 44; i++)
-            {
-                float side = i % 2 == 0 ? -1f : 1f;
-                float t = i / 43f;
-                float x = side * (Mathf.Lerp(48f, 73f, (i % 6) / 5f) + Mathf.Sin(i * 1.61f) * 2.8f);
-                float z = Mathf.Lerp(-2f, 47f, t) + Mathf.Cos(i * 0.83f) * 3f;
-                float scale = Mathf.Lerp(layout.SideTreeScaleRange.x, layout.SideTreeScaleRange.y, (i % 4) / 3f);
-                PlaceTree(root, index++, new Vector3(x, 0f, z), scale);
-            }
-
-            for (int i = 0; i < 34; i++)
-            {
-                float t = i / 33f;
-                float x = Mathf.Lerp(-76f, 76f, t) + Mathf.Sin(i * 2.05f) * 4.4f;
-                float z = 36f + Mathf.Sin(t * Mathf.PI * 7f) * 4.2f + Mathf.Cos(i * 0.64f) * 2f;
-                float scale = 0.68f + (i % 6) * 0.065f;
-                PlaceTree(root, index++, new Vector3(x, 0f, z), scale);
-            }
+            index = CreateTreeCluster(root, index, new Vector3(-60f, 0f, 17f), 22, 16f, 10f, new Vector2(0.82f, 1.18f), true);
+            index = CreateTreeCluster(root, index, new Vector3(60f, 0f, 18f), 22, 16f, 10f, new Vector2(0.82f, 1.18f), true);
+            index = CreateTreeCluster(root, index, new Vector3(-43f, 0f, 38f), 24, 20f, 8f, new Vector2(0.62f, 0.98f), false);
+            index = CreateTreeCluster(root, index, new Vector3(43f, 0f, 38f), 24, 20f, 8f, new Vector2(0.62f, 0.98f), false);
+            index = CreateTreeCluster(root, index, new Vector3(-16f, 0f, 45f), 15, 14f, 5f, new Vector2(0.5f, 0.78f), false);
+            index = CreateTreeCluster(root, index, new Vector3(18f, 0f, 45f), 15, 14f, 5f, new Vector2(0.5f, 0.78f), false);
+            index = CreateTreeCluster(root, index, new Vector3(-82f, 0f, 34f), 12, 10f, 9f, new Vector2(0.66f, 0.96f), true);
+            CreateTreeCluster(root, index, new Vector3(82f, 0f, 34f), 12, 10f, 9f, new Vector2(0.66f, 0.96f), true);
         }
 
         private static void CreateGrass(Transform parent, DevFishEnvironmentLayoutSO layout)
@@ -176,34 +458,70 @@ namespace VirtualFishing.Core.Fish
             Transform root = NewRoot("Pond_Grass", parent).transform;
             string[] grassPaths = { Grass11Path, Grass15Path };
 
-            for (int i = 0; i < layout.SideGrassCount; i++)
+            int index = 0;
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(-48f, 0f, 10f), 58, 10f, 4.8f, new Vector2(0.46f, 0.68f), false);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(48f, 0f, 11f), 58, 10f, 4.8f, new Vector2(0.46f, 0.68f), false);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(-36f, 0f, 31f), 66, 14f, 4.4f, new Vector2(0.46f, 0.64f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(36f, 0f, 32f), 66, 14f, 4.4f, new Vector2(0.46f, 0.64f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(-10f, 0f, 36f), 42, 11f, 3.2f, new Vector2(0.44f, 0.62f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(12f, 0f, 36f), 42, 11f, 3.2f, new Vector2(0.44f, 0.62f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(-28f, -0.04f, 7f), 48, 8f, 2.4f, new Vector2(0.46f, 0.7f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(26f, -0.04f, 8f), 48, 8f, 2.4f, new Vector2(0.46f, 0.7f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(0f, -0.04f, 29f), 42, 15f, 2f, new Vector2(0.44f, 0.66f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(-15f, -0.04f, 13f), 42, 7f, 2f, new Vector2(0.42f, 0.64f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(15f, -0.04f, 13f), 42, 7f, 2f, new Vector2(0.42f, 0.64f), true);
+            index = CreateGrassCluster(root, layout, grassPaths, index, new Vector3(-62f, 0f, 25f), 36, 8f, 4f, new Vector2(0.44f, 0.62f), false);
+            CreateGrassCluster(root, layout, grassPaths, index, new Vector3(62f, 0f, 25f), 36, 8f, 4f, new Vector2(0.44f, 0.62f), false);
+        }
+
+        private static int CreateTreeCluster(Transform parent, int startIndex, Vector3 center, int count, float radiusX, float radiusZ, Vector2 scaleRange, bool frameOnly)
+        {
+            int index = startIndex;
+            for (int i = 0; i < count; i++)
             {
-                float t = i / Mathf.Max(1f, layout.SideGrassCount - 1f);
-                float side = i % 2 == 0 ? -1f : 1f;
-                float clump = (i % 9) / 8f;
-                float x = side * (24f + Mathf.Sin(i * 1.73f) * 6.2f + clump * 38f);
-                float z = 1f + t * 46f + Mathf.Sin(i * 0.65f) * 3.1f + Mathf.Cos(i * 1.17f) * 1.8f;
-                float scale = Mathf.Lerp(layout.SideGrassScaleRange.x, layout.SideGrassScaleRange.y, (i % 5) / 4f);
-                PlacePrefab(grassPaths[i % grassPaths.Length], $"Grass_{i + 1:00}", root, new Vector3(x, 0f, z), new Vector3(0f, i * 37f, 0f), Vector3.one * scale);
+                float angle = (i * 137.5f + startIndex * 11f) * Mathf.Deg2Rad;
+                float radius = Mathf.Sqrt((i + 1f) / count);
+                float x = center.x + Mathf.Cos(angle) * radiusX * radius;
+                float z = center.z + Mathf.Sin(angle) * radiusZ * radius;
+
+                if (!frameOnly && Mathf.Abs(x) < 10f && z < 45f)
+                {
+                    x += x < 0f ? -10f : 10f;
+                }
+
+                float scaleT = (i % 7) / 6f;
+                float scale = Mathf.Lerp(scaleRange.x, scaleRange.y, scaleT);
+                PlaceTree(parent, index++, new Vector3(x, 0f, z), scale);
             }
 
-            for (int i = 0; i < layout.RearGrassCount; i++)
+            return index;
+        }
+
+        private static int CreateGrassCluster(Transform parent, DevFishEnvironmentLayoutSO layout, string[] grassPaths, int startIndex, Vector3 center, int count, float radiusX, float radiusZ, Vector2 scaleRange, bool reeds)
+        {
+            int index = startIndex;
+            for (int i = 0; i < count; i++)
             {
-                float t = i / Mathf.Max(1f, layout.RearGrassCount - 1f);
-                float x = Mathf.Lerp(-72f, 72f, t) + Mathf.Sin(i * 1.91f) * 4.8f;
-                float z = 27f + Mathf.Sin(t * Mathf.PI * 9f) * 4f + Mathf.Cos(i * 0.77f) * 2.2f;
-                float scale = Mathf.Lerp(layout.RearGrassScaleRange.x, layout.RearGrassScaleRange.y, (i % 4) / 3f);
-                CreateFallbackGrass(root, layout, new Vector3(x, 0f, z), new Vector3(0f, i * 31f, 0f), Vector3.one * scale);
+                float angle = (i * 109f + startIndex * 7f) * Mathf.Deg2Rad;
+                float radius = Mathf.Sqrt((i + 0.5f) / count);
+                Vector3 position = center + new Vector3(Mathf.Cos(angle) * radiusX * radius, 0f, Mathf.Sin(angle) * radiusZ * radius);
+                float scale = Mathf.Lerp(scaleRange.x, scaleRange.y, (i % 6) / 5f);
+
+                if (reeds || i % 3 == 0)
+                {
+                    Vector3 reedScale = Vector3.one * scale;
+                    reedScale.y *= 1.15f;
+                    CreateFallbackGrass(parent, layout, position, new Vector3(0f, index * 29f, 0f), reedScale);
+                }
+                else
+                {
+                    PlacePrefab(grassPaths[index % grassPaths.Length], $"Grass_{index + 1:00}", parent, position, new Vector3(0f, index * 37f, 0f), Vector3.one * scale);
+                }
+
+                index++;
             }
 
-            for (int i = 0; i < layout.AquaticGrassCount; i++)
-            {
-                float t = i / Mathf.Max(1f, layout.AquaticGrassCount - 1f);
-                float x = Mathf.Lerp(-53f, 53f, t) + Mathf.Sin(i * 2.11f) * 3.5f;
-                float z = 4.5f + Mathf.Sin(t * Mathf.PI * 10f) * 2.8f + Mathf.Cos(i * 0.93f) * 1.2f;
-                float scale = Mathf.Lerp(layout.AquaticGrassScaleRange.x, layout.AquaticGrassScaleRange.y, (i % 5) / 4f);
-                CreateFallbackGrass(root, layout, new Vector3(x, -0.05f, z), new Vector3(0f, i * 43f, 0f), Vector3.one * scale);
-            }
+            return index;
         }
 
         private static void CleanupLegacySceneScenery()
@@ -214,10 +532,13 @@ namespace VirtualFishing.Core.Fish
                 "Pond_LeftHill",
                 "Pond_RightHill",
                 "Pond_Mountains",
+                "Pond_KoreanFishingSiteBackdrop",
+                "Pond_FarRidges",
                 "Pond_Trees",
                 "Pond_Rocks",
                 "Pond_Ground",
-                "Pond_Water"
+                "Pond_Water",
+                "Pond_WaterDepthBands"
             };
 
             foreach (string name in names)
@@ -238,7 +559,8 @@ namespace VirtualFishing.Core.Fish
 
         private static void PlaceTree(Transform parent, int index, Vector3 position, float scale = 1f)
         {
-            PlacePrefab(TreePaths[index % TreePaths.Length], $"Tree_{index + 1:00}", parent, position, new Vector3(0f, index * 29f, 0f), Vector3.one * scale);
+            float rotation = index * 47f + Mathf.Sin(index * 1.37f) * 18f;
+            PlacePrefab(TreePaths[index % TreePaths.Length], $"Tree_{index + 1:00}", parent, position, new Vector3(0f, rotation, 0f), Vector3.one * scale);
         }
 
         private static GameObject NewRoot(string name, Transform parent)
@@ -279,16 +601,36 @@ namespace VirtualFishing.Core.Fish
                 blade.transform.localPosition = new Vector3((i - 3) * 0.22f, layout.BladeBaseHeight + i * layout.BladeHeightStep, (i - 3) * 0.08f);
                 blade.transform.localRotation = Quaternion.Euler(0f, i * 24f, 16f - i * 3f);
                 blade.transform.localScale = layout.BladeScale;
-                blade.GetComponent<Renderer>().sharedMaterial = CreateLitMaterial(new Color(0.24f, 0.5f, 0.2f));
+                blade.GetComponent<Renderer>().sharedMaterial = CreateLitMaterial(i % 2 == 0 ? ReedColor : SoftGrassColor);
             }
         }
 
         private static void AssignMaterial(GameObject target, string path)
         {
+            AssignMaterial(target, path, Color.white);
+        }
+
+        private static void AssignMaterial(GameObject target, string path, Color tint)
+        {
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null && target.TryGetComponent(out Renderer renderer))
             {
-                renderer.sharedMaterial = material;
+                Material instance = new(material) { hideFlags = HideFlags.DontSave };
+
+                if (tint != Color.white)
+                {
+                    if (instance.HasProperty("_Color"))
+                    {
+                        instance.color = tint;
+                    }
+
+                    if (instance.HasProperty("_BaseColor"))
+                    {
+                        instance.SetColor("_BaseColor", tint);
+                    }
+                }
+
+                renderer.sharedMaterial = instance;
             }
         }
 
@@ -296,6 +638,69 @@ namespace VirtualFishing.Core.Fish
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
             Material material = new(shader) { color = color, hideFlags = HideFlags.DontSave };
+            return material;
+        }
+
+        private static Material CreateTransparentMaterial(Color color)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
+            Material material = new(shader) { color = color, hideFlags = HideFlags.DontSave };
+
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", color);
+            }
+
+            if (material.HasProperty("_Surface"))
+            {
+                material.SetFloat("_Surface", 1f);
+            }
+
+            if (material.HasProperty("_Blend"))
+            {
+                material.SetFloat("_Blend", 0f);
+            }
+
+            if (material.HasProperty("_SrcBlend"))
+            {
+                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            }
+
+            if (material.HasProperty("_DstBlend"))
+            {
+                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            }
+
+            if (material.HasProperty("_ZWrite"))
+            {
+                material.SetInt("_ZWrite", 0);
+            }
+
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            return material;
+        }
+
+        private static Material CreateBackdropImageMaterial(Texture2D texture, Color tint)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Texture") ?? Shader.Find("Standard");
+            Material material = new(shader) { color = tint, hideFlags = HideFlags.DontSave };
+            material.mainTexture = texture;
+
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", texture);
+            }
+
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", tint);
+            }
+
+            if (material.HasProperty("_Cull"))
+            {
+                material.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
+            }
+
             return material;
         }
 

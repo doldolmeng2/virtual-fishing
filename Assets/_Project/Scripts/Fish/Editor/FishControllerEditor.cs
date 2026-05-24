@@ -32,6 +32,16 @@ namespace VirtualFishing.EditorTools
                     fishController.TriggerRandomMoveMode();
                 }
 
+                if (GUILayout.Button("Preview Reeling Pull"))
+                {
+                    fishController.PreviewReelingPull();
+                }
+
+                if (GUILayout.Button("Preview Reeling Pull 100%"))
+                {
+                    fishController.PreviewReelingPull(100f);
+                }
+
                 if (GUILayout.Button("Preview Hook Success"))
                 {
                     fishController.PreviewHookSuccess();

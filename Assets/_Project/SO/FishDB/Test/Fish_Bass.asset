@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Fish_Bass
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishSpeciesDataSO
   fishId: Fish_Bass
-  displayName: Bass
+  displayName: 배스
   rarityValue: 3
   sizeRangeCm:
     min: 28
@@ -28,4 +28,4 @@ MonoBehaviour:
   baseScore: 220
   fishPrefab: {fileID: 1809855982420343196, guid: c8332bb896c977b4cbd4bc368ef59c50, type: 3}
   icon: {fileID: 0}
-  description: Balanced predator fish for medium difficulty testing.
+  description: 국내 저수지에 흔히 서식하는 중형 포식어 테스트 데이터.

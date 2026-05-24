@@ -149,6 +149,12 @@ namespace VirtualFishing.MiniGame
         {
             _currentFishMoveState = fishMoveState;
             _phaseHoldTimer = 0f;
+            _normalPhaseTimer = 0f;
+
+            if (_currentFishMoveState == FishMoveState.Normal)
+            {
+                PickNormalPhaseDuration();
+            }
         }
 
         private void UpdatePhaseHold(Vector3 rodDirection)
@@ -165,6 +171,38 @@ namespace VirtualFishing.MiniGame
                 _phaseHoldTimer = 0f;
                 OnPhaseComplete?.Invoke();
             }
+        }
+
+        private void UpdateNormalPhase()
+        {
+            if (_currentFishMoveState != FishMoveState.Normal)
+            {
+                _normalPhaseTimer = 0f;
+                return;
+            }
+
+            _normalPhaseTimer += Time.deltaTime;
+            if (_normalPhaseTimer < _normalPhaseDuration)
+            {
+                return;
+            }
+
+            _normalPhaseTimer = 0f;
+            PickNormalPhaseDuration();
+            OnPhaseComplete?.Invoke();
+        }
+
+        private void PickNormalPhaseDuration()
+        {
+            if (settings == null)
+            {
+                _normalPhaseDuration = 4f;
+                return;
+            }
+
+            float min = Mathf.Max(0.1f, settings.normalPhaseDurationMin);
+            float max = Mathf.Max(min, settings.normalPhaseDurationMax);
+            _normalPhaseDuration = UnityEngine.Random.Range(min, max);
         }
 
         private bool IsRodInOppositeDirection(Vector3 rodDirection)

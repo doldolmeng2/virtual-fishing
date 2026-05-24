@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80aa74d180c32af4482c0e010d4b09ff, type: 3}
-  m_Name: Fish_Crucian
+  m_Name: Fish_Snakehead
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.FishSpeciesDataSO
-  fishId: Fish_Crucian
-  displayName: 붕어
-  rarityValue: 1
+  fishId: Fish_Snakehead
+  displayName: 가물치
+  rarityValue: 4
   sizeRangeCm:
-    min: 18
-    max: 32
+    min: 45
+    max: 90
   weightRangeKg:
-    min: 0.4
-    max: 1.2
-  baseResistanceValue: 0.8
-  movementPattern: 0
-  minWaitTime: 2
-  maxWaitTime: 5
-  baseScore: 100
-  fishPrefab: {fileID: 7660056815385157646, guid: 74e9af0b829b51242b0efbce201004e7, type: 3}
+    min: 2.5
+    max: 8
+  baseResistanceValue: 2.5
+  movementPattern: 2
+  minWaitTime: 5
+  maxWaitTime: 9
+  baseScore: 460
+  fishPrefab: {fileID: 8264218793534278510, guid: ce4ab8efe9a308b4ab2e4d40c6347445, type: 3}
   icon: {fileID: 0}
-  description: 한국 저수지에서 흔한 담수어. 잔잔한 움직임으로 기본 테스트에 사용.
+  description: 한국 저수지의 강한 포식성 담수어. 빠르고 거친 움직임 테스트용.

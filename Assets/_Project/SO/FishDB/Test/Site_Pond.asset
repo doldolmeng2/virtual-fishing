@@ -22,8 +22,12 @@ MonoBehaviour:
   environmentPrefab: {fileID: 0}
   spawnFishList:
   - speciesDataField: {fileID: 11400000, guid: 57db1531e48a45b3b8c2e1fc4938cd79, type: 2}
-    spawnWeightField: 60
+    spawnWeightField: 35
   - speciesDataField: {fileID: 11400000, guid: 9ff950cfac6144048f6665346a11d786, type: 2}
-    spawnWeightField: 30
+    spawnWeightField: 18
   - speciesDataField: {fileID: 11400000, guid: e87c54b43fc34bdb8fef65ca530dc012, type: 2}
-    spawnWeightField: 10
+    spawnWeightField: 14
+  - speciesDataField: {fileID: 11400000, guid: 5b4d0a8c1f2d4f85a71e99b7c3a6d821, type: 2}
+    spawnWeightField: 22
+  - speciesDataField: {fileID: 11400000, guid: c2f8de71b6424d9e8b9ac47f319d05a6, type: 2}
+    spawnWeightField: 11
