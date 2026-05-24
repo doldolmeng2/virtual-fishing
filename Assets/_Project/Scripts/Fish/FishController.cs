@@ -571,7 +571,9 @@ namespace VirtualFishing.Core.Fish
             splashObject.transform.SetParent(parent);
 
             ParticleSystem particleSystem = splashObject.AddComponent<ParticleSystem>();
+            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             ParticleSystem.MainModule main = particleSystem.main;
+            main.playOnAwake = false;
             main.loop = true;
             main.startLifetime = 0.45f;
             main.startSpeed = 3.2f;
@@ -626,7 +628,9 @@ namespace VirtualFishing.Core.Fish
             splashObject.transform.localScale = Vector3.one * hookSuccessSplashScale;
 
             ParticleSystem particleSystem = splashObject.AddComponent<ParticleSystem>();
+            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             ParticleSystem.MainModule main = particleSystem.main;
+            main.playOnAwake = false;
             main.loop = false;
             main.duration = 1.1f;
             main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 0.9f);
