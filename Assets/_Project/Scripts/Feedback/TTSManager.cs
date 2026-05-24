@@ -1,52 +1,62 @@
-﻿using System;
-using System.Collections;
-using UnityEngine;
-using VirtualFishing.Interfaces;
+﻿using UnityEngine;
+using System.Collections.Generic;
 
 namespace VirtualFishing.Feedback
 {
-    public class TTSManager : MonoBehaviour, ITTSFeedback
+    public class TTSManager : MonoBehaviour
     {
-        public bool IsSpeaking { get; private set; }
-        public event Action OnSpeechComplete;
+        [Header("오디오 소스")]
+        [Tooltip("TTS 음성을 재생할 AudioSource 컴포넌트")]
+        [SerializeField] private AudioSource audioSource;
 
-        private Coroutine speechCoroutine;
+        [Header("TTS 음성 데이터 매핑")]
+        [Tooltip("FeedbackManager에서 호출할 텍스트와 실제 음성 파일(.wav)을 연결하세요.")]
+        [SerializeField] private List<TTSData> ttsList = new List<TTSData>();
+        
+        // 빠른 검색을 위한 내부 딕셔너리
+        private Dictionary<string, AudioClip> ttsDictionary = new Dictionary<string, AudioClip>();
+
+        [System.Serializable]
+        public struct TTSData
+        {
+            [TextArea(2, 3)]
+            public string textMessage; // 예: "캘리브레이션이 완료되었습니다."
+            public AudioClip clip;     // 위 텍스트를 읽어주는 오디오 파일
+        }
+
+        private void Awake()
+        {
+            // AudioSource가 없으면 자동으로 추가
+            if (audioSource == null) 
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+            }
+            
+            // 인스펙터에서 설정한 리스트를 딕셔너리로 변환하여 검색 속도 최적화
+            foreach (var data in ttsList)
+            {
+                if (!ttsDictionary.ContainsKey(data.textMessage))
+                {
+                    ttsDictionary.Add(data.textMessage, data.clip);
+                }
+            }
+        }
 
         public void Speak(string message)
         {
-            Stop(); // 기존 음성이 있다면 중단
-
-            IsSpeaking = true;
-            Debug.Log($"[TTSManager] 음성 출력 중: {message}");
-
-            // 외부 플러그인(Meta Voice SDK, Google Cloud TTS 등) 연동 지점
-            // 구현 전 프로토타입 단계이므로, 임시 딜레이 코루틴으로 완료 이벤트를 시뮬레이션합니다.
-            speechCoroutine = StartCoroutine(SimulateSpeechDelay(message));
-        }
-
-        public void Stop()
-        {
-            if (speechCoroutine != null)
+            // 딕셔너리에서 요청받은 텍스트와 똑같은 음성 파일이 있는지 검색
+            if (ttsDictionary.TryGetValue(message, out AudioClip clip))
             {
-                StopCoroutine(speechCoroutine);
-                speechCoroutine = null;
+                audioSource.clip = clip;
+                audioSource.Play();
+                Debug.Log($"<color=cyan>[TTS 재생]</color> {message}");
             }
-
-            if (IsSpeaking)
+            else
             {
-                IsSpeaking = false;
-                // 외부 TTS API 재생 중지 로직 호출
+                // 파일이 없으면 경고 로그 출력 (개발 중 누락 방지)
+                Debug.LogWarning($"<color=orange>[TTS 경고]</color> 매핑된 오디오 파일이 없습니다: '{message}'\n인스펙터의 TTS List에 이 텍스트를 추가해주세요.");
             }
-        }
-
-        private IEnumerator SimulateSpeechDelay(string message)
-        {
-            // 텍스트 길이에 비례한 임시 대기 시간 계산
-            float simulatedDuration = Mathf.Max(1.0f, message.Length * 0.1f);
-            yield return new WaitForSeconds(simulatedDuration);
-
-            IsSpeaking = false;
-            OnSpeechComplete?.Invoke();
         }
     }
 }
