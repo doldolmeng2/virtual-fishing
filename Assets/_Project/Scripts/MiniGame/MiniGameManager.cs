@@ -114,7 +114,7 @@ namespace VirtualFishing.MiniGame
             float resistance = _fishData.species != null ? _fishData.species.BaseResistance : 1f;
             tensionCalculator.Calculate(resistance, reelingSpeed, _currentFishMoveState, rodDirection);
 
-            UpdatePhaseHold();
+            UpdatePhaseHold(rodDirection);
             UpdateNormalPhase();
             UpdateSuccessGauge(reelingSpeed);
         }
@@ -166,9 +166,9 @@ namespace VirtualFishing.MiniGame
             }
         }
 
-        private void UpdatePhaseHold()
+        private void UpdatePhaseHold(Vector3 rodDirection)
         {
-            if (!IsRodInOppositeDirection())
+            if (!IsRodInOppositeDirection(rodDirection))
             {
                 _phaseHoldTimer = Mathf.Max(0f, _phaseHoldTimer - Time.deltaTime);
                 return;
@@ -214,18 +214,25 @@ namespace VirtualFishing.MiniGame
             _normalPhaseDuration = UnityEngine.Random.Range(min, max);
         }
 
-        private bool IsRodInOppositeDirection()
+        private bool IsRodInOppositeDirection(Vector3 rodDirection)
         {
-            if (rodHandTransform == null) return false;
-
             float threshold = settings != null ? settings.phaseDirectionThreshold : 0.3f;
-            Vector3 center = hmdTransform != null ? hmdTransform.position : Vector3.zero;
-            float xOffset = rodHandTransform.position.x - center.x;
+
+            float xValue;
+            if (rodHandTransform != null)
+            {
+                Vector3 center = hmdTransform != null ? hmdTransform.position : Vector3.zero;
+                xValue = rodHandTransform.position.x - center.x;
+            }
+            else
+            {
+                xValue = rodDirection.x;
+            }
 
             return _currentFishMoveState switch
             {
-                FishMoveState.Left  => xOffset >  threshold,
-                FishMoveState.Right => xOffset < -threshold,
+                FishMoveState.Left  => xValue >  threshold,
+                FishMoveState.Right => xValue < -threshold,
                 _                   => false
             };
         }
