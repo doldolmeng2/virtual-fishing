@@ -25,6 +25,10 @@ namespace VirtualFishing.Account
         public event Action OnAccountLoaded;
         public event Action OnAccountSaved;
 
+        /// <summary>Login 등으로 accountId가 설정된 상태인지.</summary>
+        public bool HasActiveAccount =>
+            accountData != null && !string.IsNullOrEmpty(accountData.accountId);
+
         private string _saveFolderPath;
         private Coroutine _autoSaveCoroutine;
 

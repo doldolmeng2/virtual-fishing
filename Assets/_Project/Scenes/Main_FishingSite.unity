@@ -622,6 +622,7 @@ GameObject:
   - component: {fileID: 421315286}
   - component: {fileID: 421315282}
   - component: {fileID: 421315281}
+  - component: {fileID: 8811223344556677890}
   m_Layer: 0
   m_Name: EventBridge
   m_TagString: Untagged
@@ -962,7 +963,6 @@ Transform:
   - {fileID: 939065972239042035}
   - {fileID: 1010831260}
   - {fileID: 1852815760}
-  - {fileID: 618775857}
   - {fileID: 1038784169}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1193,11 +1193,6 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4432986586034886833, guid: 42c51d7d30513a444a0cefcefcc59f8a, type: 3}
   m_PrefabInstance: {fileID: 609939104}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &618775857 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-  m_PrefabInstance: {fileID: 1945621999}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &629120933
 GameObject:
@@ -2630,63 +2625,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5383835908310366625, guid: 18a08976c799f4649a9506c6053624c4, type: 3}
   m_PrefabInstance: {fileID: 1893853915}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &1945621999
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 523157602}
-    m_Modifications:
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.3
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 13.20199
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3983522489206877821, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8426506923316597035, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
-      propertyPath: m_Name
-      value: AccountManager
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: a04d30e6305788f4eb9676ec5796f58d, type: 3}
 --- !u!224 &1963984750 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 2101296471861602699, guid: 8b88efba90934954cab50e929be821dd, type: 3}
@@ -3222,6 +3160,22 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 404979f6efe538746b54f6d5a877f7ba, type: 3}
+--- !u!114 &8811223344556677890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 421315280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7c3e1f24b6584d09e2f3a1b5c6d7e8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Core.FishCatchAccountBridge
+  onFishCaughtEvent: {fileID: 11400000, guid: be6929c88d1763243b2c1120e344594e, type: 2}
+  accountManager: {fileID: 0}
+  miniGameManager: {fileID: 5674637478222264239}
+  editorFallbackAccountId: TestAccount
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
