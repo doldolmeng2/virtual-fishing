@@ -30,6 +30,12 @@ namespace VirtualFishing.MiniGame
         [Tooltip("실패: 텐션이 0 까지 떨어져 물고기가 도망쳤을 때 발행")]
         [SerializeField] private VoidEventSO onFishEscapedEvent;
 
+        [Header("낚싯대 위치 참조 (Phase 판정용)")]
+        [Tooltip("오른손 컨트롤러 Transform (XR) 또는 시뮬레이션 손 Transform")]
+        [SerializeField] private Transform rodHandTransform;
+        [Tooltip("HMD(카메라) Transform. 비우면 월드 X 절댓값으로 판정")]
+        [SerializeField] private Transform hmdTransform;
+
         [Header("UI")]
         [SerializeField] private FishController fishController;
         [SerializeField] private FishIndicatorUI fishIndicatorUI;
@@ -108,7 +114,7 @@ namespace VirtualFishing.MiniGame
             float resistance = _fishData.species != null ? _fishData.species.BaseResistance : 1f;
             tensionCalculator.Calculate(resistance, reelingSpeed, _currentFishMoveState, rodDirection);
 
-            UpdatePhaseHold(rodDirection);
+            UpdatePhaseHold();
             UpdateNormalPhase();
             UpdateSuccessGauge(reelingSpeed);
         }
@@ -160,9 +166,9 @@ namespace VirtualFishing.MiniGame
             }
         }
 
-        private void UpdatePhaseHold(Vector3 rodDirection)
+        private void UpdatePhaseHold()
         {
-            if (!IsRodInOppositeDirection(rodDirection))
+            if (!IsRodInOppositeDirection())
             {
                 _phaseHoldTimer = Mathf.Max(0f, _phaseHoldTimer - Time.deltaTime);
                 return;
@@ -208,13 +214,18 @@ namespace VirtualFishing.MiniGame
             _normalPhaseDuration = UnityEngine.Random.Range(min, max);
         }
 
-        private bool IsRodInOppositeDirection(Vector3 rodDirection)
+        private bool IsRodInOppositeDirection()
         {
+            if (rodHandTransform == null) return false;
+
             float threshold = settings != null ? settings.phaseDirectionThreshold : 0.3f;
+            Vector3 center = hmdTransform != null ? hmdTransform.position : Vector3.zero;
+            float xOffset = rodHandTransform.position.x - center.x;
+
             return _currentFishMoveState switch
             {
-                FishMoveState.Left  => rodDirection.x >  threshold,
-                FishMoveState.Right => rodDirection.x < -threshold,
+                FishMoveState.Left  => xOffset >  threshold,
+                FishMoveState.Right => xOffset < -threshold,
                 _                   => false
             };
         }
