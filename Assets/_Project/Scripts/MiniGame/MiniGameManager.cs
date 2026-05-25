@@ -30,12 +30,6 @@ namespace VirtualFishing.MiniGame
         [Tooltip("실패: 텐션이 0 까지 떨어져 물고기가 도망쳤을 때 발행")]
         [SerializeField] private VoidEventSO onFishEscapedEvent;
 
-        [Header("낚싯대 위치 참조 (Phase 판정용)")]
-        [Tooltip("오른손 컨트롤러 Transform (XR) 또는 시뮬레이션 손 Transform")]
-        [SerializeField] private Transform rodHandTransform;
-        [Tooltip("HMD(카메라) Transform. 비우면 월드 X 절댓값으로 판정")]
-        [SerializeField] private Transform hmdTransform;
-
         [Header("UI")]
         [SerializeField] private FishController fishController;
         [SerializeField] private FishIndicatorUI fishIndicatorUI;
@@ -217,22 +211,10 @@ namespace VirtualFishing.MiniGame
         private bool IsRodInOppositeDirection(Vector3 rodDirection)
         {
             float threshold = settings != null ? settings.phaseDirectionThreshold : 0.3f;
-
-            float xValue;
-            if (rodHandTransform != null)
-            {
-                Vector3 center = hmdTransform != null ? hmdTransform.position : Vector3.zero;
-                xValue = rodHandTransform.position.x - center.x;
-            }
-            else
-            {
-                xValue = rodDirection.x;
-            }
-
             return _currentFishMoveState switch
             {
-                FishMoveState.Left  => xValue >  threshold,
-                FishMoveState.Right => xValue < -threshold,
+                FishMoveState.Left  => rodDirection.x >  threshold,
+                FishMoveState.Right => rodDirection.x < -threshold,
                 _                   => false
             };
         }

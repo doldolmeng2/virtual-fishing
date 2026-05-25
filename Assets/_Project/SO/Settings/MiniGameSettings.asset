@@ -14,18 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Data.MiniGameSettingsSO
   baseDifficulty: 1
   baseTimeLimit: 60
-  resistanceFactor: 1
-  tensionIncreaseRate: 8.5
-  tensionDecreaseRate: 7
-  tensionMultiplierSide: 1.5
-  tensionMultiplierOpposite: 2
-  gaugeIncreaseRate: 3
-  gaugeDecreaseRate: 5
-  successGaugeMax: 100
-  biteMinTime: 10
-  biteMaxTime: 20
-  biteGapMinTime: 1
-  phaseHoldDuration: 2
-  phaseDirectionThreshold: 0.1
-  normalPhaseDurationMin: 3
-  normalPhaseDurationMax: 5
+  tensionIncreaseRate: 5
+  gaugeIncreaseRate: 10
+  tensionDecreaseRate: 3
