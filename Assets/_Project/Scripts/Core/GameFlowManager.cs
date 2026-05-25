@@ -18,6 +18,7 @@ namespace VirtualFishing.Core
             (GameState.Fishing,      GameState.MiniGame),
             (GameState.Fishing,      GameState.FishingReady),
             (GameState.MiniGame,     GameState.Result),
+            (GameState.MiniGame,     GameState.FishingReady),
             (GameState.Result,       GameState.FishingReady),
             (GameState.Result,       GameState.ExitSequence),
         };
@@ -98,7 +99,7 @@ namespace VirtualFishing.Core
         public void HandleMiniGameResult()
         {
             if (currentState == GameState.MiniGame)
-                TransitionTo(GameState.Result);
+                TransitionTo(GameState.FishingReady);
         }
 
         public void HandleResultConfirmed()
