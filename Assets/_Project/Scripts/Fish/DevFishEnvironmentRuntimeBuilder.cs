@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,6 +19,7 @@ namespace VirtualFishing.Core.Fish
         private const string GroundMaterialPath = "Assets/Art/Environment/Pond/Models/PurePoly_Selected/Materials/PP_Ground.mat";
         private const string WaterMaterialPath = "Assets/Art/Environment/Water/Simple Water Shader/Resources/Water_mat_03.mat";
         private const string KoreanReservoirBackdropPath = "Assets/Art/Environment/Backdrops/fish_eagle_hill_polyhaven_4k.jpg";
+        private const string MountainTriplanarShaderName = "VirtualFishing/FishMountainTriplanar";
         private const float ScenicForwardOffset = -9f;
         private const float BackdropRadius = 155f;
 
@@ -26,6 +28,26 @@ namespace VirtualFishing.Core.Fish
         private static readonly Color SoftGrassColor = new(0.36f, 0.47f, 0.25f);
         private static readonly Color ReedColor = new(0.45f, 0.5f, 0.25f);
         private static readonly Color FarRidgeColor = new(0.28f, 0.39f, 0.29f);
+
+        private static readonly string[] MountainForestTexturePaths =
+        {
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_01.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_02.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_03.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_04.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_05.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_06.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_07.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_jirisan_08.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_bukhansan_01.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_bukhansan_02.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_bukhansan_03.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_bukhansan_04.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_seoraksan_01.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_seoraksan_02.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_seoraksan_03.png",
+            "Assets/Art/Environment/Pond/Textures/MountainForestTiles/korean_forest_tile_seoraksan_04.png"
+        };
 
         private static readonly string[] TreePaths =
         {
@@ -384,6 +406,7 @@ namespace VirtualFishing.Core.Fish
             PlacePrefab(Mountain02Path, "Mountain_Distant_Silhouette_Right", root, new Vector3(120f, -30f, 162f), new Vector3(0f, -24f, 0f), Vector3.one * 1.62f);
             PlacePrefab(Mountain01Path, "Mountain_LeftWrap", root, new Vector3(-98f, -15f, 62f), new Vector3(0f, 30f, 0f), Vector3.one * 1.7f);
             PlacePrefab(Mountain02Path, "Mountain_RightWrap", root, new Vector3(98f, -15f, 62f), new Vector3(0f, -30f, 0f), Vector3.one * 1.66f);
+            ApplyKoreanMountainForestMaterials(root.gameObject);
         }
 
         private static void CreateRocks(Transform parent)
@@ -624,6 +647,200 @@ namespace VirtualFishing.Core.Fish
             instance.transform.localPosition = position;
             instance.transform.localRotation = Quaternion.Euler(euler);
             instance.transform.localScale = scale;
+        }
+
+        private static void ApplyKoreanMountainForestMaterials(GameObject mountainRoot)
+        {
+            Material[] materials = LoadMountainForestMaterials();
+            if (materials.Length == 0)
+            {
+                Debug.LogWarning("[DevFishEnvironmentRuntimeBuilder] Missing Korean mountain forest tile textures.");
+                return;
+            }
+
+            int rendererIndex = 0;
+            foreach (Renderer renderer in mountainRoot.GetComponentsInChildren<Renderer>(true))
+            {
+                Material selected = materials[rendererIndex % materials.Length];
+                Material[] slots = renderer.sharedMaterials;
+                if (slots == null || slots.Length == 0)
+                {
+                    renderer.sharedMaterial = selected;
+                }
+                else
+                {
+                    for (int i = 0; i < slots.Length; i++)
+                    {
+                        slots[i] = selected;
+                    }
+
+                    renderer.sharedMaterials = slots;
+                }
+
+                rendererIndex++;
+            }
+        }
+
+        private static Material[] LoadMountainForestMaterials()
+        {
+            Material[] materials = new Material[MountainForestTexturePaths.Length];
+            int count = 0;
+
+            foreach (string path in MountainForestTexturePaths)
+            {
+                if (File.Exists(path))
+                {
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+                }
+
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (texture == null)
+                {
+                    continue;
+                }
+
+                materials[count] = CreateMountainForestMaterial(texture, count);
+                count++;
+            }
+
+            if (count == materials.Length)
+            {
+                return materials;
+            }
+
+            if (count == 0)
+            {
+                return CreateProceduralMountainForestMaterials();
+            }
+
+            Material[] compact = new Material[count];
+            for (int i = 0; i < count; i++)
+            {
+                compact[i] = materials[i];
+            }
+
+            return compact;
+        }
+
+        private static Material[] CreateProceduralMountainForestMaterials()
+        {
+            Material[] materials = new Material[4];
+            for (int i = 0; i < materials.Length; i++)
+            {
+                materials[i] = CreateMountainForestMaterial(CreateProceduralJirisanTexture(i), i);
+            }
+
+            return materials;
+        }
+
+        private static Texture2D CreateProceduralJirisanTexture(int seed)
+        {
+            const int size = 256;
+            Texture2D texture = new(size, size, TextureFormat.RGBA32, true)
+            {
+                name = $"Generated_JirisanForest_{seed + 1}",
+                hideFlags = HideFlags.DontSave,
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Trilinear,
+                anisoLevel = 2
+            };
+
+            Color low = new(0.17f, 0.27f, 0.14f);
+            Color mid = new(0.32f, 0.47f, 0.22f);
+            Color high = new(0.55f, 0.66f, 0.31f);
+            float phase = seed * 12.37f;
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float nx = (x + phase) / size;
+                    float ny = (y - phase) / size;
+                    float canopy = Mathf.PerlinNoise(nx * 8.5f, ny * 8.5f);
+                    canopy += Mathf.PerlinNoise(nx * 23.0f + 5.1f, ny * 23.0f + 9.7f) * 0.35f;
+                    canopy = Mathf.Clamp01(canopy * 0.72f);
+
+                    Color color = Color.Lerp(low, mid, canopy);
+                    color = Color.Lerp(color, high, Mathf.Clamp01((canopy - 0.48f) * 1.35f));
+                    color *= RandomShade(x, y, seed);
+                    texture.SetPixel(x, y, color);
+                }
+            }
+
+            texture.Apply(true, false);
+            return texture;
+        }
+
+        private static float RandomShade(int x, int y, int seed)
+        {
+            int hash = x * 73856093 ^ y * 19349663 ^ seed * 83492791;
+            hash = (hash << 13) ^ hash;
+            return 0.92f + (1f - ((hash * (hash * hash * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824f) * 0.08f;
+        }
+
+        private static Material CreateMountainForestMaterial(Texture2D texture, int index)
+        {
+            Shader shader = Shader.Find(MountainTriplanarShaderName)
+                ?? Shader.Find("Universal Render Pipeline/Lit")
+                ?? Shader.Find("Standard");
+            Material material = new(shader)
+            {
+                name = $"MAT_Runtime_MountainForest_{index + 1:00}",
+                hideFlags = HideFlags.DontSave,
+                mainTexture = texture,
+                color = new Color(0.56f, 0.67f, 0.36f)
+            };
+
+            texture.wrapMode = TextureWrapMode.Repeat;
+            texture.filterMode = FilterMode.Trilinear;
+            texture.anisoLevel = Mathf.Max(texture.anisoLevel, 2);
+
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", texture);
+            }
+
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", new Color(0.56f, 0.67f, 0.36f));
+            }
+
+            if (material.HasProperty("_Tint"))
+            {
+                material.SetColor("_Tint", new Color(0.66f, 0.82f, 0.45f));
+            }
+
+            if (material.HasProperty("_TileScale"))
+            {
+                material.SetFloat("_TileScale", 0.18f + (index % 4) * 0.025f);
+            }
+
+            if (material.HasProperty("_BlendSharpness"))
+            {
+                material.SetFloat("_BlendSharpness", 5.5f);
+            }
+
+            if (material.HasProperty("_Brightness"))
+            {
+                material.SetFloat("_Brightness", 1.08f);
+            }
+
+            if (material.HasProperty("_TextureStrength"))
+            {
+                material.SetFloat("_TextureStrength", 0.58f);
+            }
+
+            if (material.HasProperty("_Smoothness"))
+            {
+                material.SetFloat("_Smoothness", 0.12f);
+            }
+
+            if (material.HasProperty("_Metallic"))
+            {
+                material.SetFloat("_Metallic", 0f);
+            }
+
+            return material;
         }
 
         private static void CreateFallbackGrass(Transform parent, DevFishEnvironmentLayoutSO layout, Vector3 position, Vector3 euler, Vector3 scale)

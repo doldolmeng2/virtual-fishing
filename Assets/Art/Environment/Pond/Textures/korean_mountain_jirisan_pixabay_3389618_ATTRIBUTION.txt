@@ -1,0 +1,5 @@
+﻿Source: Pixabay
+Page: https://pixabay.com/photos/nature-valley-jirisan-mountain-3389618/
+Download: https://cdn.pixabay.com/photo/2018/05/11/06/45/nature-3389618_1280.jpg
+License: Pixabay Content License
+Notes: Used to create muted Jirisan-style forest slope texture tiles for Dev_Fish mountain materials.
