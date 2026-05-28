@@ -113,9 +113,9 @@ namespace VirtualFishing.Core.Fish
         {
             RenderSettings.fog = false;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.62f, 0.7f, 0.72f);
-            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.47f, 0.42f);
-            RenderSettings.ambientGroundColor = new Color(0.28f, 0.25f, 0.22f);
+            RenderSettings.ambientSkyColor = new Color(0.9f, 0.96f, 1f);
+            RenderSettings.ambientEquatorColor = new Color(0.7f, 0.76f, 0.72f);
+            RenderSettings.ambientGroundColor = new Color(0.46f, 0.44f, 0.4f);
 
             Light[] lights = Object.FindObjectsOfType<Light>();
             foreach (Light sun in lights)
@@ -126,8 +126,8 @@ namespace VirtualFishing.Core.Fish
                 }
 
                 sun.transform.rotation = Quaternion.Euler(38f, -32f, 0f);
-                sun.color = new Color(1f, 0.92f, 0.78f);
-                sun.intensity = 0.92f;
+                sun.color = new Color(1f, 0.96f, 0.86f);
+                sun.intensity = 1.08f;
                 break;
             }
         }
@@ -174,13 +174,53 @@ namespace VirtualFishing.Core.Fish
 
         private static void CreatePanoramaRing(Transform parent, Texture2D backdrop)
         {
-            const int segmentCount = 64;
-            const float bottom = -18f;
-            const float height = 76f;
+            const int verticalBandCount = 48;
+            const float bottom = -20f;
+            const float height = 96f;
+            const float uvBottom = 0.42f;
+            const float uvTop = 0.98f;
 
             GameObject ring = new("Far_Panorama_Ring");
             ring.transform.SetParent(parent, false);
             ring.transform.localPosition = Vector3.zero;
+
+            for (int band = 0; band < verticalBandCount; band++)
+            {
+                float bandStart = band / (float)verticalBandCount;
+                float bandEnd = (band + 1) / (float)verticalBandCount;
+                float bandMiddle = (bandStart + bandEnd) * 0.5f;
+                float fade = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.42f, 1f, bandMiddle));
+                float alpha = bandMiddle < 0.42f
+                    ? 1f
+                    : Mathf.Lerp(0.98f, 0.03f, fade);
+
+                CreatePanoramaBand(
+                    ring.transform,
+                    backdrop,
+                    $"Far_Panorama_Band_{band + 1:00}",
+                    Mathf.Lerp(bottom, height, bandStart),
+                    Mathf.Lerp(bottom, height, bandEnd),
+                    Mathf.Lerp(uvBottom, uvTop, bandStart),
+                    Mathf.Lerp(uvBottom, uvTop, bandEnd),
+                    alpha);
+            }
+        }
+
+        private static void CreatePanoramaBand(
+            Transform parent,
+            Texture2D backdrop,
+            string name,
+            float bottom,
+            float top,
+            float uvBottom,
+            float uvTop,
+            float alpha)
+        {
+            const int segmentCount = 64;
+
+            GameObject band = new(name);
+            band.transform.SetParent(parent, false);
+            band.transform.localPosition = Vector3.zero;
 
             Mesh mesh = new();
             Vector3[] vertices = new Vector3[(segmentCount + 1) * 2];
@@ -194,9 +234,9 @@ namespace VirtualFishing.Core.Fish
                 float x = Mathf.Sin(angle) * BackdropRadius;
                 float z = Mathf.Cos(angle) * BackdropRadius;
                 vertices[i * 2] = new Vector3(x, bottom, z);
-                vertices[i * 2 + 1] = new Vector3(x, height, z);
-                uv[i * 2] = new Vector2(t, 0.08f);
-                uv[i * 2 + 1] = new Vector2(t, 0.92f);
+                vertices[i * 2 + 1] = new Vector3(x, top, z);
+                uv[i * 2] = new Vector2(t, uvBottom);
+                uv[i * 2 + 1] = new Vector2(t, uvTop);
             }
 
             for (int i = 0; i < segmentCount; i++)
@@ -217,12 +257,12 @@ namespace VirtualFishing.Core.Fish
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
-            MeshFilter filter = ring.AddComponent<MeshFilter>();
-            MeshRenderer renderer = ring.AddComponent<MeshRenderer>();
+            MeshFilter filter = band.AddComponent<MeshFilter>();
+            MeshRenderer renderer = band.AddComponent<MeshRenderer>();
             filter.sharedMesh = mesh;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
-            renderer.sharedMaterial = CreateBackdropImageMaterial(backdrop, new Color(0.82f, 0.9f, 0.92f));
+            renderer.sharedMaterial = CreateBackdropImageMaterial(backdrop, new Color(1.14f, 1.18f, 1.2f, alpha));
         }
 
         private static void CreateFallbackHorizonRing(Transform parent)
@@ -701,7 +741,50 @@ namespace VirtualFishing.Core.Fish
                 material.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
             }
 
+            if (tint.a < 0.999f)
+            {
+                ConfigureTransparentMaterial(material);
+            }
+
             return material;
+        }
+
+        private static void ConfigureTransparentMaterial(Material material)
+        {
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+
+            if (material.HasProperty("_Surface"))
+            {
+                material.SetFloat("_Surface", 1f);
+            }
+
+            if (material.HasProperty("_Blend"))
+            {
+                material.SetFloat("_Blend", 0f);
+            }
+
+            if (material.HasProperty("_SrcBlend"))
+            {
+                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            }
+
+            if (material.HasProperty("_DstBlend"))
+            {
+                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            }
+
+            if (material.HasProperty("_ZWrite"))
+            {
+                material.SetInt("_ZWrite", 0);
+            }
+
+            if (material.HasProperty("_AlphaClip"))
+            {
+                material.SetFloat("_AlphaClip", 0f);
+            }
+
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
 
         private static void SetDontSaveRecursive(GameObject root)

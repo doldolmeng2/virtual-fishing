@@ -52,6 +52,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private bool createDefaultSplashWhenMissing = true;
         [SerializeField] private float splashWaterHeight = 0.14f;
         [SerializeField] private float splashFollowYOffset = 0.04f;
+        [SerializeField, Range(0.25f, 1f)] private float biteSplashScaleMultiplier = 0.7f;
 
         [Header("Hook Success Preview")]
         [SerializeField] private Transform hookSuccessAttachTarget;
@@ -65,7 +66,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float previewFloatAirDistance = 1.8f;
         [SerializeField] private float previewFloatAirDrop = 0.55f;
         [SerializeField] private float previewFloatFlyDuration = 1.2f;
-        [SerializeField] private float hookSuccessSplashScale = 2f;
+        [SerializeField] private float hookSuccessSplashScale = 1.35f;
         [SerializeField] private float hookedVisualScaleMultiplier = 1f;
         [SerializeField] private float hookedFlopAngle = 18f;
         [SerializeField] private float hookedFlopSpeed = 11f;
@@ -524,6 +525,7 @@ namespace VirtualFishing.Core.Fish
             }
 
             currentSplashInstance.name = $"{SpeciesName}_BiteSplash";
+            currentSplashInstance.transform.localScale *= biteSplashScaleMultiplier;
             UpdateSplashPosition();
             currentSplashInstance.Play();
         }
@@ -633,24 +635,24 @@ namespace VirtualFishing.Core.Fish
             ParticleSystem.MainModule main = particleSystem.main;
             main.loop = true;
             main.startLifetime = 0.45f;
-            main.startSpeed = 3.2f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.24f, 0.48f);
+            main.startSpeed = 2.45f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.16f, 0.32f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 240;
+            main.maxParticles = 160;
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
-            emission.rateOverTime = 96f;
+            emission.rateOverTime = 62f;
 
             ParticleSystem.ShapeModule shape = particleSystem.shape;
             shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = 0.84f;
+            shape.radius = 0.58f;
             shape.arc = 360f;
 
             ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
             velocity.enabled = true;
-            velocity.y = new ParticleSystem.MinMaxCurve(0.9f, 2.6f);
-            velocity.x = new ParticleSystem.MinMaxCurve(-0.9f, 0.9f);
-            velocity.z = new ParticleSystem.MinMaxCurve(-0.9f, 0.9f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.65f, 1.85f);
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.55f, 0.55f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.55f, 0.55f);
 
             Renderer renderer = particleSystem.GetComponent<Renderer>();
             if (renderer != null)
