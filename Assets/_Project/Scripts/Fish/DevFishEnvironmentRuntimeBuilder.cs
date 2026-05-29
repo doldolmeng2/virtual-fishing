@@ -688,10 +688,7 @@ namespace VirtualFishing.Core.Fish
 
             foreach (string path in MountainForestTexturePaths)
             {
-                if (File.Exists(path))
-                {
-                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-                }
+                ConfigureMountainTextureImport(path);
 
                 Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
                 if (texture == null)
@@ -722,6 +719,69 @@ namespace VirtualFishing.Core.Fish
             return compact;
         }
 
+        private static void ConfigureMountainTextureImport(string assetPath)
+        {
+            if (!File.Exists(ToProjectAbsolutePath(assetPath)))
+            {
+                return;
+            }
+
+            bool changed = false;
+            if (AssetImporter.GetAtPath(assetPath) is TextureImporter importer)
+            {
+                if (importer.textureType != TextureImporterType.Default)
+                {
+                    importer.textureType = TextureImporterType.Default;
+                    changed = true;
+                }
+
+                if (!importer.sRGBTexture)
+                {
+                    importer.sRGBTexture = true;
+                    changed = true;
+                }
+
+                if (importer.wrapMode != TextureWrapMode.Repeat)
+                {
+                    importer.wrapMode = TextureWrapMode.Repeat;
+                    changed = true;
+                }
+
+                if (importer.filterMode != FilterMode.Trilinear)
+                {
+                    importer.filterMode = FilterMode.Trilinear;
+                    changed = true;
+                }
+
+                if (importer.maxTextureSize < 2048)
+                {
+                    importer.maxTextureSize = 2048;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    importer.SaveAndReimport();
+                }
+            }
+
+            if (!changed)
+            {
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            }
+        }
+
+        private static string ToProjectAbsolutePath(string assetPath)
+        {
+            if (!assetPath.StartsWith("Assets/"))
+            {
+                return assetPath;
+            }
+
+            string relativePath = assetPath.Substring("Assets/".Length).Replace('/', Path.DirectorySeparatorChar);
+            return Path.Combine(Application.dataPath, relativePath);
+        }
+
         private static Material[] CreateProceduralMountainForestMaterials()
         {
             Material[] materials = new Material[4];
@@ -745,9 +805,9 @@ namespace VirtualFishing.Core.Fish
                 anisoLevel = 2
             };
 
-            Color low = new(0.17f, 0.27f, 0.14f);
-            Color mid = new(0.32f, 0.47f, 0.22f);
-            Color high = new(0.55f, 0.66f, 0.31f);
+            Color low = new(0.16f, 0.36f, 0.13f);
+            Color mid = new(0.33f, 0.58f, 0.21f);
+            Color high = new(0.62f, 0.78f, 0.32f);
             float phase = seed * 12.37f;
 
             for (int y = 0; y < size; y++)
@@ -788,7 +848,7 @@ namespace VirtualFishing.Core.Fish
                 name = $"MAT_Runtime_MountainForest_{index + 1:00}",
                 hideFlags = HideFlags.DontSave,
                 mainTexture = texture,
-                color = new Color(0.56f, 0.67f, 0.36f)
+                color = new Color(0.34f, 0.52f, 0.24f)
             };
 
             texture.wrapMode = TextureWrapMode.Repeat;
@@ -802,32 +862,97 @@ namespace VirtualFishing.Core.Fish
 
             if (material.HasProperty("_BaseColor"))
             {
-                material.SetColor("_BaseColor", new Color(0.56f, 0.67f, 0.36f));
+                material.SetColor("_BaseColor", new Color(0.34f, 0.52f, 0.24f));
             }
 
-            if (material.HasProperty("_Tint"))
+            if (material.HasProperty("_ForestTint"))
             {
-                material.SetColor("_Tint", new Color(0.66f, 0.82f, 0.45f));
+                material.SetColor("_ForestTint", new Color(0.34f, 0.52f, 0.24f));
             }
 
-            if (material.HasProperty("_TileScale"))
+            if (material.HasProperty("_RockTint"))
             {
-                material.SetFloat("_TileScale", 0.18f + (index % 4) * 0.025f);
+                material.SetColor("_RockTint", new Color(0.34f, 0.31f, 0.24f));
+            }
+
+            if (material.HasProperty("_HeightTint"))
+            {
+                material.SetColor("_HeightTint", new Color(0.46f, 0.52f, 0.4f));
+            }
+
+            if (material.HasProperty("_FogColor"))
+            {
+                material.SetColor("_FogColor", new Color(0.55f, 0.66f, 0.7f));
+            }
+
+            if (material.HasProperty("_TextureScale"))
+            {
+                material.SetFloat("_TextureScale", 0.075f + (index % 4) * 0.0075f);
+            }
+
+            if (material.HasProperty("_DetailScale"))
+            {
+                material.SetFloat("_DetailScale", 0.26f + (index % 3) * 0.035f);
             }
 
             if (material.HasProperty("_BlendSharpness"))
             {
-                material.SetFloat("_BlendSharpness", 5.5f);
+                material.SetFloat("_BlendSharpness", 4.5f);
             }
 
             if (material.HasProperty("_Brightness"))
             {
-                material.SetFloat("_Brightness", 1.08f);
+                material.SetFloat("_Brightness", 1.05f);
             }
 
-            if (material.HasProperty("_TextureStrength"))
+            if (material.HasProperty("_PhotoStrength"))
             {
-                material.SetFloat("_TextureStrength", 0.58f);
+                material.SetFloat("_PhotoStrength", 0.78f);
+            }
+
+            if (material.HasProperty("_Contrast"))
+            {
+                material.SetFloat("_Contrast", 1.08f);
+            }
+
+            if (material.HasProperty("_Saturation"))
+            {
+                material.SetFloat("_Saturation", 1.05f);
+            }
+
+            if (material.HasProperty("_NoiseStrength"))
+            {
+                material.SetFloat("_NoiseStrength", 0.16f);
+            }
+
+            if (material.HasProperty("_SlopeRockStrength"))
+            {
+                material.SetFloat("_SlopeRockStrength", 0.38f);
+            }
+
+            if (material.HasProperty("_HeightRockStrength"))
+            {
+                material.SetFloat("_HeightRockStrength", 0.24f);
+            }
+
+            if (material.HasProperty("_FogBlend"))
+            {
+                material.SetFloat("_FogBlend", 0.18f);
+            }
+
+            if (material.HasProperty("_HeightStart"))
+            {
+                material.SetFloat("_HeightStart", -18f);
+            }
+
+            if (material.HasProperty("_HeightRange"))
+            {
+                material.SetFloat("_HeightRange", 58f);
+            }
+
+            if (material.HasProperty("_DebugMode"))
+            {
+                material.SetFloat("_DebugMode", 0f);
             }
 
             if (material.HasProperty("_Smoothness"))
