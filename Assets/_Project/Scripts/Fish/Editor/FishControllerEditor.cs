@@ -47,6 +47,21 @@ namespace VirtualFishing.EditorTools
                     fishController.PreviewHookSuccess();
                 }
 
+                if (GUILayout.Button("Try Start MiniGame"))
+                {
+                    fishController.TryStartMiniGame();
+                }
+
+                if (GUILayout.Button("Simulate Line Break"))
+                {
+                    fishController.SimulateLineBreak();
+                }
+
+                if (GUILayout.Button("Simulate Fish Escape"))
+                {
+                    fishController.SimulateFishEscape();
+                }
+
                 if (GUILayout.Button("Reset Fish"))
                 {
                     fishController.ResetFish();

@@ -3,13 +3,41 @@ using System.Collections;
 using UnityEngine;
 using VirtualFishing.Data;
 using VirtualFishing.Fishing;
+using VirtualFishing.Fishing.Events;
 using VirtualFishing.Interfaces;
 using VirtualFishing.MiniGame;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace VirtualFishing.Core.Fish
 {
     public class FishController : MonoBehaviour, IFish
     {
+        [Serializable]
+        private sealed class SpeciesCatchEffect
+        {
+            public FishSpeciesDataSO species;
+            public string fishId;
+            public GameObject effectPrefab;
+
+            public bool Matches(FishSpeciesDataSO current)
+            {
+                if (current == null || effectPrefab == null)
+                {
+                    return false;
+                }
+
+                if (species == current)
+                {
+                    return true;
+                }
+
+                return !string.IsNullOrWhiteSpace(fishId)
+                    && string.Equals(fishId, current.FishId, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         [Header("Visual Test Setup")]
         [SerializeField] private Transform spawnRoot;
         [SerializeField] private Vector3 spawnOffset = new(0f, 0.5f, 2.5f);
@@ -24,6 +52,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private bool createDefaultSplashWhenMissing = true;
         [SerializeField] private float splashWaterHeight = 0.14f;
         [SerializeField] private float splashFollowYOffset = 0.04f;
+        [SerializeField, Range(0.25f, 1f)] private float biteSplashScaleMultiplier = 0.7f;
 
         [Header("Hook Success Preview")]
         [SerializeField] private Transform hookSuccessAttachTarget;
@@ -37,11 +66,27 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float previewFloatAirDistance = 1.8f;
         [SerializeField] private float previewFloatAirDrop = 0.55f;
         [SerializeField] private float previewFloatFlyDuration = 1.2f;
-        [SerializeField] private float hookSuccessSplashScale = 2f;
+        [SerializeField] private float hookSuccessSplashScale = 1.35f;
         [SerializeField] private float hookedVisualScaleMultiplier = 1f;
         [SerializeField] private float hookedFlopAngle = 18f;
         [SerializeField] private float hookedFlopSpeed = 11f;
         [SerializeField] private float hookedFlopVerticalAmount = 0.035f;
+
+        [Header("Catch Success Effect")]
+        [SerializeField] private Transform catchEffectRoot;
+        [SerializeField] private GameObject calmCatchEffectPrefab;
+        [SerializeField] private GameObject aggressiveCatchEffectPrefab;
+        [SerializeField] private GameObject erraticCatchEffectPrefab;
+        [SerializeField] private GameObject rareCatchEffectPrefab;
+        [SerializeField] private SpeciesCatchEffect[] speciesCatchEffects = new SpeciesCatchEffect[0];
+        [SerializeField] private float catchEffectLifetime = 3f;
+        [SerializeField] private bool useEditorNamuFxFallback = true;
+
+        [Header("Scenario Lifecycle")]
+        [SerializeField] private FishingRodController rodController;
+        [SerializeField] private bool clearFishWhenRodReturnsToReady = true;
+        [SerializeField] private bool clearFishWhenRodReleased = true;
+        [SerializeField] private bool clearFishOnMiniGameFailure = true;
 
         [Header("Runtime State")]
         [SerializeField] private FishSpeciesDataSO currentSpecies;
@@ -76,6 +121,7 @@ namespace VirtualFishing.Core.Fish
         private Vector3 hookedBaseLocalPosition;
         private Quaternion hookedBaseLocalRotation;
         private bool miniGameEventsSubscribed;
+        private bool rodEventsSubscribed;
 
         public FishSpeciesDataSO CurrentSpecies => currentSpecies;
         public string SpeciesName => currentSpecies != null ? currentSpecies.DisplayName : string.Empty;
@@ -86,6 +132,7 @@ namespace VirtualFishing.Core.Fish
         public float CurrentDifficulty => currentDifficulty;
         public FishPhase CurrentPhase => currentPhase;
         public FishMoveMode CurrentMoveMode => currentMoveMode;
+        public bool IsHookSuccessPreviewActive => isHookSuccessPreviewActive;
         public FishPhase InspectorDebugPhase
         {
             get => inspectorDebugPhase;
@@ -101,16 +148,19 @@ namespace VirtualFishing.Core.Fish
         private void OnEnable()
         {
             SubscribeMiniGameEvents();
+            SubscribeRodEvents();
         }
 
         private void Start()
         {
             SubscribeMiniGameEvents();
+            SubscribeRodEvents();
         }
 
         private void OnDisable()
         {
             UnsubscribeMiniGameEvents();
+            UnsubscribeRodEvents();
             StopPhaseMovement();
             StopSplashEffect();
         }
@@ -277,6 +327,16 @@ namespace VirtualFishing.Core.Fish
             AttachHookedFishToFloat();
 
             Debug.Log("[FishController] Hook success preview applied.");
+        }
+
+        public void SimulateLineBreak()
+        {
+            ClearFishForScenario("line break");
+        }
+
+        public void SimulateFishEscape()
+        {
+            ClearFishForScenario("fish escaped");
         }
 
         public void PreviewReelingPull()
@@ -465,6 +525,7 @@ namespace VirtualFishing.Core.Fish
             }
 
             currentSplashInstance.name = $"{SpeciesName}_BiteSplash";
+            currentSplashInstance.transform.localScale *= biteSplashScaleMultiplier;
             UpdateSplashPosition();
             currentSplashInstance.Play();
         }
@@ -574,24 +635,24 @@ namespace VirtualFishing.Core.Fish
             ParticleSystem.MainModule main = particleSystem.main;
             main.loop = true;
             main.startLifetime = 0.45f;
-            main.startSpeed = 3.2f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.24f, 0.48f);
+            main.startSpeed = 2.45f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.16f, 0.32f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 240;
+            main.maxParticles = 160;
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
-            emission.rateOverTime = 96f;
+            emission.rateOverTime = 62f;
 
             ParticleSystem.ShapeModule shape = particleSystem.shape;
             shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = 0.84f;
+            shape.radius = 0.58f;
             shape.arc = 360f;
 
             ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
             velocity.enabled = true;
-            velocity.y = new ParticleSystem.MinMaxCurve(0.9f, 2.6f);
-            velocity.x = new ParticleSystem.MinMaxCurve(-0.9f, 0.9f);
-            velocity.z = new ParticleSystem.MinMaxCurve(-0.9f, 0.9f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.65f, 1.85f);
+            velocity.x = new ParticleSystem.MinMaxCurve(-0.55f, 0.55f);
+            velocity.z = new ParticleSystem.MinMaxCurve(-0.55f, 0.55f);
 
             Renderer renderer = particleSystem.GetComponent<Renderer>();
             if (renderer != null)
@@ -607,64 +668,111 @@ namespace VirtualFishing.Core.Fish
 
         private void PlayHookSuccessSplash(Vector3 position)
         {
-            Transform parent = splashRoot != null ? splashRoot : transform;
-            ParticleSystem splash = CreateHookSuccessSplash(parent);
-            if (splash == null)
+            GameObject effectPrefab = ResolveCatchEffectPrefab();
+            if (effectPrefab == null)
             {
+                Debug.LogWarning($"[FishController] Catch effect skipped: no NamuFX prefab resolved for {SpeciesName}.");
                 return;
             }
 
-            splash.transform.position = position;
-            splash.Play();
-            Destroy(splash.gameObject, 2.5f);
-        }
+            Transform parent = catchEffectRoot != null
+                ? catchEffectRoot
+                : splashRoot != null
+                    ? splashRoot
+                    : transform;
 
-        private ParticleSystem CreateHookSuccessSplash(Transform parent)
-        {
-            GameObject splashObject = new("Generated_HookSuccessSplash");
-            splashObject.transform.SetParent(parent);
-            splashObject.transform.localScale = Vector3.one * hookSuccessSplashScale;
+            GameObject effectInstance = Instantiate(effectPrefab, position, Quaternion.identity, parent);
+            effectInstance.name = $"{SpeciesName}_CatchSuccessEffect";
+            effectInstance.transform.localScale *= hookSuccessSplashScale;
 
-            ParticleSystem particleSystem = splashObject.AddComponent<ParticleSystem>();
-            ParticleSystem.MainModule main = particleSystem.main;
-            main.loop = false;
-            main.duration = 1.1f;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 0.9f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(1.8f, 3.6f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.24f, 0.58f);
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 180;
-
-            ParticleSystem.EmissionModule emission = particleSystem.emission;
-            emission.rateOverTime = 0f;
-            emission.SetBursts(new[]
+            foreach (ParticleSystem particleSystem in effectInstance.GetComponentsInChildren<ParticleSystem>(true))
             {
-                new ParticleSystem.Burst(0f, 70),
-                new ParticleSystem.Burst(0.12f, 35)
-            });
-
-            ParticleSystem.ShapeModule shape = particleSystem.shape;
-            shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = 0.55f;
-            shape.arc = 360f;
-
-            ParticleSystem.VelocityOverLifetimeModule velocity = particleSystem.velocityOverLifetime;
-            velocity.enabled = true;
-            velocity.y = new ParticleSystem.MinMaxCurve(0.8f, 2.4f);
-            velocity.x = new ParticleSystem.MinMaxCurve(-1.1f, 1.1f);
-            velocity.z = new ParticleSystem.MinMaxCurve(-1.1f, 1.1f);
-
-            Renderer renderer = particleSystem.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material = new Material(Shader.Find("Sprites/Default"))
-                {
-                    color = new Color(0.72f, 0.92f, 1f, 0.78f)
-                };
+                particleSystem.Play(true);
             }
 
-            return particleSystem;
+            Destroy(effectInstance, catchEffectLifetime);
+            Debug.Log($"[FishController] NamuFX catch effect played: fish={SpeciesName}, prefab={effectPrefab.name}");
         }
+
+        private GameObject ResolveCatchEffectPrefab()
+        {
+            if (currentSpecies != null && speciesCatchEffects != null)
+            {
+                foreach (SpeciesCatchEffect effectOverride in speciesCatchEffects)
+                {
+                    if (effectOverride != null && effectOverride.Matches(currentSpecies))
+                    {
+                        return effectOverride.effectPrefab;
+                    }
+                }
+            }
+
+            GameObject configuredPrefab = GetConfiguredCatchEffectPrefab();
+            if (configuredPrefab != null)
+            {
+                return configuredPrefab;
+            }
+
+#if UNITY_EDITOR
+            if (useEditorNamuFxFallback)
+            {
+                return AssetDatabase.LoadAssetAtPath<GameObject>(GetEditorNamuFxPath());
+            }
+#endif
+
+            return null;
+        }
+
+        private GameObject GetConfiguredCatchEffectPrefab()
+        {
+            if (currentSpecies != null && currentSpecies.Rarity >= 4 && rareCatchEffectPrefab != null)
+            {
+                return rareCatchEffectPrefab;
+            }
+
+            return pattern switch
+            {
+                MovementPattern.Aggressive => aggressiveCatchEffectPrefab,
+                MovementPattern.Erratic => erraticCatchEffectPrefab,
+                _ => calmCatchEffectPrefab
+            };
+        }
+
+#if UNITY_EDITOR
+        private string GetEditorNamuFxPath()
+        {
+            const string root = "Assets/Art/Environment/Water/NamuFX/StylizedWaterEffects/Prefabs";
+
+            if (currentSpecies != null)
+            {
+                switch (currentSpecies.FishId)
+                {
+                    case "Fish_Crucian":
+                        return $"{root}/Water_Impact.prefab";
+                    case "Fish_Carp":
+                        return $"{root}/Water_Splash_A.prefab";
+                    case "Fish_Bass":
+                        return $"{root}/Water_Splash_B.prefab";
+                    case "Fish_Snakehead":
+                        return $"{root}/Water_Explosion.prefab";
+                    case "Fish_Catfish":
+                        return $"{root}/Water_Ball_Explosion.prefab";
+                }
+            }
+
+            if (currentSpecies != null && currentSpecies.Rarity >= 4)
+            {
+                return $"{root}/Water_Ball_Explosion.prefab";
+            }
+
+            return pattern switch
+            {
+                MovementPattern.Aggressive => $"{root}/Water_Splash_B.prefab",
+                MovementPattern.Erratic => $"{root}/Water_Explosion.prefab",
+                _ => $"{root}/Water_Impact.prefab"
+            };
+        }
+#endif
 
         private void UpdateSplashPosition()
         {
@@ -697,6 +805,12 @@ namespace VirtualFishing.Core.Fish
             if (success)
             {
                 AttachHookedFishToFloat();
+                return;
+            }
+
+            if (clearFishOnMiniGameFailure)
+            {
+                ClearFishForScenario("mini game failed");
             }
         }
 
@@ -847,6 +961,86 @@ namespace VirtualFishing.Core.Fish
             miniGameManager.OnSuccessGaugeChanged -= HandleSuccessGaugeChanged;
             miniGameManager.OnMiniGameEnded -= HandleMiniGameEnded;
             miniGameEventsSubscribed = false;
+        }
+
+        private void SubscribeRodEvents()
+        {
+            if (rodController == null)
+            {
+                rodController = FindObjectOfType<FishingRodController>();
+            }
+
+            if (rodController == null || rodEventsSubscribed)
+            {
+                return;
+            }
+
+            rodController.OnRodStateChanged += HandleRodStateChanged;
+            rodController.OnReleased += HandleRodReleased;
+            rodEventsSubscribed = true;
+        }
+
+        private void UnsubscribeRodEvents()
+        {
+            if (rodController == null || !rodEventsSubscribed)
+            {
+                return;
+            }
+
+            rodController.OnRodStateChanged -= HandleRodStateChanged;
+            rodController.OnReleased -= HandleRodReleased;
+            rodEventsSubscribed = false;
+        }
+
+        private void HandleRodReleased()
+        {
+            if (!clearFishWhenRodReleased)
+            {
+                return;
+            }
+
+            ClearFishForScenario("rod released");
+        }
+
+        private void HandleRodStateChanged(RodStateTransition transition)
+        {
+            if (!clearFishWhenRodReturnsToReady)
+            {
+                return;
+            }
+
+            if (isHookSuccessPreviewActive
+                && transition.Previous == RodState.MiniGame
+                && IsRodReadyState(transition.Current))
+            {
+                return;
+            }
+
+            if (IsRodActiveFishingState(transition.Previous) && IsRodReadyState(transition.Current))
+            {
+                ClearFishForScenario($"rod returned to {transition.Current}");
+            }
+        }
+
+        private void ClearFishForScenario(string reason)
+        {
+            if (currentSpecies == null && currentVisualInstance == null && currentSplashInstance == null)
+            {
+                return;
+            }
+
+            ResetFish();
+            Debug.Log($"[FishController] Fish cleared for scenario: {reason}");
+        }
+
+        private static bool IsRodReadyState(RodState state)
+        {
+            return state is RodState.Idle or RodState.Attached;
+        }
+
+        private static bool IsRodActiveFishingState(RodState state)
+        {
+            return state is RodState.Casting or RodState.WaitingForBite or RodState.Hit or RodState.MiniGame;
         }
 
         private static FishMoveMode GetWeightedRandomMoveMode()
