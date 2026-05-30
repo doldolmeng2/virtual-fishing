@@ -632,7 +632,9 @@ namespace VirtualFishing.Core.Fish
             splashObject.transform.SetParent(parent);
 
             ParticleSystem particleSystem = splashObject.AddComponent<ParticleSystem>();
+            particleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             ParticleSystem.MainModule main = particleSystem.main;
+            main.playOnAwake = false;
             main.loop = true;
             main.startLifetime = 0.45f;
             main.startSpeed = 2.45f;
