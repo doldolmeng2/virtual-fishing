@@ -1,0 +1,4 @@
+Source: Wikimedia Commons
+Page: https://commons.wikimedia.org/wiki/File:Korea-Mountain-Jirisan-Valley-26.jpg
+Downloaded asset: korean_mountain_jirisan_commons_valley_26.jpg
+Notes: Used as the primary source image for cropped Jirisan-style forest texture tiles on Dev_Fish mountain materials.
