@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using VirtualFishing.Core.Events;
+using VirtualFishing.Core.Fish;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
 
@@ -33,13 +34,15 @@ namespace VirtualFishing.Fishing
 
         private Rigidbody _rb;
         private Vector3 _launchOrigin;
+        private float _launchTime;
+        private const float LaunchCollisionGrace = 0.2f; // 발사 직후 충돌 정지 무시 시간(초)
         private bool _isLaunched;
         private bool _hasLanded;
         private float _sinkingDepth;
         private bool _isReeling;
         private int _waterLayer;
 
-        private enum FloatState { AttachedToRod, InFlight, OnWater, Reeling }
+        private enum FloatState { AttachedToRod, InFlight, OnWater, Reeling, Idle }
         private FloatState _state = FloatState.AttachedToRod;
         private float _currentReelSpeed;
 
@@ -55,6 +58,12 @@ namespace VirtualFishing.Fishing
         public float Velocity => _rb != null && !_rb.isKinematic ? _rb.linearVelocity.magnitude : 0f;
         public event Action OnWaterLanded;
 
+        /// <summary>물이 아닌 곳(땅 등)에 떨어진 찌를 수동 회수로 낚싯대까지 끌어왔을 때 발행. (낚싯대 캐스팅 취소→준비 복귀용)</summary>
+        public event Action OnReeledBack;
+
+        /// <summary>자동 회수 중(릴을 감아 찌를 rodTip으로 끌어오는 Reeling 상태)인지. 시각적 릴 회전용.</summary>
+        public bool IsAutoReeling => _state == FloatState.Reeling;
+
         public void Launch(float speed, Vector3 direction)
         {
             if (_rb == null) return;
@@ -66,6 +75,7 @@ namespace VirtualFishing.Fishing
             _hasLanded = false;
             _isReeling = false;
             _sinkingDepth = 0f;
+            _launchTime = Time.time;
 
             _rb.isKinematic = false;
             // 직접 할당 — AddForce(VelocityChange)는 isKinematic 토글 직후
@@ -126,6 +136,9 @@ namespace VirtualFishing.Fishing
                 case FloatState.Reeling:
                     UpdateReeling();
                     break;
+                case FloatState.Idle:
+                    UpdateIdleReelBack();
+                    break;
             }
 
             if (rodTip != null)
@@ -146,19 +159,83 @@ namespace VirtualFishing.Fishing
 
             if (distFromOrigin > gameSettings.castingBoundaryRadius)
             {
-                OnWaterContact();
+                // 캐스팅 가능 영역을 벗어남(장외) → 물이 아니므로 진행하지 않고 정지(무시)
+                HaltWithoutLanding();
                 return;
             }
 
-            // 수면 아래로 떨어지면 강제 착수 (Trigger 실패 fallback)
+            // 수면 '높이' 아래로 내려오면 표면 판정 (Trigger 실패 fallback)
             float surfaceY = waterSurface != null ? waterSurface.position.y : 0f;
             if (transform.position.y <= surfaceY)
             {
-                Debug.Log("[Float] 수면 아래 도달 → 강제 착수");
-                Vector3 pos = transform.position;
-                pos.y = surfaceY;
-                transform.position = pos;
-                OnWaterContact();
+                if (IsOverWater())
+                {
+                    // 물 위 → 착수(진행)
+                    Vector3 pos = transform.position;
+                    pos.y = surfaceY;
+                    transform.position = pos;
+                    OnWaterContact();
+                }
+                else
+                {
+                    // 물이 아님(땅 등) → 진행하지 않고 그 자리에 정지(무시). 수동 회수로만 복귀.
+                    HaltWithoutLanding();
+                }
+            }
+        }
+
+        // [물 판정] 착수 높이에서 아래로 레이캐스트. 레이어 무관, PondWaterSurface 컴포넌트로 물 판정.
+        private bool IsOverWater()
+        {
+            Vector3 origin = transform.position + Vector3.up * 0.5f;
+            var hits = Physics.RaycastAll(origin, Vector3.down, 3f, ~0, QueryTriggerInteraction.Collide);
+            foreach (var hit in hits)
+            {
+                if (hit.collider.transform.IsChildOf(transform)) continue; // 찌 자신 무시
+                if (IsWaterCollider(hit.collider)) return true;
+            }
+            return false;
+        }
+
+        // [물 콜라이더 판정] PondWaterSurface 컴포넌트(레이어 무관) 또는 Water 레이어면 물로 인정.
+        private bool IsWaterCollider(Collider col)
+        {
+            if (col == null) return false;
+            if (col.GetComponentInParent<PondWaterSurface>() != null) return true;
+            return _waterLayer >= 0 && col.gameObject.layer == _waterLayer;
+        }
+
+        // [물 아님] 진행하지 않고 그 자리에 정지(무시). 이벤트 발행 안 함 → 낚시 흐름 진행 X. 수동 회수로만 복귀.
+        private void HaltWithoutLanding()
+        {
+            _isLaunched = false;
+            _hasLanded = false;
+            if (_rb != null)
+            {
+                _rb.linearVelocity = Vector3.zero;
+                _rb.angularVelocity = Vector3.zero;
+                _rb.isKinematic = true;
+            }
+            _state = FloatState.Idle;
+            Debug.Log("[Float] 물이 아닌 곳에 떨어짐 → 정지(무시). 회수 전까지 진행 안 함.");
+        }
+
+        // [Idle 회수] 물이 아닌 곳에 멈춘 찌를 수동 릴 입력(_currentReelSpeed)으로 낚싯대까지 끌어옴.
+        private void UpdateIdleReelBack()
+        {
+            if (rodTip == null || _currentReelSpeed <= 0f) return;
+
+            Vector3 target = rodTip.position + Vector3.down * hangDistance;
+            transform.position = Vector3.MoveTowards(transform.position, target,
+                reelInSpeed * _currentReelSpeed * Time.deltaTime);
+
+            if (Vector3.Distance(transform.position, target) < 0.1f)
+            {
+                _state = FloatState.AttachedToRod;
+                _swingAngle = 0f;
+                _swingVelocity = 0f;
+                OnReeledBack?.Invoke();
+                Debug.Log("[Float] 회수 완료 → 낚싯대 준비 복귀");
             }
         }
 
@@ -243,6 +320,20 @@ namespace VirtualFishing.Fishing
                 _swingAngle = 0f;
                 _swingVelocity = 0f;
             }
+        }
+
+        // [충돌 착수] non-trigger 물/땅 콜라이더와 물리 충돌 시 즉시 처리.
+        // 물이면 착수(진행), 물이 아니면(땅 등) 곧바로 정지 → 미끄러져 물까지 흘러가는 것 방지.
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (_state != FloatState.InFlight) return;
+            // 발사 직후(낚싯대 근처) 충돌은 무시
+            if (Time.time - _launchTime < LaunchCollisionGrace) return;
+
+            if (IsWaterCollider(collision.collider))
+                OnWaterContact();
+            else
+                HaltWithoutLanding();
         }
 
         private void OnTriggerEnter(Collider other)
