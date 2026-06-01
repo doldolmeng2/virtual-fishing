@@ -32,9 +32,34 @@ namespace VirtualFishing.EditorTools
                     fishController.TriggerRandomMoveMode();
                 }
 
+                if (GUILayout.Button("Preview Reeling Pull"))
+                {
+                    fishController.PreviewReelingPull();
+                }
+
+                if (GUILayout.Button("Preview Reeling Pull 100%"))
+                {
+                    fishController.PreviewReelingPull(100f);
+                }
+
                 if (GUILayout.Button("Preview Hook Success"))
                 {
                     fishController.PreviewHookSuccess();
+                }
+
+                if (GUILayout.Button("Try Start MiniGame"))
+                {
+                    fishController.TryStartMiniGame();
+                }
+
+                if (GUILayout.Button("Simulate Line Break"))
+                {
+                    fishController.SimulateLineBreak();
+                }
+
+                if (GUILayout.Button("Simulate Fish Escape"))
+                {
+                    fishController.SimulateFishEscape();
                 }
 
                 if (GUILayout.Button("Reset Fish"))

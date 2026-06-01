@@ -19,11 +19,15 @@ namespace VirtualFishing.MiniGame
         [SerializeField] private float tensionSpeed = 15f;
         [Tooltip("방향이 바뀌는 간격(초)")]
         [SerializeField] private float directionChangeInterval = 2f;
+        [Tooltip("화살표 안쪽 fill(phase hold) 이 0→1 로 차오르는 데 걸리는 시간(초). 차오르면 0 으로 리셋해서 phase 완료 흉내.")]
+        [SerializeField] private float phaseHoldFillTime = 2f;
 
         [Header("현재 더미값 (실행 중 인스펙터에서 직접 수정 가능)")]
         [Range(0f, 100f)]
         [SerializeField] private float tension = 20f;
         [SerializeField] private FishMoveMode moveMode = FishMoveMode.Stop;
+        [Range(0f, 1f)]
+        [SerializeField] private float phaseHoldProgress = 0f;
 
         private bool  _tensionGoingUp = true;
         private float _directionTimer;
@@ -80,6 +84,19 @@ namespace VirtualFishing.MiniGame
                 _directionTimer  = 0f;
                 _directionIndex  = (_directionIndex + 1) % _directionCycle.Length;
                 moveMode         = _directionCycle[_directionIndex];
+                phaseHoldProgress = 0f; // 방향 바뀌면 phase hold 게이지 리셋
+            }
+
+            // 화살표 안쪽 fill(phase hold) 자동 시뮬
+            // Stop 상태에서는 화살표가 안 보이므로 게이지도 0 유지
+            if (moveMode == FishMoveMode.Stop || phaseHoldFillTime <= 0f)
+            {
+                phaseHoldProgress = 0f;
+            }
+            else
+            {
+                phaseHoldProgress += Time.deltaTime / phaseHoldFillTime;
+                if (phaseHoldProgress >= 1f) phaseHoldProgress = 0f; // 다 차면 리셋해서 phase 완료 흉내
             }
         }
 
@@ -87,6 +104,7 @@ namespace VirtualFishing.MiniGame
         {
             ui.SimulateTension(tension);
             ui.SimulateDirection(moveMode);
+            ui.SimulatePhaseHold(phaseHoldProgress);
         }
     }
 }

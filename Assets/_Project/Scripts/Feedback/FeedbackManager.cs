@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using VirtualFishing.Fishing;
 using VirtualFishing.Interfaces;
+using VirtualFishing.MiniGame;
+using VirtualFishing.Core.Fish;
+using VirtualFishing.Data;
 
 namespace VirtualFishing.Feedback
 {
@@ -16,6 +19,9 @@ namespace VirtualFishing.Feedback
         [Header("Game References")]
         [Tooltip("현재 상태를 읽어올 낚싯대 컨트롤러를 연결하세요")]
         public FishingRodController fishingRodController;
+
+        [Tooltip("물고기 데이터를 읽어올 미니게임 매니저를 연결하세요")]
+        public MiniGameManager miniGameManager;
 
         [Header("Temporary UI References")]
         [Tooltip("Head-Locked 경고 캔버스 게임오브젝트를 여기에 넣으세요")]
@@ -109,7 +115,7 @@ namespace VirtualFishing.Feedback
         {
             HideUI("HookingGuide");
             PlaySound("HookFail");
-            PlayTTS("물고기가 미끼만 먹고 도망갔습니다.");
+            PlayTTS("물고기가 도망갔습니다.");
             ShowVisualEffect("FishEscape", Vector3.zero);
             Debug.Log("<color=green>[피드백]</color> 챔질 실패");
         }
@@ -140,15 +146,49 @@ namespace VirtualFishing.Feedback
             Debug.Log($"<color=green>[피드백]</color> 성공 게이지 변화: {value}");
         }
 
-        public void OnMiniGameResultEvent()
+        public void OnFishCaughtEvent()
         {
-            // 성공/실패 여부는 MiniGameManager의 상태를 참조하거나 직전 Hook 상태를 통해 판단
             HideUI("MiniGamePanel");
-            ShowUI("CatchResult"); // 포획 결과창 출력
+            HideUI("TensionWarning"); 
+            
+            // 미니게임 매니저에서 방금 잡은 물고기 데이터를 가져옴
+            object catchData = null;
+            if (miniGameManager != null)
+            {
+                catchData = miniGameManager.CurrentFishData;
+            }
+
+            ShowUI("CatchResult", catchData); 
+            
             PlaySound("Fanfare");
             ShowVisualEffect("Fireworks", Vector3.zero);
             PlayTTS("축하합니다! 물고기를 낚으셨습니다.");
-            Debug.Log("<color=green>[피드백]</color> 미니게임 종료 및 결과창 출력");
+            
+            Debug.Log("<color=green>[피드백]</color> 미니게임 성공: OnFishCaughtEvent 수신 및 실제 데이터 출력");
+        }
+
+        public void OnLineBreakEvent()
+        {
+            HideUI("MiniGamePanel");
+            HideUI("TensionWarning"); // 텐션 100이었으므로 무조건 켜져있을 경고 끄기
+            
+            PlaySound("LineBreak"); // 줄 끊어지는 팽팽한 타격음
+            PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Both); // 팅! 하는 강한 진동
+            PlayTTS("힘을 버티지 못하고 낚싯줄이 끊어졌습니다.");
+            
+            Debug.Log("<color=red>[피드백]</color> 미니게임 실패: OnLineBreakEvent 수신 (줄 끊김)");
+        }
+
+        public void OnFishEscapedEvent()
+        {
+            HideUI("MiniGamePanel");
+            HideUI("TensionWarning");
+            
+            PlaySound("HookFail"); // 기존 실패 사운드 재사용
+            ShowVisualEffect("FishEscape", Vector3.zero);
+            PlayTTS("줄이 너무 느슨해져서 물고기가 도망갔습니다.");
+            
+            Debug.Log("<color=orange>[피드백]</color> 미니게임 실패: OnFishEscapedEvent 수신 (도망감)");
         }
 
         #endregion
@@ -182,7 +222,7 @@ namespace VirtualFishing.Feedback
                     // 시야 중앙에 붉은색 큰 팝업 및 중앙 유도 화살표 켜기
                     ShowUI("SafetyWarning");
                     PlaySound("WarningAlarm");
-                    PlayTTS("위험합니다. 발자국을 따라 가운데로 오세요.");
+                    PlayTTS("이동하시면 위험합니다. 가운데로 돌아가주세요.");
                     PlayHaptic(HapticPattern.RhythmicWarning, ControllerHand.Both);
                     visualManager.FadeScreen(0.0f, 0.5f);
                     break;
@@ -192,7 +232,7 @@ namespace VirtualFishing.Feedback
                     HideUI("SafetyWarning");
                     visualManager.FadeScreen(0.9f, 1.0f); // 1초에 걸쳐 90% 어둡게
                     visualManager.ShowPassthrough(true);
-                    PlayTTS("안전을 위해 게임을 멈춥니다. 주변을 확인하세요.");
+                    PlayTTS("안전을 위해 게임을 멈춥니다. 장비를 벗고 주변을 확인해주세요.");
                     break;
             }
             Debug.Log($"<color=green>[피드백]</color> 안전 경고 단계 변경: {warningLevel}");
@@ -224,10 +264,34 @@ namespace VirtualFishing.Feedback
             if (target != null)
             {
                 target.SetActive(true);
+                
                 if (uiId == "CatchResult")
                 {
                     var ctrl = target.GetComponent<CatchResultController>();
-                    if (ctrl != null) ctrl.DisplayResult("참돔", 45.2f, 3.1f, 4);
+                    if (ctrl != null) 
+                    {
+                        // data가 FishCatchData 타입이고, species 정보가 비어있지 않은지 확인
+                        if (data is FishCatchData fishData && fishData.species != null)
+                        {
+                            // 1. 데이터 구조에서 값 꺼내기
+                            string fishName = fishData.species.DisplayName; // 어종 이름
+                            float fishWeight = fishData.weight;             // 무게 (kg)
+                            int fishStars = fishData.species.Rarity;        // 희귀도 (별 등급)
+                            
+                            // 2. 크기(Size)는 현재 잡힌 데이터(FishCatchData)에 없으므로,
+                            // 원본 데이터(FishSpeciesDataSO)의 범위 내에서 임시로 랜덤 값을 가져옵니다.
+                            float fishSize = fishData.species.GetRandomSizeCm();
+
+                            // 3. UI 컨트롤러에 실제 데이터 전달
+                            // (소수점 1자리까지만 깔끔하게 보이게 하려면 ToString("F1") 처리를 UI 쪽에서 하시면 됩니다)
+                            ctrl.DisplayResult(fishName, fishSize, fishWeight, fishStars); 
+                        }
+                        else
+                        {
+                            // 데이터가 제대로 넘어오지 않았을 때의 예비용(Fallback)
+                            ctrl.DisplayResult("알 수 없는 물고기", 0.0f, 0.0f, 1);
+                        }
+                    }
                 }
             }
         }
