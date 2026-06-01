@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using VirtualFishing.Data;
+using VirtualFishing.Fishing;
 
 namespace VirtualFishing.Core.Fish
 {
@@ -61,6 +63,8 @@ namespace VirtualFishing.Core.Fish
             {
                 BuildDebugEnvironment();
             }
+
+            TryBindFloatWaterSurface();
 
             Debug.Log(
                 $"[FishEnvironmentController] Environment applied: site={currentSite.DisplayName}, " +
@@ -129,7 +133,8 @@ namespace VirtualFishing.Core.Fish
         private void ApplyDevFishRuntimeEnvironment()
         {
 #if UNITY_EDITOR
-            if (currentSite.SceneName != "Dev_Fish")
+            string activeSceneName = SceneManager.GetActiveScene().name;
+            if (activeSceneName != "Dev_Fish" && activeSceneName != "Main_FishingSite")
             {
                 return;
             }
@@ -143,6 +148,31 @@ namespace VirtualFishing.Core.Fish
                 debugEnvironmentInstance = null;
             }
 #endif
+        }
+
+        private void TryBindFloatWaterSurface()
+        {
+            PondWaterSurface pond = null;
+            if (siteEnvironmentInstance != null)
+            {
+                pond = siteEnvironmentInstance.GetComponentInChildren<PondWaterSurface>(true);
+            }
+
+            if (pond == null)
+            {
+                pond = FindFirstObjectByType<PondWaterSurface>();
+            }
+
+            if (pond == null)
+            {
+                return;
+            }
+
+            FloatController floatController = FindFirstObjectByType<FloatController>();
+            if (floatController != null)
+            {
+                floatController.BindWaterSurface(pond.transform);
+            }
         }
 
         private void BuildDebugEnvironment()
