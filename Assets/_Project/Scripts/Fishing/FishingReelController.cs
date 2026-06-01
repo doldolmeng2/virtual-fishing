@@ -36,8 +36,10 @@ namespace VirtualFishing.Fishing
         [SerializeField] private float deadzoneAngularSpeed = 8f;
         [Tooltip("음의 회전(반대 방향)도 입력으로 인정할지")]
         [SerializeField] private bool allowReverse = true;
-        [Tooltip("입력 스무딩 (0~1, 1=즉각, 0.5~0.7이 반응 좋음)")]
-        [SerializeField, Range(0.05f, 1f)] private float smoothing = 0.6f;
+        [Tooltip("입력 상승(릴링 시작) 반응 시정수(s) — 작을수록 즉각적")]
+        [SerializeField] private float attackTime = 0.04f;
+        [Tooltip("입력 하강(감속) 시정수(s) — 클수록 손목을 빠르게 왕복할 때 방향 전환 순간의 끊김을 메워 부드럽게 이어짐")]
+        [SerializeField] private float releaseTime = 0.18f;
         [Tooltip("손이 회전 축에 너무 가까우면(이 거리 이내) 위치 기반 신호 무시. 손목 회전만 사용")]
         [SerializeField] private float minProjectionRadius = 0.02f;
 
@@ -120,8 +122,10 @@ namespace VirtualFishing.Fishing
             // ============ 신호 2: 컨트롤러 자체 회전 (손목 비틀기) ============
             Quaternion deltaRot = handTransform.rotation * Quaternion.Inverse(_previousHandRotation);
             deltaRot.ToAngleAxis(out float deltaAngle, out Vector3 deltaAxis);
-            // ToAngleAxis는 항상 양수 각도 반환. axis 방향에 부호가 들어있음
-            // axis와 우리 reel axis의 내적으로 부호 결정
+            // ToAngleAxis는 [0,360]을 반환 — 180°를 넘으면 반대 방향의 더 짧은 회전으로 정규화한다.
+            // (손목을 빠르게 돌릴 때 각도/축이 뒤집혀 부호가 요동치고 릴링이 끊기는 현상 방지)
+            if (deltaAngle > 180f) { deltaAngle = 360f - deltaAngle; deltaAxis = -deltaAxis; }
+            // axis 방향에 부호가 들어있음 — reel axis와의 내적으로 회전 부호 결정
             float axisDot = Vector3.Dot(deltaAxis.normalized, axisWorld);
             float rotAngularSpeed = (deltaAngle * axisDot) / dt;
             _previousHandRotation = handTransform.rotation;
@@ -136,7 +140,13 @@ namespace VirtualFishing.Fishing
             if (effectiveSpeed < deadzoneAngularSpeed) effectiveSpeed = 0f;
 
             float rawInput = Mathf.Clamp01(effectiveSpeed / Mathf.Max(1f, maxAngularSpeed));
-            _smoothedReelInput = Mathf.Lerp(_smoothedReelInput, rawInput, smoothing);
+
+            // 비대칭 스무딩(빠른 상승 / 느린 하강) — dt 기반이라 프레임레이트와 무관.
+            // 손목을 빠르게 왕복하며 릴을 감을 때, 방향 전환 순간 각속도가 0을 지나며
+            // 입력이 끊기는 '뚝뚝 끊김'을 느린 하강이 메워 연속적인 릴링 체감을 준다.
+            float tau = rawInput > _smoothedReelInput ? attackTime : releaseTime;
+            float k = tau <= 0f ? 1f : 1f - Mathf.Exp(-dt / tau);
+            _smoothedReelInput = Mathf.Lerp(_smoothedReelInput, rawInput, k);
             rodController.UpdateReelingInput(_smoothedReelInput);
 
             if (verboseLog)

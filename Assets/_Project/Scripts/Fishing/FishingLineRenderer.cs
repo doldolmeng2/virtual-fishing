@@ -38,8 +38,20 @@ namespace VirtualFishing.Fishing
             _lineRenderer.enabled = false;
         }
 
-        private void LateUpdate()
+        private void OnEnable() => Application.onBeforeRender += UpdateLine;
+        private void OnDisable() => Application.onBeforeRender -= UpdateLine;
+
+        // RodTremorDamper(BeforeRenderOrder 2000)가 낚싯대 회전을 보정한 '이후'에 줄을 갱신해야
+        // 줄 시작점이 실제로 렌더되는 rodTip 위치와 어긋나지 않는다.
+        // (LateUpdate에서 갱신하면 XRI/Damper의 onBeforeRender 보정 전 위치를 써서 줄이 낚싯대를 안 따라옴)
+        [BeforeRenderOrder(2100)]
+        private void UpdateLine()
         {
+            // floatController 미할당/유실 시 씬에서 자동 검색.
+            // (씬 통합 시 인스펙터 wiring이 누락돼도 줄이 정상 렌더되도록 — 메인 씬 줄 미표시 버그 방지)
+            if (floatController == null)
+                floatController = FindAnyObjectByType<FloatController>();
+
             bool shouldRender = rodTip != null
                 && floatController != null
                 && floatController.gameObject.activeSelf;

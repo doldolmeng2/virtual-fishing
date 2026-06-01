@@ -208,6 +208,7 @@ GameObject:
   - component: {fileID: 679238255950261746}
   - component: {fileID: 4568188010428181218}
   - component: {fileID: 3230383861955748756}
+  - component: {fileID: 8588553530260944259}
   m_Layer: 0
   m_Name: FishingRod
   m_TagString: Untagged
@@ -256,6 +257,10 @@ MonoBehaviour:
   onRodStateChanged: {fileID: 11400000, guid: 3c4ec41f719168543aab651331e35595, type: 2}
   onCastingStarted: {fileID: 11400000, guid: 931ee3453910b10418c8891d3c4249f4, type: 2}
   onReelIn: {fileID: 11400000, guid: 387441e36bd9d2742af42b6947aeda82, type: 2}
+  onHookingSuccess: {fileID: 0}
+  onHookingFailed: {fileID: 0}
+  onBiteOccurredEvent: {fileID: 0}
+  miniGameManager: {fileID: 0}
 --- !u!54 &1844425511682930925
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -404,7 +409,7 @@ MonoBehaviour:
   m_SmoothScale: 0
   m_SmoothScaleAmount: 8
   m_TightenScale: 0.1
-  m_ThrowOnDetach: 1
+  m_ThrowOnDetach: 0
   m_ThrowSmoothingDuration: 0.25
   m_ThrowSmoothingCurve:
     serializedVersion: 2
@@ -477,6 +482,23 @@ MonoBehaviour:
   tintStrength: 0.7
   useEmission: 1
   emissionIntensity: 1.5
+--- !u!114 &8588553530260944259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3584383216452137840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8370efed72ca9a9439ecbfcf1239b4fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Fishing.RodTremorDamper
+  rodController: {fileID: 0}
+  idleAngularSpeed: 35
+  activeAngularSpeed: 200
+  maxSmoothTime: 0.15
+  minSmoothTime: 0
 --- !u!1 &4666024948856699960
 GameObject:
   m_ObjectHideFlags: 0
@@ -754,7 +776,8 @@ MonoBehaviour:
   maxAngularSpeed: 360
   deadzoneAngularSpeed: 8
   allowReverse: 1
-  smoothing: 0.6
+  attackTime: 0.04
+  releaseTime: 0.18
   minProjectionRadius: 0.02
   verboseLog: 1
   logInterval: 0.25

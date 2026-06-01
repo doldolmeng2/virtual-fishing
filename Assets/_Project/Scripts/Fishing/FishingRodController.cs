@@ -62,6 +62,10 @@ namespace VirtualFishing.Fishing
         public float ReelingSpeed { get; private set; }
         public bool IsInCastingZone { get; private set; }
         public bool IsInHookingZone { get; private set; }
+
+        /// <summary>자동 회수 중인지 — 시각적 릴 회전용 (찌가 자동으로 rodTip까지 감겨오는 중).</summary>
+        public bool IsAutoReeling => floatCtrl != null && floatCtrl.IsAutoReeling;
+
         public event Action<RodStateTransition> OnRodStateChanged;
 
         public void Attach(Transform hand)
@@ -120,9 +124,12 @@ namespace VirtualFishing.Fishing
             // [미니게임/챔질 직후 그랩 해제 차단]
             // 이 단계에서 사용자가 트리거를 떼도 게임 로직상 낚싯대를 놓치면 안 됨.
             // XR system은 select가 풀렸지만 _isGrabbed/_attachedHand는 유지하여 미니게임 진행 보장.
-            if (_currentState == RodState.MiniGame || _currentState == RodState.Hit)
+            // [한번 잡으면 놓지 못하도록] 그랩된 동안에는 트리거를 떼도 해제하지 않는다.
+            // XR select만 풀릴 뿐 _isGrabbed/_attachedHand는 유지 → 낚싯대가 계속 손에 붙어있음.
+            // (XR 추종은 XRFishingRodAdapter가 손에 재부착해 이어감.)
+            if (_isGrabbed)
             {
-                Debug.Log($"[Rod] {_currentState} 상태 — 그랩 해제 무시 (미니게임 진행 유지)");
+                Debug.Log($"[Rod] 그랩 해제 무시 — 한번 잡으면 못 놓음 (state={_currentState})");
                 return;
             }
 
@@ -178,14 +185,20 @@ namespace VirtualFishing.Fishing
         private void OnEnable()
         {
             if (floatCtrl != null)
+            {
                 floatCtrl.OnWaterLanded += HandleWaterLanded;
+                floatCtrl.OnReeledBack += HandleReeledBack;
+            }
             onBiteOccurredEvent?.Register(this);
         }
 
         private void OnDisable()
         {
             if (floatCtrl != null)
+            {
                 floatCtrl.OnWaterLanded -= HandleWaterLanded;
+                floatCtrl.OnReeledBack -= HandleReeledBack;
+            }
             onBiteOccurredEvent?.Unregister(this);
         }
 
@@ -418,6 +431,18 @@ namespace VirtualFishing.Fishing
             {
                 SetState(RodState.WaitingForBite);
                 OnCastComplete?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// 물이 아닌 곳에 떨어진 찌를 수동 회수로 낚싯대까지 끌어온 경우 → 캐스팅 취소하고 준비(Attached)로 복귀.
+        /// </summary>
+        private void HandleReeledBack()
+        {
+            if (_currentState == RodState.Casting)
+            {
+                Debug.Log("[Rod] 파울 찌 회수 완료 → 준비 상태 복귀");
+                SetState(RodState.Attached);
             }
         }
 
