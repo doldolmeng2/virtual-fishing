@@ -18,6 +18,8 @@ namespace VirtualFishing.Fishing
         [Header("회전 설정")]
         [Tooltip("ReelingSpeed=1 일 때 초당 회전 각도(deg/s)")]
         [SerializeField] private float degreesPerSecondAtFullSpeed = 540f;
+        [Tooltip("자동 회수 중 릴 회전량 (ReelingSpeed=1 기준 비율, 0~1). 입력이 없어도 릴이 감기는 연출")]
+        [SerializeField, Range(0f, 1f)] private float autoReelVisualSpeed = 0.7f;
         [Tooltip("회전축 (로컬). 보통 X축 = 낚싯대 방향에 수직인 가로축.")]
         [SerializeField] private Vector3 rotationAxis = Vector3.right;
         [Tooltip("미세한 떨림(idle 상태에서도 살짝 진동) — 0이면 비활성화")]
@@ -42,6 +44,11 @@ namespace VirtualFishing.Fishing
             if (reelPivot == null) return;
 
             float speed = rodController != null ? rodController.ReelingSpeed : 0f;
+
+            // 자동 회수 중에는 실제 릴 입력이 없어도 릴이 시각적으로 감기도록 한다.
+            if (rodController != null && rodController.IsAutoReeling)
+                speed = Mathf.Max(speed, autoReelVisualSpeed);
+
             float deltaAngle = speed * degreesPerSecondAtFullSpeed * Time.deltaTime;
 
             // idle 진동 (선택)
