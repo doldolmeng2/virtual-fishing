@@ -69,9 +69,9 @@ namespace VirtualFishing.EditorTools
                 return;
             }
 
-            if (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame)
+            if (keyboard.fKey.wasPressedThisFrame)
             {
-                scenarioTester.ForceBiteNow();
+                scenarioTester.ForceFakeBite();
             }
 
             if (keyboard.pKey.wasPressedThisFrame)
@@ -81,12 +81,12 @@ namespace VirtualFishing.EditorTools
 
             if (keyboard.qKey.wasPressedThisFrame)
             {
-                scenarioTester.PreviewReelPull(25f);
+                scenarioTester.PreviewReelPull(0f);
             }
 
             if (keyboard.wKey.wasPressedThisFrame)
             {
-                scenarioTester.PreviewReelPull(60f);
+                scenarioTester.PreviewReelPull(50f);
             }
 
             if (keyboard.eKey.wasPressedThisFrame)
@@ -94,34 +94,14 @@ namespace VirtualFishing.EditorTools
                 scenarioTester.PreviewReelPull(100f);
             }
 
-            if (keyboard.mKey.wasPressedThisFrame)
-            {
-                scenarioTester.TryStartMiniGame();
-            }
-
             if (keyboard.cKey.wasPressedThisFrame)
             {
-                scenarioTester.SimulateCatchSuccess();
-            }
-
-            if (keyboard.lKey.wasPressedThisFrame)
-            {
-                scenarioTester.SimulateLineBreak();
-            }
-
-            if (keyboard.xKey.wasPressedThisFrame)
-            {
-                scenarioTester.SimulateFishEscape();
-            }
-
-            if (keyboard.vKey.wasPressedThisFrame)
-            {
-                scenarioTester.SimulateRodRelease();
+                scenarioTester.SimulateFullSuccessFlow();
             }
 
             if (keyboard.rKey.wasPressedThisFrame)
             {
-                scenarioTester.SimulateReelIn();
+                scenarioTester.CancelBiteAndClear();
             }
         }
     }

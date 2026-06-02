@@ -38,6 +38,18 @@ namespace VirtualFishing.Core.Fish
             }
         }
 
+        private readonly struct RuntimeFishProfile
+        {
+            public readonly Vector3 VisualScale;
+            public readonly float SpeedMultiplier;
+
+            public RuntimeFishProfile(Vector3 visualScale, float speedMultiplier)
+            {
+                VisualScale = visualScale;
+                SpeedMultiplier = speedMultiplier;
+            }
+        }
+
         [Header("Visual Test Setup")]
         [SerializeField] private Transform spawnRoot;
         [SerializeField] private Vector3 spawnOffset = new(0f, 0.5f, 2.5f);
@@ -60,6 +72,12 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private Vector3 hookSuccessLocalEuler = new(90f, 85f, 0f);
         [SerializeField] private bool hideVisualUntilHookSuccess = true;
         [SerializeField] private float reelingPullMinDistanceFromFloat = 0.15f;
+        [SerializeField] private PondWaterSurface reelingWaterSurface;
+        [SerializeField] private Transform reelingShoreReference;
+        [SerializeField] private bool useEnvironmentShorePoint = true;
+        [SerializeField] private float reelingShoreInset = 0.35f;
+        [SerializeField] private Vector3 fallbackReelingShoreOffset = new(0f, 0f, -8f);
+        [SerializeField] private float reelingTriangleBaseHalfWidth = 10f;
         [SerializeField] private bool moveFloatDuringReelingPreview = true;
         [SerializeField] private bool createPreviewFloatWhenMissing = true;
         [SerializeField] private float previewFloatWaterHeight = 0.2f;
@@ -120,6 +138,11 @@ namespace VirtualFishing.Core.Fish
         private bool isHookSuccessPreviewActive;
         private Vector3 hookedBaseLocalPosition;
         private Quaternion hookedBaseLocalRotation;
+        private Transform hookedFloatTarget;
+        private Renderer[] hookedFloatRenderers = Array.Empty<Renderer>();
+        private PondWaterSurface cachedReelingWaterSurface;
+        private Vector3 cachedReelingShorePoint;
+        private bool hasCachedReelingShorePoint;
         private bool miniGameEventsSubscribed;
         private bool rodEventsSubscribed;
 
@@ -229,6 +252,10 @@ namespace VirtualFishing.Core.Fish
             phaseCompleteCount = 0;
             isWaitingAtMovementLimit = false;
             isHookSuccessPreviewActive = false;
+            hookedFloatTarget = null;
+            hookedFloatRenderers = Array.Empty<Renderer>();
+            cachedReelingWaterSurface = null;
+            hasCachedReelingShorePoint = false;
             ClearPreviewFloat();
 
             Debug.Log("[FishController] Fish state reset.");
@@ -374,6 +401,7 @@ namespace VirtualFishing.Core.Fish
             }
 
             StopPhaseMovement();
+            Renderer[] targetRenderers = GetHookTargetRenderers(target);
             Vector3 hookWaterPosition = currentVisualInstance.transform.position;
             hookWaterPosition.y = splashWaterHeight + splashFollowYOffset;
             StopSplashEffect();
@@ -388,6 +416,7 @@ namespace VirtualFishing.Core.Fish
             currentVisualInstance.transform.localScale = GetHookedLocalScale(target);
             hookedBaseLocalPosition = currentVisualInstance.transform.localPosition;
             hookedBaseLocalRotation = currentVisualInstance.transform.localRotation;
+            TrackHookedFloatTarget(target, targetRenderers);
             isHookSuccessPreviewActive = true;
             SetVisualRenderersEnabled(true);
 
@@ -439,6 +468,9 @@ namespace VirtualFishing.Core.Fish
             Transform parent = spawnRoot != null ? spawnRoot : transform;
             Vector3 spawnPosition = parent.position + spawnOffset;
             visualSpawnPosition = spawnPosition;
+            hasCachedReelingShorePoint = TryResolveEnvironmentShorePoint(
+                visualSpawnPosition,
+                out cachedReelingShorePoint);
 
             if (speciesData.FishPrefab != null)
             {
@@ -468,6 +500,7 @@ namespace VirtualFishing.Core.Fish
                     currentVisualInstance.transform.localScale = GetPlaceholderScale(sizeCm);
                 }
 
+                ApplySpeciesVisualProfile(speciesData);
                 visualBaseLocalScale = currentVisualInstance.transform.localScale;
                 SetVisualRenderersEnabled(!hideVisualUntilHookSuccess);
                 ClampVisualPosition();
@@ -486,6 +519,10 @@ namespace VirtualFishing.Core.Fish
             currentVisualInstance = null;
             visualBaseLocalScale = Vector3.one;
             isHookSuccessPreviewActive = false;
+            hookedFloatTarget = null;
+            hookedFloatRenderers = Array.Empty<Renderer>();
+            cachedReelingWaterSurface = null;
+            hasCachedReelingShorePoint = false;
         }
 
         private void ClearPreviewFloat()
@@ -599,6 +636,43 @@ namespace VirtualFishing.Core.Fish
             {
                 renderer.enabled = isEnabled;
             }
+        }
+
+        private static Renderer[] GetHookTargetRenderers(Transform target)
+        {
+            return target != null
+                ? target.GetComponentsInChildren<Renderer>(true)
+                : Array.Empty<Renderer>();
+        }
+
+        private void TrackHookedFloatTarget(Transform target, Renderer[] targetRenderers)
+        {
+            hookedFloatTarget = target;
+            hookedFloatRenderers = targetRenderers ?? Array.Empty<Renderer>();
+        }
+
+        private bool IsHookedFloatStillVisible()
+        {
+            if (hookedFloatTarget == null || !hookedFloatTarget.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            if (hookedFloatRenderers == null || hookedFloatRenderers.Length == 0)
+            {
+                return true;
+            }
+
+            for (int i = 0; i < hookedFloatRenderers.Length; i++)
+            {
+                Renderer renderer = hookedFloatRenderers[i];
+                if (renderer != null && renderer.enabled && renderer.gameObject.activeInHierarchy)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private Vector3 GetHookedLocalScale(Transform target)
@@ -825,8 +899,7 @@ namespace VirtualFishing.Core.Fish
 
             float progress = Mathf.Clamp01(successGauge / 100f);
             Vector3 currentPosition = currentVisualInstance.transform.position;
-            currentPosition.y = visualSpawnPosition.y;
-            currentPosition.z = Mathf.Lerp(visualSpawnPosition.z, GetUserNearWaterZ(visualSpawnPosition.z), progress);
+            currentPosition = ClampPositionToReelingTriangle(currentPosition, visualSpawnPosition, progress);
             currentVisualInstance.transform.position = currentPosition;
             UpdateSplashPosition();
         }
@@ -850,8 +923,8 @@ namespace VirtualFishing.Core.Fish
             }
 
             float progress = Mathf.Clamp01(successGauge / 100f);
-            Vector3 floatPosition = previewFloatStartPosition;
-            floatPosition.z = Mathf.Lerp(previewFloatStartPosition.z, GetUserNearWaterZ(previewFloatStartPosition.z), progress);
+            Vector3 floatPosition = ClampPositionToReelingTriangle(floatTransform.position, previewFloatStartPosition, progress);
+            floatPosition.y = previewFloatWaterHeight;
             floatTransform.position = floatPosition;
             UpdateSplashPosition();
         }
@@ -865,15 +938,226 @@ namespace VirtualFishing.Core.Fish
             return position;
         }
 
-        private float GetUserNearWaterZ(float startZ)
+        private Vector3 ClampPositionToReelingTriangle(Vector3 currentPosition, Vector3 startPosition, float progress)
         {
-            Camera camera = Camera.main;
-            if (camera == null)
+            Vector3 shorePoint = GetReelingShorePoint(startPosition);
+            Vector2 start2D = new(startPosition.x, startPosition.z);
+            Vector2 shore2D = new(shorePoint.x, shorePoint.z);
+            Vector2 toShore = shore2D - start2D;
+            float distanceToShore = toShore.magnitude;
+            if (distanceToShore < 0.001f)
             {
-                return startZ - 8f;
+                return ClampPointInsideReelingWater(currentPosition, startPosition);
             }
 
-            return Mathf.Min(startZ - reelingPullMinDistanceFromFloat, camera.transform.position.z + 3f);
+            Vector2 forward = toShore / distanceToShore;
+            Vector2 right = new(-forward.y, forward.x);
+            Vector2 current2D = new(currentPosition.x, currentPosition.z);
+            Vector2 center = start2D + forward * (distanceToShore * progress);
+            float halfWidth = Mathf.Lerp(reelingTriangleBaseHalfWidth, 0f, progress);
+            float lateral = Mathf.Clamp(Vector2.Dot(current2D - center, right), -halfWidth, halfWidth);
+            Vector2 clamped2D = center + right * lateral;
+
+            Vector3 clampedPosition = new(clamped2D.x, startPosition.y, clamped2D.y);
+            return ClampPointInsideReelingWater(clampedPosition, startPosition);
+        }
+
+        private Vector3 GetReelingShorePoint(Vector3 startPosition)
+        {
+            if (hasCachedReelingShorePoint && IsCachedReelingShorePointValid())
+            {
+                cachedReelingShorePoint.y = startPosition.y;
+                return cachedReelingShorePoint;
+            }
+
+            hasCachedReelingShorePoint = false;
+            if (TryResolveEnvironmentShorePoint(startPosition, out cachedReelingShorePoint))
+            {
+                hasCachedReelingShorePoint = true;
+                cachedReelingShorePoint.y = startPosition.y;
+                return cachedReelingShorePoint;
+            }
+
+            return GetFallbackReelingShorePoint(startPosition);
+        }
+
+        private bool IsCachedReelingShorePointValid()
+        {
+            return !useEnvironmentShorePoint
+                || (cachedReelingWaterSurface != null && cachedReelingWaterSurface.isActiveAndEnabled);
+        }
+
+        private bool TryResolveEnvironmentShorePoint(Vector3 startPosition, out Vector3 shorePoint)
+        {
+            shorePoint = default;
+            if (useEnvironmentShorePoint
+                && TryGetReelingWaterSurface(startPosition, out PondWaterSurface waterSurface)
+                && waterSurface.TryGetClosestInsetShorePoint(
+                    GetShoreReferencePosition(startPosition),
+                    startPosition,
+                    reelingShoreInset,
+                    out shorePoint))
+            {
+                shorePoint = EnsureMinimumReelingDistance(startPosition, shorePoint, waterSurface);
+                shorePoint.y = startPosition.y;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryGetReelingWaterSurface(Vector3 startPosition, out PondWaterSurface waterSurface)
+        {
+            if (reelingWaterSurface != null && reelingWaterSurface.isActiveAndEnabled)
+            {
+                waterSurface = reelingWaterSurface;
+                cachedReelingWaterSurface = waterSurface;
+                return true;
+            }
+
+            if (cachedReelingWaterSurface != null && cachedReelingWaterSurface.isActiveAndEnabled)
+            {
+                waterSurface = cachedReelingWaterSurface;
+                return true;
+            }
+
+            PondWaterSurface[] waterSurfaces = FindObjectsOfType<PondWaterSurface>();
+            float bestDistance = float.PositiveInfinity;
+            waterSurface = null;
+
+            foreach (PondWaterSurface candidate in waterSurfaces)
+            {
+                if (candidate == null || !candidate.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                float distance = 0f;
+                if (!candidate.ContainsWorldPoint(startPosition))
+                {
+                    distance = GetWaterBoundsDistance(candidate, startPosition);
+                }
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    waterSurface = candidate;
+                }
+            }
+
+            cachedReelingWaterSurface = waterSurface;
+            return waterSurface != null;
+        }
+
+        private static float GetWaterBoundsDistance(PondWaterSurface waterSurface, Vector3 position)
+        {
+            if (waterSurface == null)
+            {
+                return float.PositiveInfinity;
+            }
+
+            if (TryGetWaterBounds(waterSurface, out Bounds bounds))
+            {
+                Vector3 closest = bounds.ClosestPoint(position);
+                return (closest - position).sqrMagnitude;
+            }
+
+            return float.PositiveInfinity;
+        }
+
+        private static bool TryGetWaterBounds(PondWaterSurface waterSurface, out Bounds bounds)
+        {
+            bounds = default;
+            if (waterSurface == null)
+            {
+                return false;
+            }
+
+            Collider waterCollider = waterSurface.GetComponent<Collider>();
+            if (waterCollider != null)
+            {
+                bounds = waterCollider.bounds;
+                return true;
+            }
+
+            if (waterSurface.TryGetComponent(out Renderer renderer))
+            {
+                bounds = renderer.bounds;
+                return true;
+            }
+
+            return false;
+        }
+
+        private Vector3 EnsureMinimumReelingDistance(
+            Vector3 startPosition,
+            Vector3 shorePoint,
+            PondWaterSurface waterSurface)
+        {
+            if ((shorePoint - startPosition).sqrMagnitude <= reelingPullMinDistanceFromFloat * reelingPullMinDistanceFromFloat)
+            {
+                Vector3 direction = shorePoint - startPosition;
+                if (direction.sqrMagnitude < 0.0001f)
+                {
+                    direction = GetFallbackReelingDirection();
+                }
+
+                shorePoint = startPosition + direction.normalized * reelingPullMinDistanceFromFloat;
+                if (waterSurface != null)
+                {
+                    shorePoint = waterSurface.ClampWorldPointInside(shorePoint, reelingShoreInset);
+                }
+            }
+
+            shorePoint.y = startPosition.y;
+            return shorePoint;
+        }
+
+        private Vector3 ClampPointInsideReelingWater(Vector3 position, Vector3 startPosition)
+        {
+            if (TryGetReelingWaterSurface(startPosition, out PondWaterSurface waterSurface))
+            {
+                Vector3 clamped = waterSurface.ClampWorldPointInside(position, reelingShoreInset);
+                clamped.y = startPosition.y;
+                return clamped;
+            }
+
+            return position;
+        }
+
+        private Vector3 GetFallbackReelingShorePoint(Vector3 startPosition)
+        {
+            Vector3 shorePoint = startPosition + GetFallbackReelingDirection() * Mathf.Max(
+                reelingPullMinDistanceFromFloat,
+                fallbackReelingShoreOffset.magnitude);
+            shorePoint.y = startPosition.y;
+            return shorePoint;
+        }
+
+        private Vector3 GetFallbackReelingDirection()
+        {
+            Vector3 direction = fallbackReelingShoreOffset;
+            direction.y = 0f;
+            return direction.sqrMagnitude > 0.0001f
+                ? direction.normalized
+                : Vector3.back;
+        }
+
+        private Vector3 GetShoreReferencePosition(Vector3 startPosition)
+        {
+            if (reelingShoreReference != null)
+            {
+                return reelingShoreReference.position;
+            }
+
+            if (rodController != null)
+            {
+                return rodController.transform.position;
+            }
+
+            return spawnRoot != null
+                ? spawnRoot.position
+                : startPosition + fallbackReelingShoreOffset;
         }
 
         private void StartPreviewFloatFlyToUser(Transform target)
@@ -996,6 +1280,11 @@ namespace VirtualFishing.Core.Fish
 
         private void HandleRodReleased()
         {
+            if (isHookSuccessPreviewActive)
+            {
+                return;
+            }
+
             if (!clearFishWhenRodReleased)
             {
                 return;
@@ -1011,10 +1300,10 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            if (isHookSuccessPreviewActive
-                && transition.Previous == RodState.MiniGame
-                && IsRodReadyState(transition.Current))
+            if (transition.Previous == RodState.MiniGame && IsRodReadyState(transition.Current))
             {
+                // MiniGameManager raises the generic result event before its C# success callback.
+                // The rod may reel in first, so keep the fish visual alive until HandleMiniGameEnded decides success/failure.
                 return;
             }
 
@@ -1086,6 +1375,12 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
+            if (!IsHookedFloatStillVisible())
+            {
+                ClearFishForScenario("hooked float hidden");
+                return;
+            }
+
             float wave = Mathf.Sin(Time.time * hookedFlopSpeed);
             Vector3 localPosition = hookedBaseLocalPosition;
             localPosition.y += Mathf.Abs(wave) * hookedFlopVerticalAmount;
@@ -1131,7 +1426,11 @@ namespace VirtualFishing.Core.Fish
                 minimumPhaseCompleteSpeedMultiplier,
                 1f - phaseCompleteCount * phaseCompleteSlowdownStep);
 
-            return patternSpeed * debugMoveSpeed * phaseSpeedMultiplier * GetDifficultySpeedMultiplier();
+            return patternSpeed
+                * debugMoveSpeed
+                * phaseSpeedMultiplier
+                * GetDifficultySpeedMultiplier()
+                * GetRuntimeProfile(currentSpecies).SpeedMultiplier;
         }
 
         private float CalculateDifficulty()
@@ -1151,6 +1450,28 @@ namespace VirtualFishing.Core.Fish
         {
             float normalizedDifficulty = Mathf.InverseLerp(0.6f, 3.2f, currentDifficulty);
             return Mathf.Lerp(0.85f, 1.35f, normalizedDifficulty);
+        }
+
+        private void ApplySpeciesVisualProfile(FishSpeciesDataSO speciesData)
+        {
+            RuntimeFishProfile profile = GetRuntimeProfile(speciesData);
+            currentVisualInstance.transform.localScale = Vector3.Scale(
+                currentVisualInstance.transform.localScale,
+                profile.VisualScale);
+        }
+
+        private static RuntimeFishProfile GetRuntimeProfile(FishSpeciesDataSO speciesData)
+        {
+            string fishId = speciesData != null ? speciesData.FishId : string.Empty;
+            return fishId switch
+            {
+                "Fish_Crucian" => new RuntimeFishProfile(new Vector3(0.95f, 1.08f, 0.92f), 0.82f),
+                "Fish_Carp" => new RuntimeFishProfile(new Vector3(1.18f, 1.12f, 1.08f), 0.74f),
+                "Fish_Bass" => new RuntimeFishProfile(new Vector3(1.02f, 0.92f, 1.22f), 1.15f),
+                "Fish_Catfish" => new RuntimeFishProfile(new Vector3(1.12f, 0.86f, 1.38f), 0.68f),
+                "Fish_Snakehead" => new RuntimeFishProfile(new Vector3(1.04f, 0.82f, 1.55f), 1.32f),
+                _ => new RuntimeFishProfile(Vector3.one, 1f)
+            };
         }
 
         private void ClampVisualPosition()
@@ -1204,6 +1525,9 @@ namespace VirtualFishing.Core.Fish
             }
 
             horizontalMoveLimit = Mathf.Max(0.1f, horizontalMoveLimit);
+            reelingPullMinDistanceFromFloat = Mathf.Max(0f, reelingPullMinDistanceFromFloat);
+            reelingShoreInset = Mathf.Max(0f, reelingShoreInset);
+            reelingTriangleBaseHalfWidth = Mathf.Max(0.1f, reelingTriangleBaseHalfWidth);
             phaseCompleteSlowdownStep = Mathf.Max(0f, phaseCompleteSlowdownStep);
             minimumPhaseCompleteSpeedMultiplier = Mathf.Clamp01(minimumPhaseCompleteSpeedMultiplier);
         }
