@@ -83,9 +83,30 @@ namespace VirtualFishing.Core.Fish
             fishController?.PreviewReelingPull(percent);
         }
 
+        public void ShowHookSuccessPresentation()
+        {
+            RefreshReferences();
+            EnsureFishForPresentation();
+
+            if (fishController == null || string.IsNullOrEmpty(fishController.SpeciesName))
+            {
+                Debug.LogWarning("[DevFishScenarioTester] Hook success presentation skipped: no fish is active.");
+                return;
+            }
+
+            fishController.PreviewHookSuccess();
+            Debug.Log("[DevFishScenarioTester] Hook success presentation shown.");
+        }
+
         public void SimulateCatchSuccess()
         {
             RefreshReferences();
+            if (miniGameManager == null)
+            {
+                ShowHookSuccessPresentation();
+                return;
+            }
+
             miniGameManager?.EndWith(MiniGameResult.Caught);
             if (fishController != null && !fishController.IsHookSuccessPreviewActive)
             {
@@ -103,15 +124,13 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            if (testSpecies == null || testSpecies.Length == 0)
+            if (miniGameManager == null)
             {
-                LoadDefaultTestSpecies();
+                ShowHookSuccessPresentation();
+                return;
             }
 
-            if (string.IsNullOrEmpty(fishController.SpeciesName) && testSpecies != null && testSpecies.Length > 0)
-            {
-                ForceSpeciesBite(testSpecies[0]);
-            }
+            EnsureFishForPresentation();
 
             fishController.TryStartMiniGame();
             miniGameManager?.EndWith(MiniGameResult.Caught);
@@ -122,6 +141,27 @@ namespace VirtualFishing.Core.Fish
             }
 
             Debug.Log("[DevFishScenarioTester] Simulated full success flow.");
+        }
+
+        private void EnsureFishForPresentation()
+        {
+            if (fishController != null && !string.IsNullOrEmpty(fishController.SpeciesName))
+            {
+                return;
+            }
+
+            if (testSpecies == null || testSpecies.Length == 0)
+            {
+                LoadDefaultTestSpecies();
+            }
+
+            if (testSpecies != null && testSpecies.Length > 0 && testSpecies[0] != null)
+            {
+                ForceSpeciesBite(testSpecies[0]);
+                return;
+            }
+
+            fishSpawner?.DebugForceBiteImmediately();
         }
 
         private void LoadDefaultTestSpecies()
@@ -200,8 +240,12 @@ namespace VirtualFishing.Core.Fish
 
             GUILayout.Space(6f);
             GUILayout.Label("Catch Flow");
-            if (GUILayout.Button("Actual Full Success Flow")) SimulateFullSuccessFlow();
-            if (GUILayout.Button("Actual Catch Success Event")) SimulateCatchSuccess();
+            if (GUILayout.Button("Test Catch Success")) ShowHookSuccessPresentation();
+            if (miniGameManager != null)
+            {
+                if (GUILayout.Button("Actual Full Success Flow")) SimulateFullSuccessFlow();
+                if (GUILayout.Button("Actual Catch Success Event")) SimulateCatchSuccess();
+            }
 
             GUILayout.Space(6f);
             if (GUILayout.Button("Clear Fish")) CancelBiteAndClear();

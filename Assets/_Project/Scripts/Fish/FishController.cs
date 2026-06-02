@@ -78,17 +78,30 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float reelingShoreInset = 0.35f;
         [SerializeField] private Vector3 fallbackReelingShoreOffset = new(0f, 0f, -8f);
         [SerializeField] private float reelingTriangleBaseHalfWidth = 10f;
+        [SerializeField] private bool keepFloatPinnedToFishWhileFishing = true;
         [SerializeField] private bool moveFloatDuringReelingPreview = true;
         [SerializeField] private bool createPreviewFloatWhenMissing = true;
-        [SerializeField] private float previewFloatWaterHeight = 0.2f;
+        [SerializeField] private float previewFloatWaterHeight = 0.3f;
         [SerializeField] private float previewFloatAirDistance = 1.8f;
         [SerializeField] private float previewFloatAirDrop = 0.55f;
         [SerializeField] private float previewFloatFlyDuration = 1.2f;
         [SerializeField] private float hookSuccessSplashScale = 1.35f;
-        [SerializeField] private float hookedVisualScaleMultiplier = 1f;
+        [SerializeField] private float hookedVisualScaleMultiplier = 5.8f;
+        [SerializeField] private Vector3 hookSuccessMouthLocalAxis = Vector3.back;
+        [SerializeField] private float hookSuccessMouthTipInset = 0.015f;
         [SerializeField] private float hookedFlopAngle = 18f;
         [SerializeField] private float hookedFlopSpeed = 11f;
         [SerializeField] private float hookedFlopVerticalAmount = 0.035f;
+        [SerializeField] private bool logHookSuccessRenderDiagnostics = true;
+        [SerializeField] private bool applyHookSuccessVisibleMaterial = true;
+        [SerializeField] private bool normalizePrefabVisualToFishSize = true;
+        [SerializeField] private float visualSizeToWorldScale = 0.014f;
+        [SerializeField] private float minimumPrefabVisualLength = 0.34f;
+        [SerializeField] private float maximumPrefabVisualLength = 1.65f;
+        [SerializeField] private Vector3 defaultFishLocalBoundsSize = new(1f, 0.35f, 0.25f);
+        [SerializeField] private float hookedMinimumVisibleExtent = 0.32f;
+        [SerializeField] private float hookedFallbackExtentThreshold = 0.000001f;
+        [SerializeField] private float hookedMaxScaleBoost = 10000f;
 
         [Header("Catch Success Effect")]
         [SerializeField] private Transform catchEffectRoot;
@@ -124,6 +137,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private int phaseCompleteCount;
         [SerializeField] private FishPhase inspectorDebugPhase = FishPhase.Phase2;
         [SerializeField] private float currentDifficulty;
+        [SerializeField, Range(0f, 1f)] private float currentReelingProgress;
         [SerializeField] private MiniGameManager miniGameManager;
         // 프로젝트에서 하나의 낚시터만 사용하므로 하나의 낚시터 타입만 사용 (추후 낚시터 추가시 수정 필요)
         [SerializeField] private BackgroundType miniGameSiteType = BackgroundType.Pond;
@@ -199,6 +213,9 @@ namespace VirtualFishing.Core.Fish
             Vector3 movementDirection = GetMovementDirectionByMode(currentMoveMode);
             if (movementDirection == Vector3.zero)
             {
+                SyncFishingFloatToFish();
+                UpdateSplashPosition();
+                UpdateHookedFlop();
                 return;
             }
 
@@ -207,7 +224,16 @@ namespace VirtualFishing.Core.Fish
             ClampVisualPosition();
             ApplyVisualDirection(movementDirection);
             UpdateSplashPosition();
+            SyncFishingFloatToFish();
             UpdateHookedFlop();
+        }
+
+        private void LateUpdate()
+        {
+            if (isPhaseMovementActive && currentVisualInstance != null && !isHookSuccessPreviewActive)
+            {
+                SyncFishingFloatToFish();
+            }
         }
 
         public void Initialize(FishSpeciesDataSO speciesData)
@@ -225,6 +251,7 @@ namespace VirtualFishing.Core.Fish
             resistance = speciesData.BaseResistance;
             pattern = speciesData.MovementPattern;
             currentDifficulty = CalculateDifficulty();
+            currentReelingProgress = 0f;
             SpawnVisual(speciesData);
             BeginPhaseMovement();
             StartSplashEffect();
@@ -251,6 +278,7 @@ namespace VirtualFishing.Core.Fish
             currentMoveMode = FishMoveMode.Stop;
             phaseCompleteCount = 0;
             isWaitingAtMovementLimit = false;
+            currentReelingProgress = 0f;
             isHookSuccessPreviewActive = false;
             hookedFloatTarget = null;
             hookedFloatRenderers = Array.Empty<Renderer>();
@@ -393,7 +421,7 @@ namespace VirtualFishing.Core.Fish
 
             Transform target = hookSuccessAttachTarget != null
                 ? hookSuccessAttachTarget
-                : FindFloatOrPreviewTransform();
+                : FindHookSuccessFloatTransform();
 
             if (target == null)
             {
@@ -404,21 +432,23 @@ namespace VirtualFishing.Core.Fish
             Renderer[] targetRenderers = GetHookTargetRenderers(target);
             Vector3 hookWaterPosition = currentVisualInstance.transform.position;
             hookWaterPosition.y = splashWaterHeight + splashFollowYOffset;
+            PinFloatToFishPosition(target);
             StopSplashEffect();
 
             currentPhase = FishPhase.None;
             phaseCompleteCount = 0;
             currentVisualInstance.transform.SetParent(target, false);
-            currentVisualInstance.transform.localPosition = target == previewFloatTransform
-                ? new Vector3(0f, -0.12f, 0.08f)
-                : hookSuccessLocalOffset;
+            currentVisualInstance.transform.localPosition = hookSuccessLocalOffset;
             currentVisualInstance.transform.localRotation = Quaternion.Euler(hookSuccessLocalEuler);
             currentVisualInstance.transform.localScale = GetHookedLocalScale(target);
+            EnsureHookedFishRenderable();
+            EnsureHookedFishVisibleSize();
+            AlignHookedFishMouthToFloat(target);
             hookedBaseLocalPosition = currentVisualInstance.transform.localPosition;
             hookedBaseLocalRotation = currentVisualInstance.transform.localRotation;
             TrackHookedFloatTarget(target, targetRenderers);
             isHookSuccessPreviewActive = true;
-            SetVisualRenderersEnabled(true);
+            LogHookSuccessRenderDiagnostics(target, "after attach");
 
             PlayHookSuccessSplash(hookWaterPosition);
 
@@ -501,10 +531,17 @@ namespace VirtualFishing.Core.Fish
                 }
 
                 ApplySpeciesVisualProfile(speciesData);
+                EnsureFishRendererBounds();
+                if (speciesData.FishPrefab != null)
+                {
+                    NormalizePrefabVisualLength();
+                }
+
                 visualBaseLocalScale = currentVisualInstance.transform.localScale;
                 SetVisualRenderersEnabled(!hideVisualUntilHookSuccess);
                 ClampVisualPosition();
                 ApplyVisualDirection(GetMovementDirectionByMode(currentMoveMode));
+                SyncFishingFloatToFish();
             }
         }
 
@@ -590,6 +627,63 @@ namespace VirtualFishing.Core.Fish
             return floatTransform != null ? floatTransform : EnsurePreviewFloatTransform();
         }
 
+        private Transform FindHookSuccessFloatTransform()
+        {
+            if (previewFloatTransform != null)
+            {
+                return previewFloatTransform;
+            }
+
+            return FindFloatOrPreviewTransform();
+        }
+
+        private void SyncFishingFloatToFish()
+        {
+            if (!keepFloatPinnedToFishWhileFishing || isHookSuccessPreviewActive || currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Transform floatTransform = FindFloatTransform();
+            floatTransform ??= EnsurePreviewFloatTransform();
+            if (floatTransform == null)
+            {
+                return;
+            }
+
+            PinFloatToFishPosition(floatTransform);
+        }
+
+        private void PinFloatToFishPosition(Transform floatTransform)
+        {
+            if (floatTransform == null || currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Vector3 fishPosition = currentVisualInstance.transform.position;
+            floatTransform.position = new Vector3(
+                fishPosition.x,
+                GetFishingFloatWaterHeight(floatTransform),
+                fishPosition.z);
+
+            if (floatTransform == previewFloatTransform)
+            {
+                previewFloatStartPosition = floatTransform.position;
+                hasPreviewFloatStartPosition = true;
+            }
+        }
+
+        private float GetFishingFloatWaterHeight(Transform floatTransform = null)
+        {
+            if (floatTransform == previewFloatTransform)
+            {
+                return previewFloatWaterHeight;
+            }
+
+            return splashWaterHeight + splashFollowYOffset;
+        }
+
         private Transform EnsurePreviewFloatTransform()
         {
             if (!createPreviewFloatWhenMissing)
@@ -638,11 +732,684 @@ namespace VirtualFishing.Core.Fish
             }
         }
 
+        private void EnsureHookedFishRenderable()
+        {
+            if (currentVisualInstance == null)
+            {
+                return;
+            }
+
+            currentVisualInstance.SetActive(true);
+            Renderer[] renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            bool hasNonFallbackRenderer = HasNonFallbackRenderer(renderers);
+            if (hasNonFallbackRenderer)
+            {
+                RemoveHookedFallbackVisual();
+                renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            }
+
+            EnsureFishRendererBounds();
+
+            if (renderers.Length == 0)
+            {
+                CreateHookedFallbackVisual();
+                renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (hasNonFallbackRenderer && IsHookedFallbackRenderer(renderer))
+                {
+                    continue;
+                }
+
+                renderer.gameObject.SetActive(true);
+                renderer.enabled = true;
+                renderer.forceRenderingOff = false;
+                renderer.allowOcclusionWhenDynamic = false;
+
+                if (applyHookSuccessVisibleMaterial)
+                {
+                    Material[] materials = renderer.sharedMaterials;
+                    if (materials == null || materials.Length == 0)
+                    {
+                        renderer.sharedMaterial = CreateHookSuccessVisibleMaterial(GetHookSuccessFishPalette()[0], 0);
+                    }
+                    else
+                    {
+                        renderer.sharedMaterials = CreateHookSuccessVisibleMaterials(materials.Length);
+                    }
+                }
+            }
+        }
+
+        private void EnsureFishRendererBounds()
+        {
+            if (currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || IsHookedFallbackRenderer(renderer))
+                {
+                    continue;
+                }
+
+                Bounds worldBounds = renderer.bounds;
+                if (GetMaxExtent(worldBounds) > hookedFallbackExtentThreshold)
+                {
+                    continue;
+                }
+
+                Bounds localBounds = GetFallbackLocalBounds(renderer);
+                renderer.localBounds = localBounds;
+                Debug.Log(
+                    $"[FishController] Renderer local bounds repaired: " +
+                    $"fish={currentVisualInstance.name}, renderer={renderer.name}, " +
+                    $"localCenter={localBounds.center.ToString("F4")}, localSize={localBounds.size.ToString("F4")}");
+            }
+        }
+
+        private Bounds GetFallbackLocalBounds(Renderer renderer)
+        {
+            Bounds localBounds = default;
+            bool hasMeshBounds = false;
+
+            if (renderer != null
+                && renderer.TryGetComponent(out MeshFilter meshFilter)
+                && meshFilter.sharedMesh != null)
+            {
+                localBounds = meshFilter.sharedMesh.bounds;
+                hasMeshBounds = GetMaxExtent(localBounds) > hookedFallbackExtentThreshold;
+            }
+
+            if (hasMeshBounds)
+            {
+                return localBounds;
+            }
+
+            return new Bounds(Vector3.zero, defaultFishLocalBoundsSize);
+        }
+
+        private void CreateHookedFallbackVisual()
+        {
+            if (currentVisualInstance.transform.Find("HookedFishFallbackVisual") != null)
+            {
+                return;
+            }
+
+            GameObject fallback = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            fallback.name = "HookedFishFallbackVisual";
+            fallback.transform.SetParent(currentVisualInstance.transform, false);
+            fallback.transform.localPosition = Vector3.zero;
+            fallback.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            fallback.transform.localScale = GetPlaceholderScale(Mathf.Max(sizeCm, 25f));
+
+            if (fallback.TryGetComponent(out Collider collider))
+            {
+                Destroy(collider);
+            }
+        }
+
+        private void RemoveHookedFallbackVisual()
+        {
+            if (currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Transform fallback = currentVisualInstance.transform.Find("HookedFishFallbackVisual");
+            if (fallback != null)
+            {
+                fallback.gameObject.SetActive(false);
+                Destroy(fallback.gameObject);
+            }
+        }
+
+        private static bool HasNonFallbackRenderer(Renderer[] renderers)
+        {
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer != null && !IsHookedFallbackRenderer(renderer))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsHookedFallbackRenderer(Renderer renderer)
+        {
+            return renderer != null && renderer.transform.name == "HookedFishFallbackVisual";
+        }
+
+        private void EnsureHookedFishVisibleSize()
+        {
+            if (currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                CreateHookedFallbackVisual();
+                EnsureHookedFishRenderable();
+                return;
+            }
+
+            if (!TryGetBestCurrentVisualBounds(out Bounds bounds))
+            {
+                return;
+            }
+
+            float maxExtent = Mathf.Max(GetMaxExtent(bounds), hookedFallbackExtentThreshold);
+            if (maxExtent >= hookedMinimumVisibleExtent)
+            {
+                return;
+            }
+
+            float scaleBoost = Mathf.Clamp(
+                hookedMinimumVisibleExtent / maxExtent,
+                1f,
+                Mathf.Max(1f, hookedMaxScaleBoost));
+            currentVisualInstance.transform.localScale *= scaleBoost;
+        }
+
+        private static float GetMaxExtent(Bounds bounds)
+        {
+            return Mathf.Max(bounds.extents.x, bounds.extents.y, bounds.extents.z);
+        }
+
+        private Material[] CreateHookSuccessVisibleMaterials(int slotCount)
+        {
+            Color[] palette = GetHookSuccessFishPalette();
+            int count = Mathf.Max(1, slotCount);
+            Material[] materials = new Material[count];
+            for (int i = 0; i < count; i++)
+            {
+                Color color = palette[Mathf.Min(i, palette.Length - 1)];
+                materials[i] = CreateHookSuccessVisibleMaterial(color, i);
+            }
+
+            return materials;
+        }
+
+        private Material CreateHookSuccessVisibleMaterial(Color fishColor, int slotIndex)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            Material material = new(shader)
+            {
+                name = $"MAT_Runtime_HookedFish_{slotIndex}",
+                hideFlags = HideFlags.DontSave,
+                color = fishColor
+            };
+
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", fishColor);
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", fishColor);
+            }
+
+            if (material.HasProperty("_Smoothness"))
+            {
+                material.SetFloat("_Smoothness", 0.38f);
+            }
+
+            if (material.HasProperty("_Metallic"))
+            {
+                material.SetFloat("_Metallic", 0f);
+            }
+
+            return material;
+        }
+
+        private Color[] GetHookSuccessFishPalette()
+        {
+            string fishId = currentSpecies != null ? currentSpecies.FishId : string.Empty;
+            return fishId switch
+            {
+                "Fish_Crucian" => new[]
+                {
+                    new Color(0.34f, 0.35f, 0.20f, 1f),
+                    new Color(0.68f, 0.58f, 0.33f, 1f),
+                    new Color(0.86f, 0.78f, 0.55f, 1f),
+                    new Color(0.50f, 0.38f, 0.18f, 1f)
+                },
+                "Fish_Carp" => new[]
+                {
+                    new Color(0.35f, 0.32f, 0.18f, 1f),
+                    new Color(0.88f, 0.57f, 0.23f, 1f),
+                    new Color(0.95f, 0.79f, 0.50f, 1f),
+                    new Color(0.68f, 0.22f, 0.12f, 1f)
+                },
+                "Fish_Bass" => new[]
+                {
+                    new Color(0.15f, 0.33f, 0.18f, 1f),
+                    new Color(0.38f, 0.56f, 0.28f, 1f),
+                    new Color(0.82f, 0.79f, 0.55f, 1f),
+                    new Color(0.08f, 0.16f, 0.10f, 1f)
+                },
+                "Fish_Catfish" => new[]
+                {
+                    new Color(0.22f, 0.20f, 0.16f, 1f),
+                    new Color(0.48f, 0.43f, 0.34f, 1f),
+                    new Color(0.76f, 0.68f, 0.53f, 1f),
+                    new Color(0.28f, 0.25f, 0.22f, 1f)
+                },
+                "Fish_Snakehead" => new[]
+                {
+                    new Color(0.10f, 0.18f, 0.10f, 1f),
+                    new Color(0.30f, 0.42f, 0.22f, 1f),
+                    new Color(0.66f, 0.63f, 0.43f, 1f),
+                    new Color(0.05f, 0.08f, 0.05f, 1f)
+                },
+                _ => new[]
+                {
+                    Color.Lerp(GetPatternColor(pattern), Color.black, 0.35f),
+                    GetPatternColor(pattern),
+                    Color.Lerp(GetPatternColor(pattern), Color.white, 0.45f),
+                    Color.Lerp(GetPatternColor(pattern), Color.black, 0.2f)
+                }
+            };
+        }
+
         private static Renderer[] GetHookTargetRenderers(Transform target)
         {
             return target != null
                 ? target.GetComponentsInChildren<Renderer>(true)
                 : Array.Empty<Renderer>();
+        }
+
+        private void NormalizePrefabVisualLength()
+        {
+            if (!normalizePrefabVisualToFishSize || currentVisualInstance == null)
+            {
+                return;
+            }
+
+            if (!TryGetBestCurrentVisualBounds(out Bounds bounds))
+            {
+                return;
+            }
+
+            float currentLength = Mathf.Max(GetMaxExtent(bounds) * 2f, hookedFallbackExtentThreshold);
+            float desiredLength = Mathf.Clamp(
+                sizeCm * visualSizeToWorldScale,
+                minimumPrefabVisualLength,
+                maximumPrefabVisualLength);
+            float scaleBoost = Mathf.Clamp(
+                desiredLength / currentLength,
+                0.001f,
+                Mathf.Max(1f, hookedMaxScaleBoost));
+
+            currentVisualInstance.transform.localScale *= scaleBoost;
+        }
+
+        private void AlignHookedFishMouthToFloat(Transform target)
+        {
+            if (target == null || currentVisualInstance == null)
+            {
+                return;
+            }
+
+            if (!TryGetCurrentVisualLocalBounds(out Bounds localBounds))
+            {
+                return;
+            }
+
+            Vector3 mouthLocalPoint = GetMouthLocalPoint(localBounds);
+            Vector3 desiredMouthPoint = target.TransformPoint(hookSuccessLocalOffset);
+            Vector3 currentMouthPoint = currentVisualInstance.transform.TransformPoint(mouthLocalPoint);
+            currentVisualInstance.transform.position += desiredMouthPoint - currentMouthPoint;
+        }
+
+        private Vector3 GetMouthLocalPoint(Bounds localBounds)
+        {
+            Vector3 axis = hookSuccessMouthLocalAxis.sqrMagnitude > 0.0001f
+                ? hookSuccessMouthLocalAxis.normalized
+                : Vector3.forward;
+            Vector3 direction = GetDominantAxisDirection(axis);
+            Vector3 mouthPoint = localBounds.center + Vector3.Scale(localBounds.extents, direction);
+            return mouthPoint - direction * Mathf.Max(0f, hookSuccessMouthTipInset);
+        }
+
+        private static Vector3 GetDominantAxisDirection(Vector3 axis)
+        {
+            Vector3 abs = new(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z));
+            if (abs.x >= abs.y && abs.x >= abs.z)
+            {
+                return new Vector3(Mathf.Sign(axis.x), 0f, 0f);
+            }
+
+            if (abs.y >= abs.x && abs.y >= abs.z)
+            {
+                return new Vector3(0f, Mathf.Sign(axis.y), 0f);
+            }
+
+            return new Vector3(0f, 0f, Mathf.Sign(axis.z));
+        }
+
+        private bool TryGetCurrentVisualLocalBounds(out Bounds bounds)
+        {
+            bounds = default;
+            if (currentVisualInstance == null)
+            {
+                return false;
+            }
+
+            Matrix4x4 worldToFishLocal = currentVisualInstance.transform.worldToLocalMatrix;
+            MeshFilter[] meshFilters = currentVisualInstance.GetComponentsInChildren<MeshFilter>(true);
+            bool hasBounds = false;
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null
+                    || meshFilter.sharedMesh == null
+                    || meshFilter.transform.name == "HookedFishFallbackVisual")
+                {
+                    continue;
+                }
+
+                Bounds meshBounds = meshFilter.sharedMesh.bounds;
+                if (GetMaxExtent(meshBounds) <= hookedFallbackExtentThreshold)
+                {
+                    continue;
+                }
+
+                Matrix4x4 matrix = worldToFishLocal * meshFilter.transform.localToWorldMatrix;
+                EncapsulateTransformedBounds(ref bounds, ref hasBounds, matrix, meshBounds);
+            }
+
+            if (hasBounds)
+            {
+                return true;
+            }
+
+            Renderer[] renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || IsHookedFallbackRenderer(renderer))
+                {
+                    continue;
+                }
+
+                Bounds localBounds = renderer.localBounds;
+                if (GetMaxExtent(localBounds) <= hookedFallbackExtentThreshold)
+                {
+                    continue;
+                }
+
+                Matrix4x4 matrix = worldToFishLocal * renderer.transform.localToWorldMatrix;
+                EncapsulateTransformedBounds(ref bounds, ref hasBounds, matrix, localBounds);
+            }
+
+            return hasBounds;
+        }
+
+        private bool TryGetBestCurrentVisualBounds(out Bounds bounds)
+        {
+            if (TryGetCurrentVisualBounds(out bounds) && GetMaxExtent(bounds) > hookedFallbackExtentThreshold)
+            {
+                return true;
+            }
+
+            if (TryGetCurrentMeshWorldBounds(out bounds) && GetMaxExtent(bounds) > hookedFallbackExtentThreshold)
+            {
+                return true;
+            }
+
+            return TryGetCurrentRendererLocalWorldBounds(out bounds);
+        }
+
+        private bool TryGetCurrentVisualBounds(out Bounds bounds)
+        {
+            bounds = default;
+            if (currentVisualInstance == null)
+            {
+                return false;
+            }
+
+            Renderer[] renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            bool hasBounds = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || IsHookedFallbackRenderer(renderer))
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private bool TryGetCurrentRendererLocalWorldBounds(out Bounds bounds)
+        {
+            bounds = default;
+            if (currentVisualInstance == null)
+            {
+                return false;
+            }
+
+            Renderer[] renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            bool hasBounds = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || IsHookedFallbackRenderer(renderer))
+                {
+                    continue;
+                }
+
+                Bounds localBounds = renderer.localBounds;
+                if (GetMaxExtent(localBounds) <= hookedFallbackExtentThreshold)
+                {
+                    continue;
+                }
+
+                EncapsulateTransformedBounds(ref bounds, ref hasBounds, renderer.transform.localToWorldMatrix, localBounds);
+            }
+
+            return hasBounds;
+        }
+
+        private bool TryGetCurrentMeshWorldBounds(out Bounds bounds)
+        {
+            bounds = default;
+            if (currentVisualInstance == null)
+            {
+                return false;
+            }
+
+            MeshFilter[] meshFilters = currentVisualInstance.GetComponentsInChildren<MeshFilter>(true);
+            bool hasBounds = false;
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null || meshFilter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                if (meshFilter.transform.name == "HookedFishFallbackVisual")
+                {
+                    continue;
+                }
+
+                Bounds meshBounds = meshFilter.sharedMesh.bounds;
+                if (GetMaxExtent(meshBounds) <= 0f)
+                {
+                    continue;
+                }
+
+                Matrix4x4 matrix = meshFilter.transform.localToWorldMatrix;
+                EncapsulateTransformedBounds(ref bounds, ref hasBounds, matrix, meshBounds);
+            }
+
+            return hasBounds;
+        }
+
+        private static void EncapsulateTransformedBounds(
+            ref Bounds bounds,
+            ref bool hasBounds,
+            Matrix4x4 matrix,
+            Bounds sourceBounds)
+        {
+            Vector3 center = sourceBounds.center;
+            Vector3 extents = sourceBounds.extents;
+            for (int x = -1; x <= 1; x += 2)
+            {
+                for (int y = -1; y <= 1; y += 2)
+                {
+                    for (int z = -1; z <= 1; z += 2)
+                    {
+                        Vector3 corner = center + Vector3.Scale(
+                            extents,
+                            new Vector3(x, y, z));
+                        Vector3 worldCorner = matrix.MultiplyPoint3x4(corner);
+                        if (!hasBounds)
+                        {
+                            bounds = new Bounds(worldCorner, Vector3.zero);
+                            hasBounds = true;
+                        }
+                        else
+                        {
+                            bounds.Encapsulate(worldCorner);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void LogHookSuccessRenderDiagnostics(Transform target, string phase)
+        {
+            if (!logHookSuccessRenderDiagnostics || currentVisualInstance == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = currentVisualInstance.GetComponentsInChildren<Renderer>(true);
+            int enabledCount = 0;
+            int activeCount = 0;
+            int materialCount = 0;
+            int missingMaterialCount = 0;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (renderer.enabled)
+                {
+                    enabledCount++;
+                }
+
+                if (renderer.gameObject.activeInHierarchy)
+                {
+                    activeCount++;
+                }
+
+                Material[] materials = renderer.sharedMaterials;
+                materialCount += materials?.Length ?? 0;
+                if (materials == null || materials.Length == 0)
+                {
+                    missingMaterialCount++;
+                    continue;
+                }
+
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    Material material = materials[materialIndex];
+                    if (material == null || material.shader == null)
+                    {
+                        missingMaterialCount++;
+                    }
+                }
+            }
+
+            string boundsText = TryGetBestCurrentVisualBounds(out Bounds bounds)
+                ? $"boundsCenter={bounds.center.ToString("F4")}, boundsExtents={bounds.extents.ToString("F4")}"
+                : "bounds=missing";
+            string meshText = BuildMeshDiagnosticsText();
+
+            Debug.Log(
+                $"[FishController] Hook success render diagnostics ({phase}): " +
+                $"target={(target != null ? target.name : "null")}, " +
+                $"fish={currentVisualInstance.name}, renderers={renderers.Length}, " +
+                $"enabled={enabledCount}, active={activeCount}, materials={materialCount}, " +
+                $"missingMaterials={missingMaterialCount}, " +
+                $"localScale={currentVisualInstance.transform.localScale.ToString("F4")}, " +
+                $"lossyScale={currentVisualInstance.transform.lossyScale.ToString("F4")}, " +
+                $"{boundsText}, {meshText}");
+        }
+
+        private string BuildMeshDiagnosticsText()
+        {
+            if (currentVisualInstance == null)
+            {
+                return "meshes=0";
+            }
+
+            MeshFilter[] meshFilters = currentVisualInstance.GetComponentsInChildren<MeshFilter>(true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null || meshFilter.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                if (meshFilter.transform.name == "HookedFishFallbackVisual")
+                {
+                    continue;
+                }
+
+                Mesh mesh = meshFilter.sharedMesh;
+                Renderer renderer = meshFilter.GetComponent<Renderer>();
+                string rendererLocalBounds = renderer != null
+                    ? renderer.localBounds.size.ToString("F4")
+                    : "none";
+
+                return
+                    $"meshes={meshFilters.Length}, mesh={mesh.name}, " +
+                    $"vertices={mesh.vertexCount}, subMeshes={mesh.subMeshCount}, " +
+                    $"meshBoundsCenter={mesh.bounds.center.ToString("F4")}, " +
+                    $"meshBoundsExtents={mesh.bounds.extents.ToString("F4")}, " +
+                    $"rendererLocalBoundsSize={rendererLocalBounds}";
+            }
+
+            return $"meshes={meshFilters.Length}, mesh=missing";
         }
 
         private void TrackHookedFloatTarget(Transform target, Renderer[] targetRenderers)
@@ -897,7 +1664,7 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            float progress = Mathf.Clamp01(successGauge / 100f);
+            float progress = SetReelingProgress(successGauge);
             Vector3 currentPosition = currentVisualInstance.transform.position;
             currentPosition = ClampPositionToReelingTriangle(currentPosition, visualSpawnPosition, progress);
             currentVisualInstance.transform.position = currentPosition;
@@ -915,18 +1682,15 @@ namespace VirtualFishing.Core.Fish
             floatTransform ??= EnsurePreviewFloatTransform();
             if (floatTransform == null) return;
 
-            if (!hasPreviewFloatStartPosition)
-            {
-                previewFloatStartPosition = floatTransform.position;
-                previewFloatStartPosition.y = previewFloatWaterHeight;
-                hasPreviewFloatStartPosition = true;
-            }
-
-            float progress = Mathf.Clamp01(successGauge / 100f);
-            Vector3 floatPosition = ClampPositionToReelingTriangle(floatTransform.position, previewFloatStartPosition, progress);
-            floatPosition.y = previewFloatWaterHeight;
-            floatTransform.position = floatPosition;
+            SetReelingProgress(successGauge);
+            PinFloatToFishPosition(floatTransform);
             UpdateSplashPosition();
+        }
+
+        private float SetReelingProgress(float successGauge)
+        {
+            currentReelingProgress = Mathf.Clamp01(successGauge / 100f);
+            return currentReelingProgress;
         }
 
         private Vector3 GetPreviewFloatStartPosition()
@@ -1388,6 +2152,7 @@ namespace VirtualFishing.Core.Fish
             currentVisualInstance.transform.localPosition = localPosition;
             currentVisualInstance.transform.localRotation =
                 hookedBaseLocalRotation * Quaternion.Euler(0f, 0f, wave * hookedFlopAngle);
+            AlignHookedFishMouthToFloat(hookedFloatTarget);
         }
 
         private Vector3 GetMovementDirectionByMode(FishMoveMode moveMode)
@@ -1481,19 +2246,15 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            float minX = visualSpawnPosition.x - horizontalMoveLimit;
-            float maxX = visualSpawnPosition.x + horizontalMoveLimit;
-
             Vector3 currentPosition = currentVisualInstance.transform.position;
-            bool hitLeftLimit = currentPosition.x <= minX;
-            bool hitRightLimit = currentPosition.x >= maxX;
-
-            Vector3 clampedPosition = currentPosition;
-            clampedPosition.x = Mathf.Clamp(clampedPosition.x, minX, maxX);
-
+            Vector3 clampedPosition = ClampPositionToReelingTriangle(
+                currentPosition,
+                visualSpawnPosition,
+                currentReelingProgress);
             currentVisualInstance.transform.position = clampedPosition;
 
-            if (!hitLeftLimit && !hitRightLimit)
+            bool wasClamped = (clampedPosition - currentPosition).sqrMagnitude > 0.0001f;
+            if (!wasClamped)
             {
                 isWaitingAtMovementLimit = false;
                 return;
@@ -1502,7 +2263,7 @@ namespace VirtualFishing.Core.Fish
             if (!isWaitingAtMovementLimit)
             {
                 isWaitingAtMovementLimit = true;
-                Debug.Log($"[FishController] Reached movement limit while staying in {currentPhase}. Waiting for external phase change.");
+                Debug.Log("[FishController] Reeling triangle boundary reached. Movement is constrained along the active fishing area.");
             }
         }
 

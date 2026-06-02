@@ -96,7 +96,7 @@ namespace VirtualFishing.EditorTools
 
             if (keyboard.cKey.wasPressedThisFrame)
             {
-                scenarioTester.SimulateFullSuccessFlow();
+                scenarioTester.ShowHookSuccessPresentation();
             }
 
             if (keyboard.rKey.wasPressedThisFrame)
