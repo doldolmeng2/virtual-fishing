@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using VirtualFishing.Fishing;
+using VirtualFishing.Fishing.Events;
 using VirtualFishing.Interfaces;
 using VirtualFishing.MiniGame;
 using VirtualFishing.Core.Fish;
@@ -78,6 +79,30 @@ namespace VirtualFishing.Feedback
 
         #region 2. 낚시 상호작용 이벤트
 
+        // [와이어링 — 낚싯대가 실제 발행하는 기존 이벤트만 사용]
+        //  · onRodStateChanged (RodStateTransitionEventSO) → OnRodStateChangedEvent(transition)
+        //      └ 전용 void 이벤트가 없는 '낚싯대 장착(Idle→Attached)' 피드백을 상태 전이로부터 감지
+        //  · onCastingStarted  (VoidEventSO) → OnCastingStartedEvent
+        //  · onBiteOccurredEvent (VoidEventSO) → OnBiteOccurredEvent  (낚싯대와 공유 구독)
+        //  · onHookingSuccess  (VoidEventSO) → OnHookingSuccessEvent
+        //  · onHookingFailed   (VoidEventSO) → OnHookingFailedEvent
+        //  ※ '찌 착수(OnWaterLandedEvent)'는 FloatController.onWaterLanded(VoidEventSO)가 직접 발행하므로
+        //    여기서 다루지 않는다. (상태 전이로도 처리하면 착수 피드백이 이중 발행됨)
+
+        /// <summary>
+        /// FishingRodController.onRodStateChanged(RodStateTransitionEventSO)를
+        /// RodStateTransitionEventListener를 통해 받는 진입점.
+        /// 낚싯대가 별도 void 이벤트로 발행하지 않는 '장착' 피드백을 상태 전이(Idle→Attached)에서 끌어낸다.
+        /// (캐스팅·챔질 성공/실패·입질·착수는 각자 전용 이벤트로 직접 수신하므로 여기서 다루지 않음 — 중복 방지)
+        /// </summary>
+        public void OnRodStateChangedEvent(RodStateTransition transition)
+        {
+            if (transition.Previous == RodState.Idle && transition.Current == RodState.Attached)
+            {
+                OnRodGrabbedEvent();
+            }
+        }
+
         public void OnRodGrabbedEvent()
         {
             HideUI("RodGrabGuide");
@@ -141,7 +166,7 @@ namespace VirtualFishing.Feedback
             Debug.Log("<color=green>[피드백]</color> 낚싯대 장착 완료 - 캐스팅 안내 (통합 로직 실행됨)");
         }
 
-        public void OnCastStartedEvent()
+        public void OnCastingStartedEvent()
         {
             PlaySound("LineCast");
             PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Right);
@@ -163,7 +188,7 @@ namespace VirtualFishing.Feedback
             Debug.Log("<color=green>[피드백]</color> 물고기 입질 발생!");
         }
 
-        public void OnHookSuccessEvent()
+        public void OnHookingSuccessEvent()
         {
             HideUI("HookingGuide");
             PlaySound("HookSuccess");
@@ -172,7 +197,7 @@ namespace VirtualFishing.Feedback
             Debug.Log("<color=green>[피드백]</color> 챔질 성공! 미니게임으로 진입합니다");
         }
 
-        public void OnHookFailedEvent()
+        public void OnHookingFailedEvent()
         {
             HideUI("HookingGuide");
             PlaySound("HookFail");
@@ -312,6 +337,11 @@ namespace VirtualFishing.Feedback
             Debug.Log("<color=green>[피드백]</color> 데이터 저장 완료 및 종료 준비");
         }
 
+        public void OnRodStateChangedEvent()
+        {
+            // 레거시 void 디버그 채널용 no-op (FishingEventDebugTester의 void onRodStateChanged).
+            // 실제 낚싯대 상태 전이 피드백은 RodStateTransition을 받는 오버로드(region 2)에서 처리.
+        }
         #endregion
 
         #region IFeedbackService 구현 (위임)
