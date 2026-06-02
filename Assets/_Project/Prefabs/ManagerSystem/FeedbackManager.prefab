@@ -276,7 +276,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 7997095423358676560}
         m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnCastStartedEvent
+        m_MethodName: OnCastingStartedEvent
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -332,7 +332,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 7997095423358676560}
         m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnHookFailedEvent
+        m_MethodName: OnHookingFailedEvent
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -360,7 +360,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 7997095423358676560}
         m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnHookSuccessEvent
+        m_MethodName: OnHookingSuccessEvent
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
