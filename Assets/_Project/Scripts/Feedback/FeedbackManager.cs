@@ -39,6 +39,10 @@ namespace VirtualFishing.Feedback
         public GameObject tensionWarningPanel;
         [Tooltip("로딩 중 표시할 캔버스 게임오브젝트를 여기에 넣으세요")]
         public GameObject loadingPanel;
+        [Tooltip("낚싯대의 위치를 표시해주는 UI를 여기에 넣으세요")]
+        public GameObject rodGrabGuidePanel;
+
+        private bool _hasPlayedGrabFeedback = false;
 
         #region 1. 시스템 및 초기화 이벤트
 
@@ -51,8 +55,9 @@ namespace VirtualFishing.Feedback
 
         public void OnCalibrationCompleteEvent()
         {
-            PlayTTS("환경 설정이 완료되었습니다. 이제 낚시를 시작할 수 있습니다.");
+            PlayTTS("환경 설정이 완료되었습니다. 컨트롤러를 움직여 낚싯대에 두고 버튼을 눌러 낚싯대를 잡아주세요.");
             PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Both);
+            ShowUI("RodGrabGuide");
             Debug.Log("<color=green>[피드백]</color> 캘리브레이션 완료");
         }
 
@@ -100,9 +105,65 @@ namespace VirtualFishing.Feedback
 
         public void OnRodGrabbedEvent()
         {
+            HideUI("RodGrabGuide");
             PlaySound("RodAttach");
             PlayHaptic(HapticPattern.LightPulse, ControllerHand.Right);
-            Debug.Log("<color=green>[피드백]</color> 낚싯대 장착 완료");
+            PlayTTS("낚싯대를 잡았습니다. 컨트롤러를 꽉 쥐고 앞으로 힘껏 휘둘러 찌를 던져보세요.");
+            Debug.Log("<color=green>[피드백]</color> 낚싯대 장착 완료 - 캐스팅 안내");
+        }
+
+        public void OnRodStateChangedEvent()
+        {
+            if (fishingRodController == null) return;
+
+            // 낚싯대 컨트롤러에서 현재 상태를 직접 읽어옵니다.
+            RodState currentState = fishingRodController.CurrentState;
+            Debug.Log($"<color=cyan>[피드백]</color> 낚싯대 상태 변경 감지: {currentState}");
+
+            switch (currentState)
+            {
+                case RodState.Idle:
+                    // 낚싯대를 놓았을 때: 중복 방지 변수 초기화
+                    _hasPlayedGrabFeedback = false;
+                    break;
+
+                case RodState.Attached:
+                    // 낚싯대를 잡았을 때
+                    TriggerGrabFeedback();
+                    break;
+
+                case RodState.Casting:
+                    // 투척 중 (기존 OnCastStartedEvent와 동일하게 연동 가능)
+                    // PlaySound("LineCast"); 
+                    break;
+
+                case RodState.WaitingForBite:
+                    // 찌가 물에 닿고 입질을 기다리는 상태
+                    break;
+
+                case RodState.Hit:
+                    // 챔질에 성공한 직후 (기존 OnHookSuccessEvent와 동일하게 연동 가능)
+                    break;
+
+                case RodState.MiniGame:
+                    // 미니게임 진행 중
+                    break;
+            }
+        }
+
+        // ★ 신규 추가됨: 실제 낚싯대 잡기 피드백을 실행하는 핵심 함수
+        private void TriggerGrabFeedback()
+        {
+            // 이미 피드백이 재생되었다면 무시하여 TTS나 사운드가 겹치는 것을 막습니다.
+            if (_hasPlayedGrabFeedback) return; 
+            _hasPlayedGrabFeedback = true;
+
+            HideUI("RodGrabGuide");
+            PlaySound("RodAttach");
+            PlayHaptic(HapticPattern.LightPulse, ControllerHand.Right);
+            PlayTTS("낚싯대를 잡았습니다. 컨트롤러를 꽉 쥐고 앞으로 힘껏 휘둘러 찌를 던져보세요.");
+            
+            Debug.Log("<color=green>[피드백]</color> 낚싯대 장착 완료 - 캐스팅 안내 (통합 로직 실행됨)");
         }
 
         public void OnCastingStartedEvent()
@@ -173,6 +234,8 @@ namespace VirtualFishing.Feedback
 
         public void OnFishCaughtEvent()
         {
+            hapticManager.Stop(ControllerHand.Both);
+
             HideUI("MiniGamePanel");
             HideUI("TensionWarning"); 
             
@@ -184,7 +247,6 @@ namespace VirtualFishing.Feedback
             }
 
             ShowUI("CatchResult", catchData); 
-            
             PlaySound("Fanfare");
             ShowVisualEffect("Fireworks", Vector3.zero);
             PlayTTS("축하합니다! 물고기를 낚으셨습니다.");
@@ -194,6 +256,8 @@ namespace VirtualFishing.Feedback
 
         public void OnLineBreakEvent()
         {
+            hapticManager.Stop(ControllerHand.Both);
+
             HideUI("MiniGamePanel");
             HideUI("TensionWarning"); // 텐션 100이었으므로 무조건 켜져있을 경고 끄기
             
@@ -206,6 +270,8 @@ namespace VirtualFishing.Feedback
 
         public void OnFishEscapedEvent()
         {
+            hapticManager.Stop(ControllerHand.Both);
+
             HideUI("MiniGamePanel");
             HideUI("TensionWarning");
             
@@ -276,7 +342,6 @@ namespace VirtualFishing.Feedback
             // 레거시 void 디버그 채널용 no-op (FishingEventDebugTester의 void onRodStateChanged).
             // 실제 낚싯대 상태 전이 피드백은 RodStateTransition을 받는 오버로드(region 2)에서 처리.
         }
-
         #endregion
 
         #region IFeedbackService 구현 (위임)
@@ -336,6 +401,7 @@ namespace VirtualFishing.Feedback
             "MiniGamePanel" => miniGamePanel,
             "TensionWarning" => tensionWarningPanel,
             "Loading" => loadingPanel,
+            "RodGrabGuide" => rodGrabGuidePanel,
             _ => null
         };
 

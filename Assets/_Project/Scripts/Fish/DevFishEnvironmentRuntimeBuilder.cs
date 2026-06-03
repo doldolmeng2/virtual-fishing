@@ -129,6 +129,7 @@ namespace VirtualFishing.Core.Fish
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
             AssignMaterial(water, WaterMaterialPath);
+            ApplyWaterObjectSettings(water);
         }
 
         private static void ApplySoftReservoirAtmosphere()
@@ -170,6 +171,7 @@ namespace VirtualFishing.Core.Fish
             plane.transform.SetParent(parent, false);
             plane.transform.localPosition = position;
             plane.transform.localScale = scale;
+            RemoveColliderFromDecor(plane);
 
             Renderer renderer = plane.GetComponent<Renderer>();
             if (renderer != null)
@@ -177,6 +179,45 @@ namespace VirtualFishing.Core.Fish
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 renderer.receiveShadows = false;
                 renderer.sharedMaterial = CreateTransparentMaterial(color);
+            }
+        }
+
+        private static void ApplyWaterObjectSettings(GameObject water)
+        {
+            int waterLayer = LayerMask.NameToLayer("Water");
+            if (waterLayer >= 0)
+            {
+                water.layer = waterLayer;
+            }
+
+            if (!water.CompareTag("Water"))
+            {
+                try
+                {
+                    water.tag = "Water";
+                }
+                catch (UnityException)
+                {
+                    // Water 태그가 프로젝트에 없으면 레이어·PondWaterSurface 판정만 사용
+                }
+            }
+        }
+
+        private static void RemoveColliderFromDecor(GameObject decor)
+        {
+            Collider collider = decor.GetComponent<Collider>();
+            if (collider == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Object.Destroy(collider);
+            }
+            else
+            {
+                Object.DestroyImmediate(collider);
             }
         }
 

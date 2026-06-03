@@ -167,6 +167,21 @@ namespace VirtualFishing.EditorTools
             {
                 collider.convex = false;
             }
+
+            int waterLayer = LayerMask.NameToLayer("Water");
+            if (waterLayer >= 0)
+            {
+                water.layer = waterLayer;
+            }
+
+            try
+            {
+                water.tag = "Water";
+            }
+            catch (UnityException)
+            {
+                // Water 태그 미정의 시 무시
+            }
         }
 
         private static void CreateMountains(Transform parent)

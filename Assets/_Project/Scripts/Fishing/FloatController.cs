@@ -119,8 +119,36 @@ namespace VirtualFishing.Fishing
 
         private void Start()
         {
+            TryResolveWaterSurface();
+
             if (rodTip != null)
                 _prevRodTipPos = rodTip.position;
+        }
+
+        /// <summary>런타임/프리팹 환경 생성 후 FishEnvironmentController 등에서 호출.</summary>
+        public void BindWaterSurface(Transform surface)
+        {
+            if (surface == null)
+            {
+                return;
+            }
+
+            waterSurface = surface;
+        }
+
+        private void TryResolveWaterSurface()
+        {
+            if (waterSurface != null)
+            {
+                return;
+            }
+
+            PondWaterSurface pond = FindFirstObjectByType<PondWaterSurface>();
+            if (pond != null)
+            {
+                waterSurface = pond.transform;
+                Debug.Log($"[Float] waterSurface 자동 연결: {pond.name}");
+            }
         }
 
         private void Update()
@@ -332,6 +360,8 @@ namespace VirtualFishing.Fishing
 
             if (IsWaterCollider(collision.collider))
                 OnWaterContact();
+            else if (IsOverWater())
+                OnWaterContact();
             else
                 HaltWithoutLanding();
         }
@@ -340,7 +370,7 @@ namespace VirtualFishing.Fishing
         {
             Debug.Log($"[Float] OnTriggerEnter: {other.name}, layer={other.gameObject.layer}, waterLayer={_waterLayer}, state={_state}");
             if (_state != FloatState.InFlight) return;
-            if (other.gameObject.layer != _waterLayer) return;
+            if (!IsWaterCollider(other)) return;
 
             float distFromOrigin = Vector3.Distance(
                 new Vector3(transform.position.x, 0f, transform.position.z),
