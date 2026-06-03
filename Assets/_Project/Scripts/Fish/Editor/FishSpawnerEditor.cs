@@ -32,6 +32,11 @@ namespace VirtualFishing.EditorTools
                     fishSpawner.DebugForceBiteImmediately();
                 }
 
+                if (GUILayout.Button("Force Fake Bite"))
+                {
+                    fishSpawner.DebugForceFakeBite();
+                }
+
                 if (GUILayout.Button("Cancel Bite"))
                 {
                     fishSpawner.CancelBite();

@@ -8,8 +8,8 @@ namespace VirtualFishing.EditorTools
 {
     public static class FishAssetImporter
     {
-        private const string SourceRoot = "Assets/Floreswa";
         private const string TargetRoot = "Assets/Art/Fishes/Floreswa";
+        private const string SourceRoot = TargetRoot;
         private const string FishDbRoot = "Assets/_Project/SO/FishDB/Test";
 
         [MenuItem("VirtualFishing/Fish/Import Floreswa Fish Assets")]
@@ -39,6 +39,8 @@ namespace VirtualFishing.EditorTools
             AssignFishPrefab("Fish_Crucian", $"{TargetRoot}/Prefabs/fish01.prefab");
             AssignFishPrefab("Fish_Bass", $"{TargetRoot}/Prefabs/fish02.prefab");
             AssignFishPrefab("Fish_Catfish", $"{TargetRoot}/Prefabs/fish03.prefab");
+            AssignFishPrefab("Fish_Carp", $"{TargetRoot}/Prefabs/fish01_shade.prefab");
+            AssignFishPrefab("Fish_Snakehead", $"{TargetRoot}/Prefabs/fish03_shade.prefab");
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

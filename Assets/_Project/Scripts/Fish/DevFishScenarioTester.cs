@@ -1,7 +1,11 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using VirtualFishing.Data;
 using VirtualFishing.Fishing;
 using VirtualFishing.MiniGame;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace VirtualFishing.Core.Fish
 {
@@ -13,8 +17,10 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private FishSpawner fishSpawner;
         [SerializeField] private FishingRodController rodController;
         [SerializeField] private MiniGameManager miniGameManager;
+        [SerializeField] private FishSpeciesDataSO[] testSpecies = new FishSpeciesDataSO[0];
 
         private const string DevFishSceneName = "Dev_Fish";
+        private Vector2 scrollPosition;
 
         private void Awake()
         {
@@ -40,20 +46,21 @@ namespace VirtualFishing.Core.Fish
             if (fishSpawner == null) fishSpawner = FindObjectOfType<FishSpawner>();
             if (rodController == null) rodController = FindObjectOfType<FishingRodController>();
             if (miniGameManager == null) miniGameManager = FindObjectOfType<MiniGameManager>();
+            LoadDefaultTestSpecies();
         }
 
-        public void StartBiteTimer()
+        public void ForceSpeciesBite(FishSpeciesDataSO speciesData)
         {
             RefreshReferences();
-            fishSpawner?.StartBiteTimer();
-            Debug.Log("[DevFishScenarioTester] Bite timer started.");
+            fishSpawner?.DebugForceBite(speciesData);
+            Debug.Log($"[DevFishScenarioTester] Forced species bite: {(speciesData != null ? speciesData.DisplayName : "null")}");
         }
 
-        public void ForceBiteNow()
+        public void ForceFakeBite()
         {
             RefreshReferences();
-            fishSpawner?.DebugForceBiteImmediately();
-            Debug.Log("[DevFishScenarioTester] Forced immediate bite.");
+            fishSpawner?.DebugForceFakeBite();
+            Debug.Log("[DevFishScenarioTester] Forced fake bite.");
         }
 
         public void CancelBiteAndClear()
@@ -62,12 +69,6 @@ namespace VirtualFishing.Core.Fish
             fishSpawner?.CancelBite();
             fishController?.ResetFish();
             Debug.Log("[DevFishScenarioTester] Bite cancelled and fish cleared.");
-        }
-
-        public void ApplyPhase(FishPhase phase)
-        {
-            RefreshReferences();
-            fishController?.SetPhase(phase);
         }
 
         public void TriggerRandomMove()
@@ -82,61 +83,104 @@ namespace VirtualFishing.Core.Fish
             fishController?.PreviewReelingPull(percent);
         }
 
-        public void PreviewHookSuccess()
+        public void ShowHookSuccessPresentation()
         {
             RefreshReferences();
-            fishController?.PreviewHookSuccess();
-        }
+            EnsureFishForPresentation();
 
-        public void TryStartMiniGame()
-        {
-            RefreshReferences();
-            fishController?.TryStartMiniGame();
+            if (fishController == null || string.IsNullOrEmpty(fishController.SpeciesName))
+            {
+                Debug.LogWarning("[DevFishScenarioTester] Hook success presentation skipped: no fish is active.");
+                return;
+            }
+
+            fishController.PreviewHookSuccess();
+            Debug.Log("[DevFishScenarioTester] Hook success presentation shown.");
         }
 
         public void SimulateCatchSuccess()
         {
             RefreshReferences();
+            if (miniGameManager == null)
+            {
+                ShowHookSuccessPresentation();
+                return;
+            }
+
             miniGameManager?.EndWith(MiniGameResult.Caught);
             if (fishController != null && !fishController.IsHookSuccessPreviewActive)
             {
-                fishController.PreviewHookSuccess();
+                Debug.LogWarning("[DevFishScenarioTester] Catch success event did not attach fish. Check MiniGameManager/FishController event wiring.");
             }
             Debug.Log("[DevFishScenarioTester] Simulated catch success.");
         }
 
-        public void SimulateLineBreak()
+        public void SimulateFullSuccessFlow()
         {
             RefreshReferences();
-            miniGameManager?.EndWith(MiniGameResult.LineBreak);
-            fishController?.SimulateLineBreak();
-            rodController?.ReelIn();
-            Debug.Log("[DevFishScenarioTester] Simulated line break.");
+            if (fishController == null)
+            {
+                Debug.LogWarning("[DevFishScenarioTester] Full success skipped: FishController not found.");
+                return;
+            }
+
+            if (miniGameManager == null)
+            {
+                ShowHookSuccessPresentation();
+                return;
+            }
+
+            EnsureFishForPresentation();
+
+            fishController.TryStartMiniGame();
+            miniGameManager?.EndWith(MiniGameResult.Caught);
+
+            if (!fishController.IsHookSuccessPreviewActive)
+            {
+                Debug.LogWarning("[DevFishScenarioTester] Full success flow did not attach fish through actual mini-game events.");
+            }
+
+            Debug.Log("[DevFishScenarioTester] Simulated full success flow.");
         }
 
-        public void SimulateFishEscape()
+        private void EnsureFishForPresentation()
         {
-            RefreshReferences();
-            miniGameManager?.EndWith(MiniGameResult.FishEscaped);
-            fishController?.SimulateFishEscape();
-            rodController?.ReelIn();
-            Debug.Log("[DevFishScenarioTester] Simulated fish escape.");
+            if (fishController != null && !string.IsNullOrEmpty(fishController.SpeciesName))
+            {
+                return;
+            }
+
+            if (testSpecies == null || testSpecies.Length == 0)
+            {
+                LoadDefaultTestSpecies();
+            }
+
+            if (testSpecies != null && testSpecies.Length > 0 && testSpecies[0] != null)
+            {
+                ForceSpeciesBite(testSpecies[0]);
+                return;
+            }
+
+            fishSpawner?.DebugForceBiteImmediately();
         }
 
-        public void SimulateRodRelease()
+        private void LoadDefaultTestSpecies()
         {
-            RefreshReferences();
-            rodController?.OnRelease();
-            fishController?.ResetFish();
-            Debug.Log("[DevFishScenarioTester] Simulated rod release.");
-        }
+            if (testSpecies != null && testSpecies.Length > 0)
+            {
+                return;
+            }
 
-        public void SimulateReelIn()
-        {
-            RefreshReferences();
-            rodController?.ReelIn();
-            fishController?.ResetFish();
-            Debug.Log("[DevFishScenarioTester] Simulated reel-in reset.");
+#if UNITY_EDITOR
+            testSpecies = new[]
+            {
+                AssetDatabase.LoadAssetAtPath<FishSpeciesDataSO>("Assets/_Project/SO/FishDB/Test/Fish_Crucian.asset"),
+                AssetDatabase.LoadAssetAtPath<FishSpeciesDataSO>("Assets/_Project/SO/FishDB/Test/Fish_Carp.asset"),
+                AssetDatabase.LoadAssetAtPath<FishSpeciesDataSO>("Assets/_Project/SO/FishDB/Test/Fish_Bass.asset"),
+                AssetDatabase.LoadAssetAtPath<FishSpeciesDataSO>("Assets/_Project/SO/FishDB/Test/Fish_Catfish.asset"),
+                AssetDatabase.LoadAssetAtPath<FishSpeciesDataSO>("Assets/_Project/SO/FishDB/Test/Fish_Snakehead.asset")
+            };
+#endif
         }
 
         private void OnGUI()
@@ -146,46 +190,66 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            const int width = 360;
+            const int width = 380;
             GUILayout.BeginArea(new Rect(12f, 12f, width, Screen.height - 24f), GUI.skin.box);
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition);
             GUILayout.Label("Dev_Fish Scenario Tester");
             GUILayout.Label($"Fish: {fishController?.SpeciesName ?? "-"}");
-            GUILayout.Label($"Phase: {fishController?.CurrentPhase.ToString() ?? "-"} / Move: {fishController?.CurrentMoveMode.ToString() ?? "-"}");
+            GUILayout.Label($"Move: {fishController?.CurrentMoveMode.ToString() ?? "-"}");
             GUILayout.Label($"Rod: {rodController?.CurrentState.ToString() ?? "not found"}");
             GUILayout.Label($"MiniGame Gauge: {(miniGameManager != null ? miniGameManager.SuccessGauge.ToString("F1") : "-")}");
 
             GUILayout.Space(6f);
-            if (GUILayout.Button("Start Bite Timer")) StartBiteTimer();
-            if (GUILayout.Button("Force Bite Now")) ForceBiteNow();
-            if (GUILayout.Button("Cancel Bite + Clear Fish")) CancelBiteAndClear();
+            GUILayout.Label("Bite Events");
+            if (GUILayout.Button("Fake Bite")) ForceFakeBite();
 
             GUILayout.Space(6f);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("P1")) ApplyPhase(FishPhase.Phase1);
-            if (GUILayout.Button("P2")) ApplyPhase(FishPhase.Phase2);
-            if (GUILayout.Button("P3")) ApplyPhase(FishPhase.Phase3);
-            if (GUILayout.Button("P4")) ApplyPhase(FishPhase.Phase4);
-            GUILayout.EndHorizontal();
+            GUILayout.Label("Fish Spawn");
+            if (testSpecies == null || testSpecies.Length == 0)
+            {
+                LoadDefaultTestSpecies();
+            }
 
-            if (GUILayout.Button("Random Move")) TriggerRandomMove();
+            if (testSpecies != null)
+            {
+                for (int i = 0; i < testSpecies.Length; i++)
+                {
+                    FishSpeciesDataSO speciesData = testSpecies[i];
+                    using (new GUILayout.HorizontalScope())
+                    {
+                        string label = speciesData != null ? $"{speciesData.DisplayName} Bite" : $"Missing Species {i + 1}";
+                        if (GUILayout.Button(label))
+                        {
+                            ForceSpeciesBite(speciesData);
+                        }
+                    }
+                }
+            }
 
             GUILayout.Space(6f);
+            GUILayout.Label("Move Trigger");
+            if (GUILayout.Button("Random Left / Right / Stop")) TriggerRandomMove();
+
+            GUILayout.Space(6f);
+            GUILayout.Label("Reeling Pull");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Pull 25%")) PreviewReelPull(25f);
-            if (GUILayout.Button("Pull 60%")) PreviewReelPull(60f);
+            if (GUILayout.Button("Pull 0%")) PreviewReelPull(0f);
+            if (GUILayout.Button("Pull 50%")) PreviewReelPull(50f);
             if (GUILayout.Button("Pull 100%")) PreviewReelPull(100f);
             GUILayout.EndHorizontal();
 
-            if (GUILayout.Button("Try Start MiniGame")) TryStartMiniGame();
-            if (GUILayout.Button("Hook Success Preview")) PreviewHookSuccess();
-            if (GUILayout.Button("Catch Success + NamuFX")) SimulateCatchSuccess();
-            if (GUILayout.Button("Line Break")) SimulateLineBreak();
-            if (GUILayout.Button("Fish Escape")) SimulateFishEscape();
-            if (GUILayout.Button("Rod Release")) SimulateRodRelease();
-            if (GUILayout.Button("Reel In / Reset")) SimulateReelIn();
+            GUILayout.Space(6f);
+            GUILayout.Label("Catch Flow");
+            if (GUILayout.Button("Test Catch Success")) ShowHookSuccessPresentation();
+            if (miniGameManager != null)
+            {
+                if (GUILayout.Button("Actual Full Success Flow")) SimulateFullSuccessFlow();
+                if (GUILayout.Button("Actual Catch Success Event")) SimulateCatchSuccess();
+            }
 
             GUILayout.Space(6f);
-            GUILayout.Label("Hotkeys: Space bite, Enter force bite, 1-4 phase, Q/W/E pull, C catch, L line break, X escape, V release, R reel-in, S reset");
+            if (GUILayout.Button("Clear Fish")) CancelBiteAndClear();
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
     }

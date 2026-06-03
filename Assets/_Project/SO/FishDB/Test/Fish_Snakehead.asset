@@ -21,11 +21,11 @@ MonoBehaviour:
   weightRangeKg:
     min: 2.5
     max: 8
-  baseResistanceValue: 2.5
+  baseResistanceValue: 2.65
   movementPattern: 2
-  minWaitTime: 5
-  maxWaitTime: 9
+  minWaitTime: 3.5
+  maxWaitTime: 7.5
   baseScore: 460
-  fishPrefab: {fileID: 8264218793534278510, guid: ce4ab8efe9a308b4ab2e4d40c6347445, type: 3}
+  fishPrefab: {fileID: 1502018486269965791, guid: f5b750ef4167382468d2c3eec5367fd8, type: 3}
   icon: {fileID: 0}
   description: 한국 저수지의 강한 포식성 담수어. 빠르고 거친 움직임 테스트용.

@@ -12,6 +12,8 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private Vector2[] controlPoints = CreateDefaultControlPoints();
 
         private Mesh generatedMesh;
+        private readonly List<Vector2> cachedOutline = new();
+        private Vector2 cachedCenter;
 
         private void Reset()
         {
@@ -67,6 +69,8 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
+            CacheOutline(outline);
+
             if (generatedMesh == null)
             {
                 generatedMesh = new Mesh
@@ -113,6 +117,79 @@ namespace VirtualFishing.Core.Fish
             meshCollider.sharedMesh = generatedMesh;
         }
 
+        public bool TryGetClosestInsetShorePoint(
+            Vector3 worldReferencePosition,
+            Vector3 worldStartPosition,
+            float inset,
+            out Vector3 worldShorePoint)
+        {
+            List<Vector2> outline = GetCachedOutline();
+            if (outline.Count < 3)
+            {
+                worldShorePoint = default;
+                return false;
+            }
+
+            Vector2 localReference = WorldToLocal2D(worldReferencePosition);
+            Vector2 localStart = WorldToLocal2D(worldStartPosition);
+            Vector2 closest = FindClosestPointOnOutline(outline, localReference);
+            Vector2 inward = cachedCenter - closest;
+            if (inward.sqrMagnitude < 0.0001f)
+            {
+                inward = localStart - closest;
+            }
+
+            if (inward.sqrMagnitude < 0.0001f)
+            {
+                inward = Vector2.up;
+            }
+
+            Vector2 localPoint = closest + inward.normalized * Mathf.Max(0f, inset);
+            if (!ContainsPoint(localPoint, outline))
+            {
+                localPoint = Vector2.Lerp(closest, cachedCenter, 0.08f);
+            }
+
+            worldShorePoint = Local2DToWorld(localPoint, worldStartPosition.y);
+            return true;
+        }
+
+        public bool ContainsWorldPoint(Vector3 worldPoint)
+        {
+            List<Vector2> outline = GetCachedOutline();
+            return outline.Count >= 3 && ContainsPoint(WorldToLocal2D(worldPoint), outline);
+        }
+
+        public Vector3 ClampWorldPointInside(Vector3 worldPoint, float inset)
+        {
+            List<Vector2> outline = GetCachedOutline();
+            if (outline.Count < 3)
+            {
+                return worldPoint;
+            }
+
+            Vector2 localPoint = WorldToLocal2D(worldPoint);
+            if (ContainsPoint(localPoint, outline))
+            {
+                return worldPoint;
+            }
+
+            Vector2 closest = FindClosestPointOnOutline(outline, localPoint);
+            Vector2 inward = cachedCenter - closest;
+            if (inward.sqrMagnitude < 0.0001f)
+            {
+                inward = cachedCenter - localPoint;
+            }
+
+            if (inward.sqrMagnitude < 0.0001f)
+            {
+                inward = Vector2.up;
+            }
+
+            Vector2 clamped = closest + inward.normalized * Mathf.Max(0.02f, inset);
+            return Local2DToWorld(clamped, worldPoint.y);
+        }
+
         private void EnsureDefaultShape()
         {
             if (controlPoints != null && controlPoints.Length >= 4)
@@ -121,6 +198,99 @@ namespace VirtualFishing.Core.Fish
             }
 
             controlPoints = CreateDefaultControlPoints();
+        }
+
+        private List<Vector2> GetCachedOutline()
+        {
+            if (cachedOutline.Count >= 3)
+            {
+                return cachedOutline;
+            }
+
+            EnsureDefaultShape();
+            CacheOutline(BuildSmoothOutline(controlPoints, smoothingIterations));
+            return cachedOutline;
+        }
+
+        private void CacheOutline(IReadOnlyList<Vector2> outline)
+        {
+            cachedOutline.Clear();
+            for (int i = 0; i < outline.Count; i++)
+            {
+                cachedOutline.Add(outline[i]);
+            }
+
+            cachedCenter = cachedOutline.Count >= 3
+                ? CalculateCenter(cachedOutline)
+                : Vector2.zero;
+        }
+
+        private Vector2 WorldToLocal2D(Vector3 worldPoint)
+        {
+            Vector3 local = transform.InverseTransformPoint(worldPoint);
+            return new Vector2(local.x, local.z);
+        }
+
+        private Vector3 Local2DToWorld(Vector2 localPoint, float worldY)
+        {
+            Vector3 world = transform.TransformPoint(new Vector3(localPoint.x, 0f, localPoint.y));
+            world.y = worldY;
+            return world;
+        }
+
+        private static Vector2 FindClosestPointOnOutline(IReadOnlyList<Vector2> outline, Vector2 point)
+        {
+            Vector2 bestPoint = outline[0];
+            float bestDistance = float.PositiveInfinity;
+
+            for (int i = 0; i < outline.Count; i++)
+            {
+                Vector2 start = outline[i];
+                Vector2 end = outline[(i + 1) % outline.Count];
+                Vector2 candidate = ClosestPointOnSegment(start, end, point);
+                float distance = (candidate - point).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestPoint = candidate;
+                }
+            }
+
+            return bestPoint;
+        }
+
+        private static Vector2 ClosestPointOnSegment(Vector2 start, Vector2 end, Vector2 point)
+        {
+            Vector2 segment = end - start;
+            float lengthSquared = segment.sqrMagnitude;
+            if (lengthSquared < 0.0001f)
+            {
+                return start;
+            }
+
+            float t = Mathf.Clamp01(Vector2.Dot(point - start, segment) / lengthSquared);
+            return start + segment * t;
+        }
+
+        private static bool ContainsPoint(Vector2 point, IReadOnlyList<Vector2> polygon)
+        {
+            bool inside = false;
+            for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+            {
+                Vector2 current = polygon[i];
+                Vector2 previous = polygon[j];
+                bool crosses = (current.y > point.y) != (previous.y > point.y);
+                if (crosses)
+                {
+                    float xAtY = (previous.x - current.x) * (point.y - current.y) / (previous.y - current.y) + current.x;
+                    if (point.x < xAtY)
+                    {
+                        inside = !inside;
+                    }
+                }
+            }
+
+            return inside;
         }
 
         private static Vector2 CalculateCenter(IReadOnlyList<Vector2> points)
