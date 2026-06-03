@@ -337,11 +337,6 @@ namespace VirtualFishing.Feedback
             Debug.Log("<color=green>[피드백]</color> 데이터 저장 완료 및 종료 준비");
         }
 
-        public void OnRodStateChangedEvent()
-        {
-            // 레거시 void 디버그 채널용 no-op (FishingEventDebugTester의 void onRodStateChanged).
-            // 실제 낚싯대 상태 전이 피드백은 RodStateTransition을 받는 오버로드(region 2)에서 처리.
-        }
         #endregion
 
         #region IFeedbackService 구현 (위임)
