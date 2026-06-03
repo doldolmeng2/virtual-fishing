@@ -1,0 +1,11 @@
+"Fishing Rod, Rigged and Animated" - imported as rod06.FBX, the player's fishing rod model (FishingRod.prefab)
+Author: Ergin ERYILDIR (ergin3d.com)
+Source: https://sketchfab.com/3d-models/fishing-rod-rigged-and-animated-78991bf44cf54acb8660bef317d72c7a
+License: CC Attribution (CC BY 4.0) https://creativecommons.org/licenses/by/4.0/
+Usage: B역할 낚싯대 모델. PBR 텍스처(Base Color/Metallic/Normal/Roughness)와 함께 사용.
+
+Required credit (CC BY 4.0 - 저작자 표시 필수, 상업적 이용 허용):
+This work is based on "Fishing Rod, Rigged and Animated"
+(https://sketchfab.com/3d-models/fishing-rod-rigged-and-animated-78991bf44cf54acb8660bef317d72c7a)
+by Ergin ERYILDIR (https://sketchfab.com/ergin3d.com)
+licensed under CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/).

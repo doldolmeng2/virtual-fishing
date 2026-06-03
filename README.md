@@ -85,6 +85,31 @@ Assets/
 - 기본적으로 깃헙으로 버전관리를 하되, 대용량 파일은 LFS 사용 (Git LFS 설치 후 git lfs pull해서 파일 받기)
 
 
+## 에셋 크레딧 / 라이선스
+
+프로젝트에 사용된 외부(서드파티) 에셋과 라이선스입니다. **CC BY** 에셋은 저작자 표시가 의무이므로, 최종 빌드의 크레딧 화면(또는 본 문서)에 출처가 반드시 유지되어야 합니다. CC0는 표시 의무가 없습니다.
+
+| 에셋 | 종류 | 경로 | 저작자 | 라이선스 |
+|------|------|------|--------|----------|
+| Fishing Rod, Rigged and Animated (`rod06`) | 3D 모델 + PBR 텍스처 | `_Project/Models/FishingRod/` | Ergin ERYILDIR (ergin3d.com) | **CC BY 4.0** (저작자 표시 필수) |
+| Kloppenheim 05 Pure Sky | HDRI(4K JPG 파노라마) | `Art/Environment/Backdrops/` | Greg Zaal, Jarod Guest (Poly Haven) | CC0 |
+| Simple Water Shader | 워터 셰이더(ShaderGraph) | `Art/Environment/Water/Simple Water Shader/` | _(확인 필요)_ | _(확인 필요)_ |
+| NamuFX — Stylized Water Effects | 워터 VFX | `Art/Environment/Water/NamuFX/` | _(확인 필요)_ | _(확인 필요)_ |
+| PurePoly (`PP_*`) Low-Poly Nature | 환경 모델 | `Art/Environment/Pond/Models/PurePoly_Selected/` | _(확인 필요)_ | _(확인 필요)_ |
+| Pack_FREE_Trees | 로우폴리 나무 | `Art/Environment/Pond/Models/Pack_FREE_Trees/` | _(확인 필요)_ | _(확인 필요)_ |
+
+### 필수 저작자 표시 (CC BY 4.0)
+
+> This work is based on "Fishing Rod, Rigged and Animated"
+> (https://sketchfab.com/3d-models/fishing-rod-rigged-and-animated-78991bf44cf54acb8660bef317d72c7a)
+> by Ergin ERYILDIR (https://sketchfab.com/ergin3d.com)
+> licensed under CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/).
+
+각 모델 폴더의 `*_ATTRIBUTION.txt`에 개별 출처를 함께 보관합니다 — 예: `_Project/Models/FishingRod/rod06_ATTRIBUTION.txt`, `Art/Environment/Backdrops/fish_eagle_hill_polyhaven_ATTRIBUTION.txt`.
+
+> _(확인 필요)_ 로 표시된 에셋은 출처/라이선스 문서가 아직 폴더에 없습니다. Asset Store / 다운로드 출처를 확인해 채워주세요.
+
+
 ## 기타
 
 - 이 부분에는 자기가 생각할 때 이런 규칙이 있으면 효율적이겠다 싶은 것들 적어주시면 됩니다. (예를 들어 저희 깃헙 레포나 브랜치 규칙)
