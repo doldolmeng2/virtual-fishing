@@ -55,16 +55,17 @@ namespace VirtualFishing.Feedback
 
         public void OnCalibrationCompleteEvent()
         {
-            PlayTTS("환경 설정이 완료되었습니다. 컨트롤러를 움직여 낚싯대에 두고 버튼을 눌러 낚싯대를 잡아주세요.");
             PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Both);
-            ShowUI("RodGrabGuide");
             Debug.Log("<color=green>[피드백]</color> 캘리브레이션 완료");
+            HideUI("RodGrabGuide");
         }
 
         public void OnSceneLoadedEvent()
         {
             // 낚시터 배경 환경음 재생 등
             Debug.Log("<color=green>[피드백]</color> 낚시터 현장 도착");
+            // PlayTTS("환경 설정이 완료되었습니다. 컨트롤러를 움직여 낚싯대에 두고 버튼을 눌러 낚싯대를 잡아주세요.");
+            // ShowUI("RodGrabGuide");
         }
 
         public void OnTrackingLostEvent()
@@ -95,63 +96,28 @@ namespace VirtualFishing.Feedback
         /// 낚싯대가 별도 void 이벤트로 발행하지 않는 '장착' 피드백을 상태 전이(Idle→Attached)에서 끌어낸다.
         /// (캐스팅·챔질 성공/실패·입질·착수는 각자 전용 이벤트로 직접 수신하므로 여기서 다루지 않음 — 중복 방지)
         /// </summary>
-        public void OnRodStateChangedEvent(RodStateTransition transition)
-        {
-            if (transition.Previous == RodState.Idle && transition.Current == RodState.Attached)
-            {
-                OnRodGrabbedEvent();
-            }
-        }
-
         public void OnRodGrabbedEvent()
         {
-            HideUI("RodGrabGuide");
             PlaySound("RodAttach");
             PlayHaptic(HapticPattern.LightPulse, ControllerHand.Right);
             PlayTTS("낚싯대를 잡았습니다. 컨트롤러를 꽉 쥐고 앞으로 힘껏 휘둘러 찌를 던져보세요.");
             Debug.Log("<color=green>[피드백]</color> 낚싯대 장착 완료 - 캐스팅 안내");
         }
 
-        public void OnRodStateChangedEvent()
+        public void OnRodStateChangedEvent(RodStateTransition transition)
         {
-            if (fishingRodController == null) return;
-
-            // 낚싯대 컨트롤러에서 현재 상태를 직접 읽어옵니다.
-            RodState currentState = fishingRodController.CurrentState;
-            Debug.Log($"<color=cyan>[피드백]</color> 낚싯대 상태 변경 감지: {currentState}");
-
-            switch (currentState)
+            // 낚싯대를 놓은 상태(Idle)에서 잡은 상태(Attached)로 변했을 때만 장착 피드백 실행
+            if (transition.Previous == RodState.Idle && transition.Current == RodState.Attached)
             {
-                case RodState.Idle:
-                    // 낚싯대를 놓았을 때: 중복 방지 변수 초기화
-                    _hasPlayedGrabFeedback = false;
-                    break;
-
-                case RodState.Attached:
-                    // 낚싯대를 잡았을 때
-                    TriggerGrabFeedback();
-                    break;
-
-                case RodState.Casting:
-                    // 투척 중 (기존 OnCastStartedEvent와 동일하게 연동 가능)
-                    // PlaySound("LineCast"); 
-                    break;
-
-                case RodState.WaitingForBite:
-                    // 찌가 물에 닿고 입질을 기다리는 상태
-                    break;
-
-                case RodState.Hit:
-                    // 챔질에 성공한 직후 (기존 OnHookSuccessEvent와 동일하게 연동 가능)
-                    break;
-
-                case RodState.MiniGame:
-                    // 미니게임 진행 중
-                    break;
+                OnRodGrabbedEvent();
+            }
+            else if (transition.Current == RodState.Idle)
+            {
+                // 낚싯대를 놓았을 때 중복 방지 변수 초기화
+                _hasPlayedGrabFeedback = false;
             }
         }
 
-        // ★ 신규 추가됨: 실제 낚싯대 잡기 피드백을 실행하는 핵심 함수
         private void TriggerGrabFeedback()
         {
             // 이미 피드백이 재생되었다면 무시하여 TTS나 사운드가 겹치는 것을 막습니다.
@@ -331,17 +297,37 @@ namespace VirtualFishing.Feedback
 
         public void OnAccountSavedEvent()
         {
-            // 저장이 완료되면 종료 UI를 띄움
+            // 1. 저장이 완료되면 종료 UI를 띄움
             ShowUI("ExitSequence");
             PlaySound("SaveComplete");
-            Debug.Log("<color=green>[피드백]</color> 데이터 저장 완료 및 종료 준비");
+            PlayTTS("데이터 저장이 완료되었습니다. 잠시 후 게임이 종료됩니다.");
+            Debug.Log("<color=green>[피드백]</color> 데이터 저장 완료 및 자동 종료 대기 중...");
+
+            // 2. 3초 뒤에 게임을 끄거나 UI를 닫는 타이머(코루틴) 시작
+            StartCoroutine(ExitRoutine());
         }
 
-        public void OnRodStateChangedEvent()
+        private System.Collections.IEnumerator ExitRoutine()
         {
-            // 레거시 void 디버그 채널용 no-op (FishingEventDebugTester의 void onRodStateChanged).
-            // 실제 낚싯대 상태 전이 피드백은 RodStateTransition을 받는 오버로드(region 2)에서 처리.
+            // 3초 대기 (TTS 음성이 끝나는 시간 정도)
+            yield return new WaitForSeconds(3.0f);
+
+            // [선택 1] UI만 끄고 메인 화면으로 돌아갈 경우
+            HideUI("ExitSequence"); 
+            
+            // [선택 2] 게임(앱)을 완전히 종료할 경우 (VR 환경에서는 보통 이걸 씁니다)
+            #if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false; // 에디터에서는 플레이 모드 정지
+            #else
+                Application.Quit(); // 실제 빌드된 앱에서는 앱 종료
+            #endif
         }
+
+        // public void OnRodStateChangedEvent()
+        // {
+        //     // 레거시 void 디버그 채널용 no-op (FishingEventDebugTester의 void onRodStateChanged).
+        //     // 실제 낚싯대 상태 전이 피드백은 RodStateTransition을 받는 오버로드(region 2)에서 처리.
+        // }
         #endregion
 
         #region IFeedbackService 구현 (위임)

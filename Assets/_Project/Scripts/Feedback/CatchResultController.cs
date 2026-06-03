@@ -1,7 +1,6 @@
 using UnityEngine;
 using TMPro;
 using System.Collections;
-using UnityEngine.Events; // 이벤트를 사용하기 위해 추가
 
 public class CatchResultController : MonoBehaviour
 {
@@ -9,23 +8,24 @@ public class CatchResultController : MonoBehaviour
     public TextMeshProUGUI fishNameText;
     public TextMeshProUGUI statsText;
     public TextMeshProUGUI gradeText;
+    
+    [Tooltip("깜빡일 안내 텍스트를 여기에 연결하세요")]
+    public TextMeshProUGUI autoCloseText;
 
     [Header("설정")]
-    public float autoConfirmDelay = 10.0f; // 자동 확인 타이머 시간
-    
-    // 버튼이나 타이머가 작동했을 때 외부(FeedbackManager 등)로 알려줄 신호
-    public UnityEvent onConfirmEvent;
+    [Tooltip("결과창이 떠 있는 시간(초)입니다. 이 시간이 지나면 자동으로 닫힙니다.")]
+    public float autoCloseDelay = 7.0f; 
 
-    private Coroutine autoConfirmCoroutine;
+    private Coroutine autoCloseCoroutine;
+    private Coroutine blinkCoroutine;
 
-    // 테스트용 임시 함수 (나중엔 실제 FishData를 받는 형태로 바뀝니다)
     public void DisplayResult(string name, float size, float weight, int stars)
     {
-        // 1. UI 텍스트 갱신[cite: 5]
+        // 1. UI 텍스트 갱신
         fishNameText.text = name;
-        statsText.text = $"크기: {size}cm\n무게: {weight}kg";
+        statsText.text = $"크기: {size:F1}cm    |    무게: {weight:F1}kg";
         
-        // 2. 별 등급 그리기 (별 개수만큼 꽉 찬 별, 나머진 빈 별)
+        // 2. 별 등급 그리기
         string starString = "";
         for (int i = 0; i < 5; i++)
         {
@@ -33,37 +33,54 @@ public class CatchResultController : MonoBehaviour
         }
         gradeText.text = starString;
 
-        // 3. 자동 확인 타이머 시작[cite: 5]
-        if (autoConfirmCoroutine != null) StopCoroutine(autoConfirmCoroutine);
-        autoConfirmCoroutine = StartCoroutine(AutoConfirmRoutine());
+        // 3. 안내 텍스트 세팅 및 깜빡임 효과 시작
+        if (autoCloseText != null)
+        {
+            autoCloseText.gameObject.SetActive(true);
+            autoCloseText.text = "잠시 후 자동으로 창이 닫힙니다...";
+            
+            if (blinkCoroutine != null) StopCoroutine(blinkCoroutine);
+            blinkCoroutine = StartCoroutine(BlinkTextRoutine());
+        }
+        else
+        {
+            Debug.LogError("<color=red>[결과창 오류]</color> Auto Close Text가 인스펙터에 연결되지 않았습니다!");
+        }
+
+        // 4. 자동 닫기 타이머 시작
+        if (autoCloseCoroutine != null) StopCoroutine(autoCloseCoroutine);
+        autoCloseCoroutine = StartCoroutine(AutoCloseRoutine());
     }
 
-    private IEnumerator AutoConfirmRoutine()
+    private IEnumerator AutoCloseRoutine()
     {
-        // 설정된 시간(10초)만큼 대기[cite: 5]
-        yield return new WaitForSeconds(autoConfirmDelay);
+        yield return new WaitForSeconds(autoCloseDelay);
         
-        // 시간이 지나면 자동으로 버튼을 누른 것과 같은 효과 발생[cite: 5]
-        Debug.Log("[결과창] 시간이 초과되어 자동으로 수족관에 넣습니다.");
-        ConfirmAndClose();
+        Debug.Log("<color=cyan>[결과창]</color> 대기 시간이 초과되어 UI를 닫습니다.");
+        gameObject.SetActive(false); 
     }
 
-    // '수족관에 넣기' 버튼을 클릭했을 때 실행할 함수[cite: 5]
-    public void OnConfirmButtonClick()
+    private IEnumerator BlinkTextRoutine()
     {
-        Debug.Log("[결과창] 수동으로 수족관에 넣기 버튼을 눌렀습니다.");
-        ConfirmAndClose();
+        if (autoCloseText == null) yield break;
+
+        Color originalColor = autoCloseText.color;
+        float speed = 2.0f; 
+
+        while (true)
+        {
+            float alpha = Mathf.Lerp(0.3f, 1.0f, Mathf.PingPong(Time.unscaledTime * speed, 1.0f));
+            
+            autoCloseText.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+            
+            yield return null;
+        }
     }
 
-    private void ConfirmAndClose()
+    // UI가 비활성화될 때 안전하게 코루틴을 멈춰줍니다.
+    private void OnDisable()
     {
-        // 코루틴(타이머)이 아직 돌고 있다면 정지
-        if (autoConfirmCoroutine != null) StopCoroutine(autoConfirmCoroutine);
-        
-        // 외부(이벤트를 구독하는 매니저)에 '저장 진행해라'고 알림
-        onConfirmEvent.Invoke();
-        
-        // UI 닫기
-        gameObject.SetActive(false);
+        if (autoCloseCoroutine != null) StopCoroutine(autoCloseCoroutine);
+        if (blinkCoroutine != null) StopCoroutine(blinkCoroutine);
     }
 }
