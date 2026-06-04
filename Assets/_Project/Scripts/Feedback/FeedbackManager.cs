@@ -24,6 +24,12 @@ namespace VirtualFishing.Feedback
         [Tooltip("물고기 데이터를 읽어올 미니게임 매니저를 연결하세요")]
         public MiniGameManager miniGameManager;
 
+        [Tooltip("안전 구역 모니터링 시스템을 연결하세요")]
+        public VirtualFishing.Safety.PlayerSafetyMonitor safetyMonitor;
+
+        [Tooltip("캘리브레이션된 중심점을 읽어올 PlayerDataSO를 연결하세요")]
+        public PlayerDataSO playerData;
+
         [Header("Temporary UI References")]
         [Tooltip("Head-Locked 경고 캔버스 게임오브젝트를 여기에 넣으세요")]
         public GameObject safetyWarningPanel;
@@ -58,6 +64,15 @@ namespace VirtualFishing.Feedback
             PlayHaptic(HapticPattern.StrongPulse, ControllerHand.Both);
             Debug.Log("<color=green>[피드백]</color> 캘리브레이션 완료");
             HideUI("RodGrabGuide");
+            if (safetyMonitor != null)
+            {
+                safetyMonitor.StartMonitoring();
+                Debug.Log("<color=green>[피드백]</color> 플레이어 안전 모니터링 가동 시작");
+            }
+            else
+            {
+                Debug.LogWarning("<color=orange>[피드백]</color> PlayerSafetyMonitor가 연결되지 않아 안전 모니터링을 시작할 수 없습니다.");
+            }
         }
 
         public void OnSceneLoadedEvent()
@@ -251,6 +266,7 @@ namespace VirtualFishing.Feedback
         #endregion
 
         #region 4. 안전 및 종료 이벤트
+        private Coroutine _emergencyCoroutine;
 
         public void OnSafetyWarningEvent(int level)
         {
@@ -270,7 +286,12 @@ namespace VirtualFishing.Feedback
 
                 case SafetyWarningLevel.NearBoundary:
                     // 바닥에 파란색 격자 표시
-                    visualManager.ShowEffect("BlueGrid", Vector3.zero);
+                    Vector3 gridPos = Vector3.zero;
+                    if (playerData != null) 
+                    {
+                        gridPos = playerData.currentPosition;
+                    }
+                    visualManager.ShowEffect("BlueGrid", gridPos);
                     hapticManager.StopAll(); 
                     visualManager.FadeScreen(0.0f, 0.5f);
                     break;
@@ -287,12 +308,26 @@ namespace VirtualFishing.Feedback
                 case SafetyWarningLevel.Emergency:
                     // 게임 화면 어둡게 페이드 아웃 후 패스스루 전환
                     HideUI("SafetyWarning");
-                    visualManager.FadeScreen(0.9f, 1.0f); // 1초에 걸쳐 90% 어둡게
-                    visualManager.ShowPassthrough(true);
                     PlayTTS("안전을 위해 게임을 멈춥니다. 장비를 벗고 주변을 확인해주세요.");
+                    _emergencyCoroutine = StartCoroutine(EmergencySequenceRoutine());
                     break;
             }
             Debug.Log($"<color=green>[피드백]</color> 안전 경고 단계 변경: {warningLevel}");
+        }
+
+        private System.Collections.IEnumerator EmergencySequenceRoutine()
+        {
+            // 1. 게임 화면을 완전히 검게 페이드 아웃 (1초 동안 진행)
+            visualManager.FadeScreen(1.0f, 1.0f); 
+            
+            // 2. 화면이 완전히 까매질 때까지 1초간 대기 (매우 중요)
+            yield return new WaitForSeconds(1.0f);
+            
+            // 3. 화면이 가려진 안전한 상태에서 패스스루(현실 카메라) 렌더링 활성화
+            visualManager.ShowPassthrough(true);
+            
+            // 4. 다시 화면의 검은 장막을 거둬내어 현실 세계(패스스루)를 유저에게 보여줌 (0.5초)
+            visualManager.FadeScreen(0.0f, 0.5f); 
         }
 
         public void OnAccountSavedEvent()
