@@ -5,19 +5,32 @@ using UnityEngine.Serialization;
 using VirtualFishing.Core.Events;
 using VirtualFishing.Data;
 using VirtualFishing.Interfaces;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace VirtualFishing.Core.Fish
 {
     public class FishSpawner : MonoBehaviour, IFishSpawner, IVoidEventListener
     {
+        private const string DefaultFakeBiteResourceName = "OnFakeBite";
+#if UNITY_EDITOR
+        private const string DefaultFakeBiteAssetPath = "Assets/_Project/SO/Events/Resources/OnFakeBite.asset";
+#endif
+
         [FormerlySerializedAs("currentSite")]
         [SerializeField] private FishingSiteDataSO siteData;
         [SerializeField] private MiniGameSettingsSO settings;
         [FormerlySerializedAs("fishController")]
         [SerializeField] private MonoBehaviour fishControllerRef;
         [SerializeField] private VoidEventSO onWarningBiteEvent;
+        [SerializeField] private VoidEventSO onFakeBiteEvent;
         [SerializeField] private VoidEventSO onBiteOccurredEvent;
         [SerializeField] private FishSpeciesDataSO debugForcedSpecies;
+        [SerializeField, Range(0f, 1f)] private float fakeBiteChance = 0.65f;
+        [SerializeField, Range(0, 3)] private int maxFakeBiteCount = 2;
+        [SerializeField] private float fakeBiteMinGap = 0.35f;
+        [SerializeField] private float fakeBiteMaxGap = 0.9f;
         [Tooltip("찌 착수 이벤트 구독 → 착수 시 StartBiteTimer() 자동 호출")]
         [SerializeField] private VoidEventSO onWaterLandedEvent;
 
@@ -25,11 +38,13 @@ namespace VirtualFishing.Core.Fish
         private Coroutine biteCoroutine;
 
         public event Action OnWarningBite;
+        public event Action OnFakeBite;
         public event Action<FishSpeciesDataSO> OnBiteOccurred;
 
         private void Awake()
         {
             fish = fishControllerRef as IFish;
+            TryAssignDefaultFakeBiteEvent();
         }
 
         private void OnEnable()  => onWaterLandedEvent?.Register(this);
@@ -61,6 +76,11 @@ namespace VirtualFishing.Core.Fish
         public void DebugForceBiteImmediately()
         {
             FishSpeciesDataSO species = debugForcedSpecies != null ? debugForcedSpecies : SelectFishSpecies();
+            DebugForceBite(species);
+        }
+
+        public void DebugForceBite(FishSpeciesDataSO species)
+        {
             if (species == null)
             {
                 Debug.LogWarning("[FishSpawner] DebugForceBiteImmediately failed: no valid fish species found.");
@@ -92,6 +112,8 @@ namespace VirtualFishing.Core.Fish
             OnWarningBite?.Invoke();
             onWarningBiteEvent?.Raise();
 
+            yield return EmitFakeBitesBeforeMainBite();
+
             float mainBiteDelay = settings != null
                 ? Mathf.Max(settings.biteGapMinTime, UnityEngine.Random.Range(0.5f, 1.5f))
                 : UnityEngine.Random.Range(0.5f, 1.5f);
@@ -105,6 +127,39 @@ namespace VirtualFishing.Core.Fish
             onBiteOccurredEvent?.Raise();
 
             biteCoroutine = null;
+        }
+
+        public void DebugForceFakeBite()
+        {
+            RaiseFakeBite();
+        }
+
+        private IEnumerator EmitFakeBitesBeforeMainBite()
+        {
+            int fakeBiteCount = PickFakeBiteCount();
+            for (int i = 0; i < fakeBiteCount; i++)
+            {
+                float gap = UnityEngine.Random.Range(fakeBiteMinGap, fakeBiteMaxGap);
+                yield return new WaitForSeconds(gap);
+                RaiseFakeBite();
+            }
+        }
+
+        private int PickFakeBiteCount()
+        {
+            if (maxFakeBiteCount <= 0 || UnityEngine.Random.value > fakeBiteChance)
+            {
+                return 0;
+            }
+
+            return UnityEngine.Random.Range(1, maxFakeBiteCount + 1);
+        }
+
+        private void RaiseFakeBite()
+        {
+            Debug.Log("[FishSpawner] Fake bite occurred.");
+            OnFakeBite?.Invoke();
+            onFakeBiteEvent?.Raise();
         }
 
         private FishSpeciesDataSO SelectFishSpecies()
@@ -155,6 +210,35 @@ namespace VirtualFishing.Core.Fish
             }
 
             return null;
+        }
+
+        private void OnValidate()
+        {
+            fakeBiteMinGap = Mathf.Max(0f, fakeBiteMinGap);
+            fakeBiteMaxGap = Mathf.Max(fakeBiteMinGap, fakeBiteMaxGap);
+            TryAssignDefaultFakeBiteEvent();
+        }
+
+        private void TryAssignDefaultFakeBiteEvent()
+        {
+            VoidEventSO defaultEvent = LoadDefaultFakeBiteEvent();
+            if (defaultEvent != null)
+            {
+                onFakeBiteEvent = defaultEvent;
+            }
+        }
+
+        private static VoidEventSO LoadDefaultFakeBiteEvent()
+        {
+#if UNITY_EDITOR
+            VoidEventSO editorAsset = AssetDatabase.LoadAssetAtPath<VoidEventSO>(DefaultFakeBiteAssetPath);
+            if (editorAsset != null)
+            {
+                return editorAsset;
+            }
+#endif
+
+            return Resources.Load<VoidEventSO>(DefaultFakeBiteResourceName);
         }
     }
 }

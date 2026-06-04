@@ -8,17 +8,18 @@ namespace VirtualFishing.EditorTools
 {
     public static class FishTestPrefabBuilder
     {
-        private const string MaterialFolder = "Assets/Art/Fishes/Test/Materials";
-        private const string PrefabFolder = "Assets/Art/Fishes/Test/Prefabs";
+        private const string MaterialFolder = "Assets/Art/Fishes/Floreswa/TestGenerated/Materials";
+        private const string PrefabFolder = "Assets/Art/Fishes/Floreswa/TestGenerated/Prefabs";
         private const string FishDbFolder = "Assets/_Project/SO/FishDB/Test";
 
         [MenuItem("VirtualFishing/Fish/Build Test Fish Prefabs")]
         public static void BuildTestFishPrefabs()
         {
             EnsureFolder("Assets/Art", "Fishes");
-            EnsureFolder("Assets/Art/Fishes", "Test");
-            EnsureFolder("Assets/Art/Fishes/Test", "Materials");
-            EnsureFolder("Assets/Art/Fishes/Test", "Prefabs");
+            EnsureFolder("Assets/Art/Fishes", "Floreswa");
+            EnsureFolder("Assets/Art/Fishes/Floreswa", "TestGenerated");
+            EnsureFolder("Assets/Art/Fishes/Floreswa/TestGenerated", "Materials");
+            EnsureFolder("Assets/Art/Fishes/Floreswa/TestGenerated", "Prefabs");
 
             BuildAndAssign(
                 fishAssetName: "Fish_Crucian",
@@ -39,6 +40,15 @@ namespace VirtualFishing.EditorTools
                 dorsalScale: new Vector3(0.18f, 0.16f, 0.1f));
 
             BuildAndAssign(
+                fishAssetName: "Fish_Carp",
+                materialName: "MAT_Fish_Carp",
+                prefabName: "PF_Fish_Carp",
+                bodyColor: new Color(0.74f, 0.55f, 0.28f),
+                bodyScale: new Vector3(0.52f, 0.3f, 1.18f),
+                tailScale: new Vector3(0.34f, 0.22f, 0.18f),
+                dorsalScale: new Vector3(0.2f, 0.18f, 0.12f));
+
+            BuildAndAssign(
                 fishAssetName: "Fish_Catfish",
                 materialName: "MAT_Fish_Catfish",
                 prefabName: "PF_Fish_Catfish",
@@ -47,6 +57,15 @@ namespace VirtualFishing.EditorTools
                 tailScale: new Vector3(0.26f, 0.16f, 0.14f),
                 dorsalScale: new Vector3(0.14f, 0.12f, 0.08f),
                 addWhiskers: true);
+
+            BuildAndAssign(
+                fishAssetName: "Fish_Snakehead",
+                materialName: "MAT_Fish_Snakehead",
+                prefabName: "PF_Fish_Snakehead",
+                bodyColor: new Color(0.22f, 0.37f, 0.24f),
+                bodyScale: new Vector3(0.32f, 0.18f, 1.48f),
+                tailScale: new Vector3(0.25f, 0.15f, 0.2f),
+                dorsalScale: new Vector3(0.13f, 0.12f, 0.22f));
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

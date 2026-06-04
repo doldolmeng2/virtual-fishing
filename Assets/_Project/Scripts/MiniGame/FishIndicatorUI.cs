@@ -75,7 +75,6 @@ namespace VirtualFishing.MiniGame
             var canvas = GetComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             transform.localScale = Vector3.one * canvasScale;
-            gameObject.SetActive(false);
         }
 
         /// <summary>미니게임 시작 시 MiniGameManager 가 호출한다.</summary>

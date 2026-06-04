@@ -21,10 +21,10 @@ MonoBehaviour:
   weightRangeKg:
     min: 0.4
     max: 1.2
-  baseResistanceValue: 0.8
+  baseResistanceValue: 0.65
   movementPattern: 0
   minWaitTime: 2
-  maxWaitTime: 5
+  maxWaitTime: 4.5
   baseScore: 100
   fishPrefab: {fileID: 7660056815385157646, guid: 74e9af0b829b51242b0efbce201004e7, type: 3}
   icon: {fileID: 0}
