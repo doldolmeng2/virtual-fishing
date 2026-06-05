@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using VirtualFishing.Core.Events;
 using UnityEngine;
 using VirtualFishing.Data;
 using VirtualFishing.Fishing;
@@ -12,7 +13,7 @@ using UnityEditor;
 
 namespace VirtualFishing.Core.Fish
 {
-    public class FishController : MonoBehaviour, IFish
+    public class FishController : MonoBehaviour, IFish, IVoidEventListener
     {
         [Serializable]
         private sealed class SpeciesCatchEffect
@@ -35,6 +36,36 @@ namespace VirtualFishing.Core.Fish
 
                 return !string.IsNullOrWhiteSpace(fishId)
                     && string.Equals(fishId, current.FishId, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private readonly struct HookedMouthAnchor
+        {
+            public readonly Vector3 LocalPoint;
+            public readonly Vector3 LocalDirection;
+            public readonly string Source;
+
+            public HookedMouthAnchor(Vector3 localPoint, Vector3 localDirection, string source)
+            {
+                LocalPoint = localPoint;
+                LocalDirection = localDirection.sqrMagnitude > 0.0001f
+                    ? localDirection.normalized
+                    : Vector3.back;
+                Source = source;
+            }
+        }
+
+        private readonly struct HookedMouthPreset
+        {
+            public readonly Vector3 BoundsOffset;
+            public readonly Vector3 LocalDirection;
+
+            public HookedMouthPreset(Vector3 boundsOffset, Vector3 localDirection)
+            {
+                BoundsOffset = boundsOffset;
+                LocalDirection = localDirection.sqrMagnitude > 0.0001f
+                    ? localDirection.normalized
+                    : Vector3.back;
             }
         }
 
@@ -68,7 +99,6 @@ namespace VirtualFishing.Core.Fish
 
         [Header("Hook Success Preview")]
         [SerializeField] private Transform hookSuccessAttachTarget;
-        [SerializeField] private Vector3 hookSuccessLocalOffset = new(0f, -0.05f, 0f);
         [SerializeField] private Vector3 hookSuccessLocalEuler = new(90f, 85f, 0f);
         [SerializeField] private bool hideVisualUntilHookSuccess = true;
         [SerializeField] private float reelingPullMinDistanceFromFloat = 0.15f;
@@ -87,11 +117,15 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float previewFloatFlyDuration = 1.2f;
         [SerializeField] private float hookSuccessSplashScale = 1.35f;
         [SerializeField] private float hookedVisualScaleMultiplier = 5.8f;
-        [SerializeField] private Vector3 hookSuccessMouthLocalAxis = Vector3.back;
         [SerializeField] private float hookSuccessMouthTipInset = 0.015f;
+        [SerializeField] private float hookSuccessFloatBottomInset = 0f;
         [SerializeField] private float hookedFlopAngle = 18f;
         [SerializeField] private float hookedFlopSpeed = 11f;
-        [SerializeField] private float hookedFlopVerticalAmount = 0.035f;
+        [SerializeField] private float hookedConnectionSlack = 0.08f;
+        [SerializeField] private float hookedConnectionSpring = 34f;
+        [SerializeField] private float hookedConnectionDamping = 9f;
+        [SerializeField] private float hookedConnectionGravity = 0.2f;
+        [SerializeField] private float hookedSwingTiltAngle = 10f;
         [SerializeField] private bool logHookSuccessRenderDiagnostics = true;
         [SerializeField] private bool applyHookSuccessVisibleMaterial = true;
         [SerializeField] private bool normalizePrefabVisualToFishSize = true;
@@ -100,6 +134,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float maximumPrefabVisualLength = 1.65f;
         [SerializeField] private Vector3 defaultFishLocalBoundsSize = new(1f, 0.35f, 0.25f);
         [SerializeField] private float hookedMinimumVisibleExtent = 0.32f;
+        [SerializeField] private float hookedMaximumVisibleExtent = 0.48f;
         [SerializeField] private float hookedFallbackExtentThreshold = 0.000001f;
         [SerializeField] private float hookedMaxScaleBoost = 10000f;
 
@@ -115,6 +150,7 @@ namespace VirtualFishing.Core.Fish
 
         [Header("Scenario Lifecycle")]
         [SerializeField] private FishingRodController rodController;
+        [SerializeField] private VoidEventSO onResultConfirmedEvent;
         [SerializeField] private bool clearFishWhenRodReturnsToReady = true;
         [SerializeField] private bool clearFishWhenRodReleased = true;
         [SerializeField] private bool clearFishOnMiniGameFailure = true;
@@ -142,6 +178,13 @@ namespace VirtualFishing.Core.Fish
         // 프로젝트에서 하나의 낚시터만 사용하므로 하나의 낚시터 타입만 사용 (추후 낚시터 추가시 수정 필요)
         [SerializeField] private BackgroundType miniGameSiteType = BackgroundType.Pond;
 
+        private const float HookedVisualPresentationScaleFactor = 0.28f;
+        private static readonly Vector3 HookedFishMouthAttachLocalPoint = Vector3.zero;
+        private static readonly Vector3 HookedFishMouthLocalDirection = Vector3.back;
+#if UNITY_EDITOR
+        private const string OnResultConfirmedAssetPath = "Assets/_Project/SO/Events/OnResultConfirmed.asset";
+#endif
+
         private GameObject currentVisualInstance;
         private ParticleSystem currentSplashInstance;
         private Vector3 visualBaseLocalScale = Vector3.one;
@@ -150,8 +193,10 @@ namespace VirtualFishing.Core.Fish
         private bool hasPreviewFloatStartPosition;
         private Coroutine previewFloatFlyCoroutine;
         private bool isHookSuccessPreviewActive;
-        private Vector3 hookedBaseLocalPosition;
-        private Quaternion hookedBaseLocalRotation;
+        private Vector3 hookedMouthLocalPoint;
+        private Vector3 hookedMouthDirectionLocal = Vector3.back;
+        private Vector3 hookedLooseOffsetWorld;
+        private Vector3 hookedLooseVelocityWorld;
         private Transform hookedFloatTarget;
         private Renderer[] hookedFloatRenderers = Array.Empty<Renderer>();
         private PondWaterSurface cachedReelingWaterSurface;
@@ -159,6 +204,9 @@ namespace VirtualFishing.Core.Fish
         private bool hasCachedReelingShorePoint;
         private bool miniGameEventsSubscribed;
         private bool rodEventsSubscribed;
+        private bool resultConfirmEventSubscribed;
+        private bool catchResultListenersSubscribed;
+        private global::CatchResultController[] catchResultControllers = Array.Empty<global::CatchResultController>();
 
         public FishSpeciesDataSO CurrentSpecies => currentSpecies;
         public string SpeciesName => currentSpecies != null ? currentSpecies.DisplayName : string.Empty;
@@ -186,20 +234,28 @@ namespace VirtualFishing.Core.Fish
         {
             SubscribeMiniGameEvents();
             SubscribeRodEvents();
+            SubscribeResultConfirmEvents();
         }
 
         private void Start()
         {
             SubscribeMiniGameEvents();
             SubscribeRodEvents();
+            SubscribeResultConfirmEvents();
         }
 
         private void OnDisable()
         {
+            UnsubscribeResultConfirmEvents();
             UnsubscribeMiniGameEvents();
             UnsubscribeRodEvents();
             StopPhaseMovement();
             StopSplashEffect();
+        }
+
+        void IVoidEventListener.OnEventRaised()
+        {
+            HandleResultConfirmed();
         }
 
         private void Update()
@@ -280,6 +336,10 @@ namespace VirtualFishing.Core.Fish
             isWaitingAtMovementLimit = false;
             currentReelingProgress = 0f;
             isHookSuccessPreviewActive = false;
+            hookedMouthLocalPoint = Vector3.zero;
+            hookedMouthDirectionLocal = Vector3.back;
+            hookedLooseOffsetWorld = Vector3.zero;
+            hookedLooseVelocityWorld = Vector3.zero;
             hookedFloatTarget = null;
             hookedFloatRenderers = Array.Empty<Renderer>();
             cachedReelingWaterSurface = null;
@@ -430,22 +490,25 @@ namespace VirtualFishing.Core.Fish
 
             StopPhaseMovement();
             Renderer[] targetRenderers = GetHookTargetRenderers(target);
-            Vector3 hookWaterPosition = currentVisualInstance.transform.position;
-            hookWaterPosition.y = splashWaterHeight + splashFollowYOffset;
+            Vector3 hookWaterPosition = GetHookSuccessEffectPosition();
             PinFloatToFishPosition(target);
             StopSplashEffect();
 
             currentPhase = FishPhase.None;
             phaseCompleteCount = 0;
-            currentVisualInstance.transform.SetParent(target, false);
-            currentVisualInstance.transform.localPosition = hookSuccessLocalOffset;
-            currentVisualInstance.transform.localRotation = Quaternion.Euler(hookSuccessLocalEuler);
-            currentVisualInstance.transform.localScale = GetHookedLocalScale(target);
+            Transform presentationParent = spawnRoot != null ? spawnRoot : transform;
+            currentVisualInstance.transform.SetParent(presentationParent, true);
+            currentVisualInstance.transform.localScale = GetHookedLocalScale(presentationParent);
             EnsureHookedFishRenderable();
             EnsureHookedFishVisibleSize();
-            AlignHookedFishMouthToFloat(target);
-            hookedBaseLocalPosition = currentVisualInstance.transform.localPosition;
-            hookedBaseLocalRotation = currentVisualInstance.transform.localRotation;
+
+            HookedMouthAnchor mouthAnchor = ResolveHookedMouthAnchor();
+            hookedMouthLocalPoint = mouthAnchor.LocalPoint;
+            hookedMouthDirectionLocal = mouthAnchor.LocalDirection;
+            hookedLooseOffsetWorld = Vector3.zero;
+            hookedLooseVelocityWorld = Vector3.zero;
+            currentVisualInstance.transform.rotation = GetHookedHangWorldRotation(Vector3.up, 0f);
+            AlignHookedFishMouthToWorldPoint(GetHookTargetWorldPoint(target));
             TrackHookedFloatTarget(target, targetRenderers);
             isHookSuccessPreviewActive = true;
             LogHookSuccessRenderDiagnostics(target, "after attach");
@@ -556,6 +619,10 @@ namespace VirtualFishing.Core.Fish
             currentVisualInstance = null;
             visualBaseLocalScale = Vector3.one;
             isHookSuccessPreviewActive = false;
+            hookedMouthLocalPoint = Vector3.zero;
+            hookedMouthDirectionLocal = Vector3.back;
+            hookedLooseOffsetWorld = Vector3.zero;
+            hookedLooseVelocityWorld = Vector3.zero;
             hookedFloatTarget = null;
             hookedFloatRenderers = Array.Empty<Renderer>();
             cachedReelingWaterSurface = null;
@@ -916,16 +983,22 @@ namespace VirtualFishing.Core.Fish
             }
 
             float maxExtent = Mathf.Max(GetMaxExtent(bounds), hookedFallbackExtentThreshold);
-            if (maxExtent >= hookedMinimumVisibleExtent)
+            float minimumVisibleExtent = hookedMinimumVisibleExtent * HookedVisualPresentationScaleFactor;
+            if (maxExtent < minimumVisibleExtent)
             {
-                return;
+                float scaleBoost = Mathf.Clamp(
+                    minimumVisibleExtent / maxExtent,
+                    1f,
+                    Mathf.Max(1f, hookedMaxScaleBoost));
+                currentVisualInstance.transform.localScale *= scaleBoost;
+                maxExtent *= scaleBoost;
             }
 
-            float scaleBoost = Mathf.Clamp(
-                hookedMinimumVisibleExtent / maxExtent,
-                1f,
-                Mathf.Max(1f, hookedMaxScaleBoost));
-            currentVisualInstance.transform.localScale *= scaleBoost;
+            float maximumVisibleExtent = Mathf.Max(minimumVisibleExtent, hookedMaximumVisibleExtent);
+            if (maxExtent > maximumVisibleExtent)
+            {
+                currentVisualInstance.transform.localScale *= maximumVisibleExtent / maxExtent;
+            }
         }
 
         private static float GetMaxExtent(Bounds bounds)
@@ -1069,41 +1142,134 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
-            if (!TryGetCurrentVisualLocalBounds(out Bounds localBounds))
+            AlignHookedFishMouthToWorldPoint(GetHookTargetWorldPoint(target));
+        }
+
+        private void AlignHookedFishMouthToWorldPoint(Vector3 mouthWorldPoint)
+        {
+            if (currentVisualInstance == null)
             {
                 return;
             }
 
-            Vector3 mouthLocalPoint = GetMouthLocalPoint(localBounds);
-            Vector3 desiredMouthPoint = target.TransformPoint(hookSuccessLocalOffset);
-            Vector3 currentMouthPoint = currentVisualInstance.transform.TransformPoint(mouthLocalPoint);
-            currentVisualInstance.transform.position += desiredMouthPoint - currentMouthPoint;
+            Vector3 currentMouthPoint = currentVisualInstance.transform.TransformPoint(hookedMouthLocalPoint);
+            currentVisualInstance.transform.position += mouthWorldPoint - currentMouthPoint;
         }
 
-        private Vector3 GetMouthLocalPoint(Bounds localBounds)
+        private Quaternion GetHookedHangWorldRotation(Vector3 hangDirection, float flopAngle)
         {
-            Vector3 axis = hookSuccessMouthLocalAxis.sqrMagnitude > 0.0001f
-                ? hookSuccessMouthLocalAxis.normalized
-                : Vector3.forward;
-            Vector3 direction = GetDominantAxisDirection(axis);
-            Vector3 mouthPoint = localBounds.center + Vector3.Scale(localBounds.extents, direction);
+            Vector3 headDirection = hangDirection.sqrMagnitude > 0.0001f
+                ? hangDirection.normalized
+                : Vector3.up;
+            Quaternion hangRotation = Quaternion.FromToRotation(hookedMouthDirectionLocal, headDirection);
+            Quaternion sideViewTwist = Quaternion.AngleAxis(-hookSuccessLocalEuler.y, headDirection);
+            Quaternion flopTwist = Quaternion.AngleAxis(flopAngle, headDirection);
+            return flopTwist * sideViewTwist * hangRotation;
+        }
+
+        private HookedMouthAnchor ResolveHookedMouthAnchor()
+        {
+            if (TryResolveHardcodedMouthAnchor(out HookedMouthAnchor hardcodedAnchor))
+            {
+                Debug.Log(
+                    $"[FishController] Hook mouth anchor resolved: fish={SpeciesName}, " +
+                    $"source={hardcodedAnchor.Source}, localPoint={hardcodedAnchor.LocalPoint.ToString("F4")}, " +
+                    $"localDirection={hardcodedAnchor.LocalDirection.ToString("F4")}");
+                return hardcodedAnchor;
+            }
+
+            if (TryGetCurrentVisualLocalBounds(out Bounds localBounds))
+            {
+                Vector3 fallbackDirection = HookedFishMouthLocalDirection;
+                return new HookedMouthAnchor(
+                    GetMouthLocalPoint(localBounds, fallbackDirection),
+                    fallbackDirection,
+                    "bounds fallback");
+            }
+
+            return new HookedMouthAnchor(Vector3.zero, GetHookSuccessMouthDirection(), "origin fallback");
+        }
+
+        private bool TryResolveHardcodedMouthAnchor(out HookedMouthAnchor anchor)
+        {
+            anchor = default;
+            if (!TryGetCurrentVisualLocalBounds(out Bounds localBounds))
+            {
+                return false;
+            }
+
+            HookedMouthPreset preset = GetHardcodedMouthPreset();
+            anchor = new HookedMouthAnchor(
+                GetMouthLocalPoint(localBounds, preset.BoundsOffset, preset.LocalDirection),
+                preset.LocalDirection,
+                $"hardcoded {GetCurrentFishPrefabName()}");
+            return true;
+        }
+
+        private HookedMouthPreset GetHardcodedMouthPreset()
+        {
+            // Floreswa fish prefabs have no mouth anchor object, so the mouth endpoint is pinned here.
+            // BoundsOffset is normalized by local renderer bounds: -1/1 means each local bounds edge.
+            string fishId = currentSpecies != null ? currentSpecies.FishId : string.Empty;
+            if (!string.IsNullOrEmpty(fishId))
+            {
+                return fishId switch
+                {
+                    "Fish_Crucian" => new HookedMouthPreset(new Vector3(0f, -0.34f, -0.9f), Vector3.back),
+                    "Fish_Carp" => new HookedMouthPreset(new Vector3(0f, -0.34f, -0.9f), Vector3.back),
+                    "Fish_Bass" => new HookedMouthPreset(new Vector3(0f, 0f, -1f), Vector3.back),
+                    "Fish_Catfish" => new HookedMouthPreset(new Vector3(0f, -0.36f, -0.95f), Vector3.back),
+                    "Fish_Snakehead" => new HookedMouthPreset(new Vector3(0f, -0.36f, -0.95f), Vector3.back),
+                    _ => GetPrefabMouthPreset()
+                };
+            }
+
+            return GetPrefabMouthPreset();
+        }
+
+        private HookedMouthPreset GetPrefabMouthPreset()
+        {
+            return GetCurrentFishPrefabName() switch
+            {
+                "fish01" => new HookedMouthPreset(new Vector3(0f, -0.34f, -0.9f), Vector3.back),
+                "fish01_shade" => new HookedMouthPreset(new Vector3(0f, -0.34f, -0.9f), Vector3.back),
+                "fish02" or "fish02_shade" => new HookedMouthPreset(new Vector3(0f, 0f, -1f), Vector3.back),
+                "fish03" => new HookedMouthPreset(new Vector3(0f, -0.36f, -0.95f), Vector3.back),
+                "fish03_shade" => new HookedMouthPreset(new Vector3(0f, -0.36f, -0.95f), Vector3.back),
+                _ => new HookedMouthPreset(HookedFishMouthLocalDirection, HookedFishMouthLocalDirection)
+            };
+        }
+
+        private string GetCurrentFishPrefabName()
+        {
+            if (currentSpecies != null && currentSpecies.FishPrefab != null)
+            {
+                return currentSpecies.FishPrefab.name;
+            }
+
+            return currentVisualInstance != null
+                ? currentVisualInstance.name.Replace("_Instance", string.Empty)
+                : string.Empty;
+        }
+
+        private Vector3 GetMouthLocalPoint(Bounds localBounds, Vector3 direction)
+        {
+            return GetMouthLocalPoint(localBounds, direction, direction);
+        }
+
+        private Vector3 GetMouthLocalPoint(Bounds localBounds, Vector3 boundsOffset, Vector3 direction)
+        {
+            Vector3 clampedOffset = new(
+                Mathf.Clamp(boundsOffset.x, -1f, 1f),
+                Mathf.Clamp(boundsOffset.y, -1f, 1f),
+                Mathf.Clamp(boundsOffset.z, -1f, 1f));
+            Vector3 mouthPoint = localBounds.center + Vector3.Scale(localBounds.extents, clampedOffset);
             return mouthPoint - direction * Mathf.Max(0f, hookSuccessMouthTipInset);
         }
 
-        private static Vector3 GetDominantAxisDirection(Vector3 axis)
+        private Vector3 GetHookSuccessMouthDirection()
         {
-            Vector3 abs = new(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z));
-            if (abs.x >= abs.y && abs.x >= abs.z)
-            {
-                return new Vector3(Mathf.Sign(axis.x), 0f, 0f);
-            }
-
-            if (abs.y >= abs.x && abs.y >= abs.z)
-            {
-                return new Vector3(0f, Mathf.Sign(axis.y), 0f);
-            }
-
-            return new Vector3(0f, 0f, Mathf.Sign(axis.z));
+            return HookedFishMouthLocalDirection;
         }
 
         private bool TryGetCurrentVisualLocalBounds(out Bounds bounds)
@@ -1442,9 +1608,53 @@ namespace VirtualFishing.Core.Fish
             return false;
         }
 
+        private Vector3 GetHookTargetWorldPoint(Transform target)
+        {
+            if (target == null)
+            {
+                return currentVisualInstance != null
+                    ? currentVisualInstance.transform.position
+                    : transform.position;
+            }
+
+            if (hookedFloatRenderers != null && hookedFloatRenderers.Length > 0)
+            {
+                Bounds bounds = default;
+                bool hasBounds = false;
+                for (int i = 0; i < hookedFloatRenderers.Length; i++)
+                {
+                    Renderer renderer = hookedFloatRenderers[i];
+                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                    {
+                        continue;
+                    }
+
+                    if (!hasBounds)
+                    {
+                        bounds = renderer.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(renderer.bounds);
+                    }
+                }
+
+                if (hasBounds)
+                {
+                    return bounds.center
+                        + Vector3.down * (bounds.extents.y + Mathf.Max(0f, hookSuccessFloatBottomInset));
+                }
+            }
+
+            return target.TransformPoint(HookedFishMouthAttachLocalPoint);
+        }
+
         private Vector3 GetHookedLocalScale(Transform target)
         {
-            Vector3 desiredWorldScale = visualBaseLocalScale * hookedVisualScaleMultiplier;
+            Vector3 desiredWorldScale = visualBaseLocalScale
+                * hookedVisualScaleMultiplier
+                * HookedVisualPresentationScaleFactor;
             if (target == null)
             {
                 return desiredWorldScale;
@@ -1535,6 +1745,20 @@ namespace VirtualFishing.Core.Fish
 
             Destroy(effectInstance, catchEffectLifetime);
             Debug.Log($"[FishController] NamuFX catch effect played: fish={SpeciesName}, prefab={effectPrefab.name}");
+        }
+
+        private Vector3 GetHookSuccessEffectPosition()
+        {
+            if (currentSplashInstance != null)
+            {
+                return currentSplashInstance.transform.position;
+            }
+
+            Vector3 position = currentVisualInstance != null
+                ? currentVisualInstance.transform.position
+                : visualSpawnPosition;
+            position.y = splashWaterHeight + splashFollowYOffset;
+            return position;
         }
 
         private GameObject ResolveCatchEffectPrefab()
@@ -2042,6 +2266,76 @@ namespace VirtualFishing.Core.Fish
             rodEventsSubscribed = false;
         }
 
+        private void SubscribeResultConfirmEvents()
+        {
+            TryResolveResultConfirmedEvent();
+
+            if (onResultConfirmedEvent != null && !resultConfirmEventSubscribed)
+            {
+                onResultConfirmedEvent.Register(this);
+                resultConfirmEventSubscribed = true;
+            }
+
+            if (catchResultListenersSubscribed)
+            {
+                return;
+            }
+
+            catchResultControllers = FindObjectsByType<global::CatchResultController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < catchResultControllers.Length; i++)
+            {
+                global::CatchResultController controller = catchResultControllers[i];
+                if (controller != null && controller.onConfirmEvent != null)
+                {
+                    controller.onConfirmEvent.RemoveListener(HandleResultConfirmed);
+                    controller.onConfirmEvent.AddListener(HandleResultConfirmed);
+                }
+            }
+
+            catchResultListenersSubscribed = true;
+        }
+
+        private void UnsubscribeResultConfirmEvents()
+        {
+            if (onResultConfirmedEvent != null && resultConfirmEventSubscribed)
+            {
+                onResultConfirmedEvent.Unregister(this);
+                resultConfirmEventSubscribed = false;
+            }
+
+            if (!catchResultListenersSubscribed)
+            {
+                return;
+            }
+
+            for (int i = 0; i < catchResultControllers.Length; i++)
+            {
+                global::CatchResultController controller = catchResultControllers[i];
+                if (controller != null && controller.onConfirmEvent != null)
+                {
+                    controller.onConfirmEvent.RemoveListener(HandleResultConfirmed);
+                }
+            }
+
+            catchResultControllers = Array.Empty<global::CatchResultController>();
+            catchResultListenersSubscribed = false;
+        }
+
+        private void TryResolveResultConfirmedEvent()
+        {
+            if (onResultConfirmedEvent != null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            onResultConfirmedEvent = AssetDatabase.LoadAssetAtPath<VoidEventSO>(OnResultConfirmedAssetPath);
+#endif
+        }
+
         private void HandleRodReleased()
         {
             if (isHookSuccessPreviewActive)
@@ -2057,8 +2351,21 @@ namespace VirtualFishing.Core.Fish
             ClearFishForScenario("rod released");
         }
 
+        private void HandleResultConfirmed()
+        {
+            ClearFishForScenario("result confirmed");
+        }
+
         private void HandleRodStateChanged(RodStateTransition transition)
         {
+            if (isHookSuccessPreviewActive
+                && IsRodReadyState(transition.Previous)
+                && IsRodActiveFishingState(transition.Current))
+            {
+                ClearFishForScenario($"new fishing started: {transition.Current}");
+                return;
+            }
+
             if (!clearFishWhenRodReturnsToReady)
             {
                 return;
@@ -2145,14 +2452,58 @@ namespace VirtualFishing.Core.Fish
                 return;
             }
 
+            float deltaTime = Time.deltaTime;
             float wave = Mathf.Sin(Time.time * hookedFlopSpeed);
-            Vector3 localPosition = hookedBaseLocalPosition;
-            localPosition.y += Mathf.Abs(wave) * hookedFlopVerticalAmount;
+            UpdateHookedLooseConnection(deltaTime);
 
-            currentVisualInstance.transform.localPosition = localPosition;
-            currentVisualInstance.transform.localRotation =
-                hookedBaseLocalRotation * Quaternion.Euler(0f, 0f, wave * hookedFlopAngle);
-            AlignHookedFishMouthToFloat(hookedFloatTarget);
+            Vector3 swingVector = Vector3.ProjectOnPlane(
+                hookedLooseOffsetWorld + hookedLooseVelocityWorld * 0.035f,
+                Vector3.up);
+            Vector3 hangDirection = Vector3.up;
+            if (swingVector.sqrMagnitude > 0.000001f)
+            {
+                Vector3 swingAxis = Vector3.Cross(Vector3.up, swingVector.normalized);
+                float slack = Mathf.Max(0.001f, hookedConnectionSlack);
+                float swingAngle = Mathf.Clamp(
+                    swingVector.magnitude / slack * hookedSwingTiltAngle,
+                    0f,
+                    hookedSwingTiltAngle);
+                hangDirection = Quaternion.AngleAxis(swingAngle, swingAxis) * Vector3.up;
+            }
+
+            currentVisualInstance.transform.rotation = GetHookedHangWorldRotation(
+                hangDirection,
+                wave * hookedFlopAngle);
+
+            AlignHookedFishMouthToWorldPoint(GetHookTargetWorldPoint(hookedFloatTarget));
+        }
+
+        private void UpdateHookedLooseConnection(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            hookedLooseVelocityWorld += Vector3.down * (hookedConnectionGravity * deltaTime);
+            hookedLooseVelocityWorld += -hookedLooseOffsetWorld * (hookedConnectionSpring * deltaTime);
+            hookedLooseVelocityWorld *= Mathf.Exp(-hookedConnectionDamping * deltaTime);
+            hookedLooseOffsetWorld += hookedLooseVelocityWorld * deltaTime;
+
+            float slack = Mathf.Max(0f, hookedConnectionSlack);
+            float distance = hookedLooseOffsetWorld.magnitude;
+            if (slack <= 0f || distance <= slack)
+            {
+                return;
+            }
+
+            Vector3 normal = hookedLooseOffsetWorld / distance;
+            hookedLooseOffsetWorld = normal * slack;
+            float outwardVelocity = Vector3.Dot(hookedLooseVelocityWorld, normal);
+            if (outwardVelocity > 0f)
+            {
+                hookedLooseVelocityWorld -= normal * outwardVelocity;
+            }
         }
 
         private Vector3 GetMovementDirectionByMode(FishMoveMode moveMode)
