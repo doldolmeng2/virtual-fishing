@@ -1108,6 +1108,10 @@ PrefabInstance:
       propertyPath: safetyWarningPanel
       value: 
       objectReference: {fileID: 1540207896}
+    - target: {fileID: 8631416207550898152, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
+      propertyPath: ttsList.Array.data[9].clip
+      value: 
+      objectReference: {fileID: 8300000, guid: 9cc9107457e1cac4caaba1760b53e3c0, type: 3}
     - target: {fileID: 8689917105399289365, guid: 59f9052afd023a142a06bb7bfad77ca0, type: 3}
       propertyPath: m_Name
       value: FeedbackSystem
@@ -1371,14 +1375,6 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8033301774489015053, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-      propertyPath: m_text
-      value: "!!\uC790\uB9AC\uB97C \uC774\uD0C8\uD558\uC9C0 \uB9D0\uC544\uC8FC\uC138\uC694!!"
-      objectReference: {fileID: 0}
-    - target: {fileID: 8033301774489015053, guid: 905dc8c6053b74a22a8172e0bbfe7e92, type: 3}
-      propertyPath: m_sharedMaterial
-      value: 
-      objectReference: {fileID: 3741584719933479584, guid: 90a8610d234c449fc884bcc2877fc2ea, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

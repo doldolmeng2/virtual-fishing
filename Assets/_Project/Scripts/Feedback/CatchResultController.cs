@@ -23,7 +23,7 @@ public class CatchResultController : MonoBehaviour
     {
         // 1. UI 텍스트 갱신
         fishNameText.text = name;
-        statsText.text = $"크기: {size:F1}cm    |    무게: {weight:F1}kg";
+        statsText.text = $"크기: {size:F1}cm | 무게: {weight:F1}kg";
         
         // 2. 별 등급 그리기
         string starString = "";
