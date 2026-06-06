@@ -474,6 +474,10 @@ MonoBehaviour:
   statsText: {fileID: 565021194701580509}
   gradeText: {fileID: 6122361826913203225}
   autoCloseText: {fileID: 2625280082817341228}
+  onConfirmEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  onResultConfirmedEvent: {fileID: 11400000, guid: c4220d1ec6e01584985c195819366f0c, type: 2}
   autoCloseDelay: 7
 --- !u!1 &6738962647097410410
 GameObject:
