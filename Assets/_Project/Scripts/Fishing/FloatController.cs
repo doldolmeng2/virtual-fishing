@@ -91,6 +91,16 @@ namespace VirtualFishing.Fishing
             _state = FloatState.OnWater;
 
             Debug.Log("[Float] 착수!");
+
+            // 어느 판정 경로(충돌/트리거/높이 fallback)로 들어와도 수면 높이에 고정.
+            // 관통/충돌 지연으로 수면 아래에 박힌 채 멈추는 문제 방지.
+            if (waterSurface != null)
+            {
+                Vector3 pos = transform.position;
+                pos.y = waterSurface.position.y;
+                transform.position = pos;
+            }
+
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
             _rb.isKinematic = true;

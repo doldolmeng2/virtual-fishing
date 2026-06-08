@@ -190,16 +190,18 @@ namespace VirtualFishing.Core.Fish
                 water.layer = waterLayer;
             }
 
-            if (!water.CompareTag("Water"))
+            // CompareTag/set_tag 모두 태그가 미정의면 UnityException 을 던지므로 함께 감싼다.
+            // (이전엔 CompareTag 가 try 밖이라 "Tag: Water is not defined" 에러가 콘솔에 찍혔다.)
+            try
             {
-                try
+                if (!water.CompareTag("Water"))
                 {
                     water.tag = "Water";
                 }
-                catch (UnityException)
-                {
-                    // Water 태그가 프로젝트에 없으면 레이어·PondWaterSurface 판정만 사용
-                }
+            }
+            catch (UnityException)
+            {
+                // Water 태그가 프로젝트에 없으면 레이어·PondWaterSurface 판정만 사용
             }
         }
 

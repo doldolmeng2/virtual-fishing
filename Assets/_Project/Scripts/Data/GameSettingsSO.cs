@@ -13,7 +13,7 @@ namespace VirtualFishing.Data
         public float castingZoneRadius = 0.5f;
         public Vector3 castingZoneOffset = new Vector3(0f, 0.3f, -0.1f);
         public float minCastingHoldTime = 0.15f;
-        public float minCastingAcceleration = 1.0f;
+        public float minCastingAcceleration = 0.9f;
         public float minCastingPower = 0.3f;
         public float maxCastingPower = 1.0f;
 

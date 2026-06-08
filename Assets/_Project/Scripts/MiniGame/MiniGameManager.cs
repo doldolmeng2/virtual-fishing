@@ -35,6 +35,8 @@ namespace VirtualFishing.MiniGame
         [SerializeField] private Transform rodHandTransform;
         [Tooltip("HMD(카메라) Transform. 비우면 월드 X 절댓값으로 판정")]
         [SerializeField] private Transform hmdTransform;
+        [Tooltip("켜면 매 프레임 좌/우 판정(sideFish/sideHmd) 값을 콘솔에 로깅한다. 손맛 튜닝용.")]
+        [SerializeField] private bool logPhaseDirectionDebug = true;
 
         [Header("UI")]
         [SerializeField] private FishController fishController;
@@ -168,13 +170,15 @@ namespace VirtualFishing.MiniGame
 
         private void UpdatePhaseHold(Vector3 rodDirection)
         {
-            if (!IsRodInOppositeDirection(rodDirection))
+            // 충전 조건일 때만 누적하되, 임계값을 많이 넘길수록 빠르게(fillSpeed 큼) 찬다.
+            // 조건을 잃어도(fillSpeed 0) 떨어뜨리지 않고 현재값을 유지한다.
+            float fillSpeed = GetPhaseFillSpeed(rodDirection);
+            if (fillSpeed <= 0f)
             {
-                _phaseHoldTimer = Mathf.Max(0f, _phaseHoldTimer - Time.deltaTime);
                 return;
             }
 
-            _phaseHoldTimer += Time.deltaTime;
+            _phaseHoldTimer += Time.deltaTime * fillSpeed;
             if (_phaseHoldTimer >= settings.phaseHoldDuration)
             {
                 _phaseHoldTimer = 0f;
@@ -214,10 +218,17 @@ namespace VirtualFishing.MiniGame
             _normalPhaseDuration = UnityEngine.Random.Range(min, max);
         }
 
-        private bool IsRodInOppositeDirection(Vector3 rodDirection)
+        /// <summary>
+        /// 챔질 방향(물고기 진행 반대쪽) 충족도에 따른 phase 게이지 충전 속도 배율을 반환한다.
+        /// 0 이면 미충족(충전 안 함). 임계값을 아슬아슬하게 넘기면 느리게(phaseFillSpeedMin),
+        /// 많이 넘길수록(팔을 강하게 뻗을수록) 빠르게(phaseFillSpeedMax) 찬다.
+        /// </summary>
+        private float GetPhaseFillSpeed(Vector3 rodDirection)
         {
             float threshold = settings != null ? settings.phaseDirectionThreshold : 0.3f;
 
+            // HMD(머리)를 기준으로 컨트롤러를 좌/우로 얼마나 뻗었는지(단순 X 차이).
+            // xValue > 0 : 컨트롤러가 머리 오른쪽, xValue < 0 : 머리 왼쪽.
             float xValue;
             if (rodHandTransform != null)
             {
@@ -229,12 +240,34 @@ namespace VirtualFishing.MiniGame
                 xValue = rodDirection.x;
             }
 
-            return _currentFishMoveState switch
+            // 임계값을 얼마나 초과했는지(m). 0 이상이면 충족, 클수록 "많이" 뻗은 상태.
+            float margin = _currentFishMoveState switch
             {
-                FishMoveState.Left  => xValue >  threshold,
-                FishMoveState.Right => xValue < -threshold,
-                _                   => false
+                FishMoveState.Left  =>  xValue - threshold,
+                FishMoveState.Right => -xValue - threshold,
+                _                   => -1f
             };
+
+            float fillSpeed = 0f;
+            if (margin >= 0f)
+            {
+                float minRate    = settings != null ? settings.phaseFillSpeedMin : 0.4f;
+                float maxRate    = settings != null ? settings.phaseFillSpeedMax : 2f;
+                float fullMargin = settings != null ? Mathf.Max(0.0001f, settings.phaseFillFullMargin) : 0.3f;
+                float t = Mathf.Clamp01(margin / fullMargin);
+                fillSpeed = Mathf.Lerp(minRate, maxRate, t);
+            }
+
+            if (logPhaseDirectionDebug)
+            {
+                // 팔 뻗음 정도(margin)에 따라 충전 속도(fillSpeed)가 어떻게 변하는지 확인용.
+                Debug.Log(
+                    $"[MiniGame] state={_currentFishMoveState} thr={threshold:F2} | " +
+                    $"xValue={xValue:F2} margin={margin:F2} fillSpeed={fillSpeed:F2} " +
+                    $"=> {(fillSpeed > 0f ? "충전" : "미충족")}");
+            }
+
+            return fillSpeed;
         }
 
         private void UpdateSuccessGauge(float reelingSpeed)

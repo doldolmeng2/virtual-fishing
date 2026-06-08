@@ -34,7 +34,7 @@ namespace VirtualFishing.UI
             
             feedbackManager.PlayTTS(message);
             feedbackManager.PlaySound("WarningBeep");
-            feedbackManager.PlayHaptic(HapticPattern.RhythmicWarning, ControllerHand.Both);
+            feedbackManager.PlayHaptic(HapticPattern.RhythmicWarning, ControllerHand.Both, HapticSource.SafetyWarning);
         }
 
         public void HideAll()
