@@ -365,7 +365,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6328676530281587492, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
       propertyPath: m_text
-      value: "\uC800\uC7A5\uC644\uB8CC!\n\uAC8C\uC784\uC774 \uC885\uB8CC\uB429\uB2C8\uB2E4"
+      value: "\uC800\uC7A5\uC644\uB8CC!"
       objectReference: {fileID: 0}
     - target: {fileID: 6328676530281587492, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
       propertyPath: m_fontAsset
@@ -477,7 +477,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8628467832533343300, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
       propertyPath: m_text
-      value: "\uC800\uC7A5 \uD6C4 \uAC8C\uC784\uC774\n\uC885\uB8CC\uB429\uB2C8\uB2E4..."
+      value: "\uAC8C\uC784 \uC800\uC7A5\uC911..."
       objectReference: {fileID: 0}
     - target: {fileID: 8628467832533343300, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
       propertyPath: m_fontAsset

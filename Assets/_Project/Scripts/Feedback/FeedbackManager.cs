@@ -353,12 +353,12 @@ namespace VirtualFishing.Feedback
             // [선택 1] UI만 끄고 메인 화면으로 돌아갈 경우
             HideUI("ExitSequence"); 
             
-            // [선택 2] 게임(앱)을 완전히 종료할 경우 (VR 환경에서는 보통 이걸 씁니다)
-            #if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false; // 에디터에서는 플레이 모드 정지
-            #else
-                Application.Quit(); // 실제 빌드된 앱에서는 앱 종료
-            #endif
+            // // [선택 2] 게임(앱)을 완전히 종료할 경우 (VR 환경에서는 보통 이걸 씁니다)
+            // #if UNITY_EDITOR
+            //     UnityEditor.EditorApplication.isPlaying = false; // 에디터에서는 플레이 모드 정지
+            // #else
+            //     Application.Quit(); // 실제 빌드된 앱에서는 앱 종료
+            // #endif
         }
 
         // public void OnRodStateChangedEvent()
