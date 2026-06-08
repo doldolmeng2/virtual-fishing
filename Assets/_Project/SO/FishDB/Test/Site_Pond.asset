@@ -19,7 +19,7 @@ MonoBehaviour:
   ambientSound: {fileID: 0}
   skyboxMaterial: {fileID: 0}
   backgroundImage: {fileID: 0}
-  environmentPrefab: {fileID: 0}
+  environmentPrefab: {fileID: 4826373285699945351, guid: 54a9b2cbf95d4de4d854e3ece7c34245, type: 3}
   spawnFishList:
   - speciesDataField: {fileID: 11400000, guid: 57db1531e48a45b3b8c2e1fc4938cd79, type: 2}
     spawnWeightField: 35
