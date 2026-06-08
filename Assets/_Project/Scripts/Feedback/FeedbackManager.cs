@@ -50,6 +50,10 @@ namespace VirtualFishing.Feedback
 
         private bool _hasPlayedGrabFeedback = false;
 
+        private void Start() {
+            PlayBGM("lake-waves");
+        }
+
         #region 1. 시스템 및 초기화 이벤트
 
         public void OnAccountLoadedEvent()
@@ -77,7 +81,6 @@ namespace VirtualFishing.Feedback
 
         public void OnSceneLoadedEvent()
         {
-            // 낚시터 배경 환경음 재생 등
             Debug.Log("<color=green>[피드백]</color> 낚시터 현장 도착");
             // PlayTTS("환경 설정이 완료되었습니다. 컨트롤러를 움직여 낚싯대에 두고 버튼을 눌러 낚싯대를 잡아주세요.");
             // ShowUI("RodGrabGuide");
@@ -334,7 +337,7 @@ namespace VirtualFishing.Feedback
         {
             // 1. 저장이 완료되면 종료 UI를 띄움
             ShowUI("ExitSequence");
-            PlaySound("SaveComplete");
+            //PlaySound("SaveComplete");
             PlayTTS("데이터 저장이 완료되었습니다. 잠시 후 게임이 종료됩니다.");
             Debug.Log("<color=green>[피드백]</color> 데이터 저장 완료 및 자동 종료 대기 중...");
 
@@ -367,6 +370,8 @@ namespace VirtualFishing.Feedback
 
         #region IFeedbackService 구현 (위임)
         public void PlaySound(string soundId) => soundManager.PlayWithId(soundId);
+        public void PlayBGM(string soundId) => soundManager.PlayBGMWithId(soundId);
+        public void StopBGM() => soundManager.StopBGM();
         public void PlayHaptic(HapticPattern pattern, ControllerHand hand) => hapticManager.Play(pattern, hand);
         public void ShowVisualEffect(string effectId, Vector3 position) => visualManager.ShowEffect(effectId, position);
         public void PlayTTS(string message) => ttsManager.Speak(message);

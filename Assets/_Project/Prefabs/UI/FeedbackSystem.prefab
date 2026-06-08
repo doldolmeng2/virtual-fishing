@@ -36,6 +36,7 @@ GameObject:
   - component: {fileID: 7154493825733577957}
   - component: {fileID: 1572699899900355584}
   - component: {fileID: 6660000000000000001}
+  - component: {fileID: 3548230280439671139}
   m_Layer: 0
   m_Name: FeedbackManager
   m_TagString: Untagged
@@ -76,6 +77,8 @@ MonoBehaviour:
   ttsManager: {fileID: 8631416207550898152}
   fishingRodController: {fileID: 0}
   miniGameManager: {fileID: 0}
+  safetyMonitor: {fileID: 678500301889528248}
+  playerData: {fileID: 11400000, guid: 17b42bec22960ec4398cc1bc2de363aa, type: 2}
   safetyWarningPanel: {fileID: 0}
   hookingGuidePanel: {fileID: 0}
   catchResultPanel: {fileID: 0}
@@ -84,34 +87,6 @@ MonoBehaviour:
   tensionWarningPanel: {fileID: 0}
   loadingPanel: {fileID: 0}
   rodGrabGuidePanel: {fileID: 0}
---- !u!114 &6660000000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2300390042483693464}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 12676b913ec3473daa4f91c00fa2620d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  gameEvent: {fileID: 11400000, guid: 3c4ec41f719168543aab651331e35595, type: 2}
-  response:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 8078747790575405315}
-        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
-        m_MethodName: OnRodStateChangedEvent
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument:
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!114 &8431806626534953815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -143,8 +118,10 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 8136fb94150e35e4493534d74ba33a9e, type: 3}
   - id: LineBreak
     clip: {fileID: 8300000, guid: 6eec4f1ace20ccc4bbfdc42d4bb99688, type: 3}
+  - id: lake-waves
+    clip: {fileID: 8300000, guid: af445b8c0e68ac4428679613bfd4d4b0, type: 3}
   sfxSource: {fileID: 0}
-  bgmSource: {fileID: 0}
+  bgmSource: {fileID: 3548230280439671139}
 --- !u!114 &2175905708459764834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,7 +148,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Feedback.VisualEffectManager
   effectLibrary:
   - id: BlueGrid
-    prefab: {fileID: 0}
+    prefab: {fileID: 3260793237806834840, guid: 1904a42cab72e49fcab8d8de0a43df04, type: 3}
   fadeOverlay: {fileID: 0}
   testSafetyRadius: 1.5
 --- !u!114 &8631416207550898152
@@ -216,7 +193,7 @@ MonoBehaviour:
   - textMessage: "\uB09A\uC2EF\uB300\uB97C \uC7A1\uC558\uC2B5\uB2C8\uB2E4. \uCEE8\uD2B8\uB864\uB7EC\uB97C
       \uAF49 \uC950\uACE0 \uC55E\uC73C\uB85C \uD798\uAECF \uD718\uB458\uB7EC \uCC0C\uB97C
       \uB358\uC838\uBCF4\uC138\uC694."
-    clip: {fileID: 8300000, guid: a00716cbf47fc4e3493ce8530100dea2, type: 3}
+    clip: {fileID: 8300000, guid: 9cc9107457e1cac4caaba1760b53e3c0, type: 3}
 --- !u!114 &374036067642053230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -805,6 +782,131 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &6660000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2300390042483693464}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12676b913ec3473daa4f91c00fa2620d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameEvent: {fileID: 11400000, guid: 3c4ec41f719168543aab651331e35595, type: 2}
+  response:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 8078747790575405315}
+        m_TargetAssemblyTypeName: VirtualFishing.Feedback.FeedbackManager, VirtualFishing
+        m_MethodName: OnRodStateChangedEvent
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!82 &3548230280439671139
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2300390042483693464}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &8689917105399289365
 GameObject:
   m_ObjectHideFlags: 0
@@ -849,7 +951,7 @@ PrefabInstance:
     - target: {fileID: 1138904711912483385, guid: 24eb8f013439b9548b699452358a665a, type: 3}
       propertyPath: playerData
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 11400000, guid: 17b42bec22960ec4398cc1bc2de363aa, type: 2}
     - target: {fileID: 1138904711912483385, guid: 24eb8f013439b9548b699452358a665a, type: 3}
       propertyPath: gameSettings
       value: 
@@ -911,6 +1013,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 24eb8f013439b9548b699452358a665a, type: 3}
+--- !u!114 &678500301889528248 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1138904711912483385, guid: 24eb8f013439b9548b699452358a665a, type: 3}
+  m_PrefabInstance: {fileID: 478709371662044033}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52e6e6813e1b7a3458c44cfd09ef6c73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Safety.PlayerSafetyMonitor
 --- !u!4 &8308349441458907162 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8496489774644208539, guid: 24eb8f013439b9548b699452358a665a, type: 3}

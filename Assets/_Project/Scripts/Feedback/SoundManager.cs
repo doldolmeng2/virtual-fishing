@@ -54,10 +54,35 @@ namespace VirtualFishing.Feedback
             }
         }
 
+        public void PlayBGMWithId(string soundId)
+        {
+            if (soundDict.TryGetValue(soundId, out AudioClip clip))
+            {
+                if (bgmSource == null)
+                {
+                    Debug.LogWarning("<color=red>[사운드 오류]</color> bgmSource가 인스펙터에 연결되지 않았습니다!");
+                    return;
+                }
+                
+                bgmSource.clip = clip;
+                bgmSource.loop = true;
+                bgmSource.Play();
+                Debug.Log($"<color=cyan>[사운드]</color> '{soundId}' BGM 재생 시작!");
+            }
+            else
+            {
+                Debug.LogWarning($"<color=orange>[사운드 오류]</color> '{soundId}' BGM 아이디를 찾을 수 없습니다.");
+            }
+        }
+
         public void PlayBGM(AudioClip clip)
         {
-            bgmSource.clip = clip;
-            bgmSource.Play();
+            if (bgmSource != null)
+            {
+                bgmSource.clip = clip;
+                bgmSource.loop = true;
+                bgmSource.Play();
+            }
         }
 
         public void StopBGM() => bgmSource.Stop();
