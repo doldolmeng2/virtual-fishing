@@ -201,11 +201,12 @@ namespace VirtualFishing.Feedback
             {
                 ShowUI("TensionWarning");
                 PlaySound("WarningBeep");
-                PlayHaptic(HapticPattern.RhythmicWarning, ControllerHand.Both);
+                hapticManager.Play(HapticPattern.RhythmicWarning, ControllerHand.Both, HapticSource.TensionWarning);
             }
             else
             {
                 HideUI("TensionWarning");
+                hapticManager.Stop(ControllerHand.Both, HapticSource.TensionWarning);
             }
             Debug.Log($"<color=green>[피드백]</color> 현재 줄 장력: {tension}");
         }
@@ -218,10 +219,10 @@ namespace VirtualFishing.Feedback
 
         public void OnFishCaughtEvent()
         {
-            hapticManager.Stop(ControllerHand.Both);
+            hapticManager.Stop(ControllerHand.Both, HapticSource.TensionWarning);
 
             HideUI("MiniGamePanel");
-            HideUI("TensionWarning"); 
+            HideUI("TensionWarning");
             
             // 미니게임 매니저에서 방금 잡은 물고기 데이터를 가져옴
             object catchData = null;
@@ -240,7 +241,7 @@ namespace VirtualFishing.Feedback
 
         public void OnLineBreakEvent()
         {
-            hapticManager.Stop(ControllerHand.Both);
+            hapticManager.Stop(ControllerHand.Both, HapticSource.TensionWarning);
 
             HideUI("MiniGamePanel");
             HideUI("TensionWarning"); // 텐션 100이었으므로 무조건 켜져있을 경고 끄기
@@ -254,7 +255,7 @@ namespace VirtualFishing.Feedback
 
         public void OnFishEscapedEvent()
         {
-            hapticManager.Stop(ControllerHand.Both);
+            hapticManager.Stop(ControllerHand.Both, HapticSource.TensionWarning);
 
             HideUI("MiniGamePanel");
             HideUI("TensionWarning");
@@ -283,7 +284,8 @@ namespace VirtualFishing.Feedback
                     visualManager.HideEffect("BlueGrid");
                     HideUI("SafetyWarning");
                     visualManager.ShowPassthrough(false);
-                    hapticManager.StopAll();
+                    // 안전 경고 진동만 해제 (미니게임 장력 경고가 진행 중이면 유지)
+                    hapticManager.Stop(ControllerHand.Both, HapticSource.SafetyWarning);
                     visualManager.FadeScreen(0.0f, 0.5f);
                     break;
 
@@ -295,7 +297,8 @@ namespace VirtualFishing.Feedback
                         gridPos = playerData.currentPosition;
                     }
                     visualManager.ShowEffect("BlueGrid", gridPos);
-                    hapticManager.StopAll(); 
+                    // 경계 근접 단계에서는 안전 경고 진동을 켜지 않음 — 혹시 걸려있던 안전 진동만 해제
+                    hapticManager.Stop(ControllerHand.Both, HapticSource.SafetyWarning);
                     visualManager.FadeScreen(0.0f, 0.5f);
                     break;
 
@@ -304,7 +307,8 @@ namespace VirtualFishing.Feedback
                     ShowUI("SafetyWarning");
                     PlaySound("WarningAlarm");
                     PlayTTS("이동하시면 위험합니다. 가운데로 돌아가주세요.");
-                    PlayHaptic(HapticPattern.RhythmicWarning, ControllerHand.Both);
+                    // 최우선 소스로 발행 → 장력 경고가 진행 중이어도 안전 경고가 우선 재생됨
+                    hapticManager.Play(HapticPattern.RhythmicWarning, ControllerHand.Both, HapticSource.SafetyWarning);
                     visualManager.FadeScreen(0.0f, 0.5f);
                     break;
 
@@ -336,13 +340,8 @@ namespace VirtualFishing.Feedback
         public void OnAccountSavedEvent()
         {
             // 1. 저장이 완료되면 종료 UI를 띄움
-            ShowUI("ExitSequence");
-            //PlaySound("SaveComplete");
-            PlayTTS("데이터 저장이 완료되었습니다. 잠시 후 게임이 종료됩니다.");
-            Debug.Log("<color=green>[피드백]</color> 데이터 저장 완료 및 자동 종료 대기 중...");
-
-            // 2. 3초 뒤에 게임을 끄거나 UI를 닫는 타이머(코루틴) 시작
-            StartCoroutine(ExitRoutine());
+            PlaySound("SaveComplete");
+            PlayTTS("데이터 저장이 완료되었습니다.");
         }
 
         private System.Collections.IEnumerator ExitRoutine()
@@ -373,6 +372,7 @@ namespace VirtualFishing.Feedback
         public void PlayBGM(string soundId) => soundManager.PlayBGMWithId(soundId);
         public void StopBGM() => soundManager.StopBGM();
         public void PlayHaptic(HapticPattern pattern, ControllerHand hand) => hapticManager.Play(pattern, hand);
+        public void PlayHaptic(HapticPattern pattern, ControllerHand hand, HapticSource source) => hapticManager.Play(pattern, hand, source);
         public void ShowVisualEffect(string effectId, Vector3 position) => visualManager.ShowEffect(effectId, position);
         public void PlayTTS(string message) => ttsManager.Speak(message);
         public void ShowUI(string uiId, object data = null)

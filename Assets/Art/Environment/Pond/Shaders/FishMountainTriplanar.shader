@@ -77,6 +77,7 @@ Shader "VirtualFishing/FishMountainTriplanar"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -84,6 +85,7 @@ Shader "VirtualFishing/FishMountainTriplanar"
                 float4 positionHCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float Hash21(float2 p)
@@ -137,7 +139,9 @@ Shader "VirtualFishing/FishMountainTriplanar"
 
             Varyings vert(Attributes input)
             {
-                Varyings output;
+                Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
                 output.positionHCS = positionInputs.positionCS;
@@ -148,6 +152,7 @@ Shader "VirtualFishing/FishMountainTriplanar"
 
             half4 frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float3 normalWS = normalize(input.normalWS);
                 float3 weights = TriplanarWeights(normalWS);
 

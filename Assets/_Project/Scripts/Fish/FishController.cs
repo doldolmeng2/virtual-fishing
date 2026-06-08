@@ -551,6 +551,12 @@ namespace VirtualFishing.Core.Fish
             string caughtAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             FishCatchData data = BuildCatchData(miniGameSiteType, caughtAt);
             miniGameManager.StartMiniGame(data);
+
+            // StartMiniGame 이 _currentFishMoveState 를 Normal 로 리셋하므로,
+            // 시작 시점에 물고기가 이미 좌/우로 움직이고 있으면 UI 화살표는 떠 있는데
+            // 챔질 방향 판정(IsRodInOppositeDirection)은 Normal 로 막혀 낚싯대에 반응하지 않는다.
+            // 현재 이동 모드를 즉시 다시 동기화해 첫 사이클부터 일치시킨다.
+            NotifyMiniGameMoveState();
         }
 
         private void SpawnVisual(FishSpeciesDataSO speciesData)
