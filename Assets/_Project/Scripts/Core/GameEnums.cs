@@ -85,6 +85,19 @@ namespace VirtualFishing
         RhythmicWarning
     }
 
+    /// <summary>
+    /// 햅틱 진동의 발행 주체. 값이 클수록 우선순위가 높다.
+    /// 여러 소스가 동시에 지속 진동(Continuous/RhythmicWarning)을 요청하면
+    /// HapticManager가 가장 높은 우선순위의 소스만 실제로 재생하고,
+    /// 정지(Stop)도 해당 소스만 해제하여 서로의 경고를 덮어쓰지 않는다.
+    /// </summary>
+    public enum HapticSource
+    {
+        Default = 0,        // 단발성 게임 피드백(장착/캐스팅/입질/챔질 등)
+        TensionWarning = 10, // 미니게임 장력 임계치 경고
+        SafetyWarning = 20   // 플레이 영역 이탈 경고 (최우선)
+    }
+
     public enum FishMoveState
     {
         Normal,   // 일반 상황 - 릴링 시 기본 텐션 증가
