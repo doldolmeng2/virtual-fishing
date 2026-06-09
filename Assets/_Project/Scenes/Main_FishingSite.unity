@@ -516,6 +516,11 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 8611808508952440389, guid: d9f974710edaf44bc9ddb7fac90313ac, type: 3}
   m_PrefabInstance: {fileID: 317428230}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &412906510 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9127695649281273110, guid: 4cea17815d58d4a48b7ee88fe295c368, type: 3}
+  m_PrefabInstance: {fileID: 809877357}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &421315280
 GameObject:
   m_ObjectHideFlags: 0
@@ -1337,10 +1342,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8815733506723761404, guid: 4cea17815d58d4a48b7ee88fe295c368, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1157271496}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2251818712599482151, guid: 4cea17815d58d4a48b7ee88fe295c368, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4cea17815d58d4a48b7ee88fe295c368, type: 3}
 --- !u!4 &809877358 stripped
 Transform:
@@ -3103,6 +3105,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5467213394491797969, guid: 8eff51d08efe4974abcdf51ee409a5c5, type: 3}
+      propertyPath: hmdTransform
+      value: 
+      objectReference: {fileID: 809877358}
+    - target: {fileID: 5467213394491797969, guid: 8eff51d08efe4974abcdf51ee409a5c5, type: 3}
       propertyPath: fishController
       value: 
       objectReference: {fileID: 2732598637346432184}
@@ -3110,6 +3116,10 @@ PrefabInstance:
       propertyPath: fishIndicatorUI
       value: 
       objectReference: {fileID: 1963984751}
+    - target: {fileID: 5467213394491797969, guid: 8eff51d08efe4974abcdf51ee409a5c5, type: 3}
+      propertyPath: rodHandTransform
+      value: 
+      objectReference: {fileID: 412906510}
     - target: {fileID: 7244064502850163835, guid: 8eff51d08efe4974abcdf51ee409a5c5, type: 3}
       propertyPath: m_Name
       value: MiniGameManager
