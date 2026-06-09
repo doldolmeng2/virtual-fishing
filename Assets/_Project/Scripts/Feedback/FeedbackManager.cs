@@ -50,6 +50,10 @@ namespace VirtualFishing.Feedback
 
         private bool _hasPlayedGrabFeedback = false;
 
+        private void Start() {
+            PlayBGM("lake-waves");
+        }
+
         #region 1. 시스템 및 초기화 이벤트
 
         public void OnAccountLoadedEvent()
@@ -77,7 +81,6 @@ namespace VirtualFishing.Feedback
 
         public void OnSceneLoadedEvent()
         {
-            // 낚시터 배경 환경음 재생 등
             Debug.Log("<color=green>[피드백]</color> 낚시터 현장 도착");
             // PlayTTS("환경 설정이 완료되었습니다. 컨트롤러를 움직여 낚싯대에 두고 버튼을 눌러 낚싯대를 잡아주세요.");
             // ShowUI("RodGrabGuide");
@@ -349,12 +352,12 @@ namespace VirtualFishing.Feedback
             // [선택 1] UI만 끄고 메인 화면으로 돌아갈 경우
             HideUI("ExitSequence"); 
             
-            // [선택 2] 게임(앱)을 완전히 종료할 경우 (VR 환경에서는 보통 이걸 씁니다)
-            #if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false; // 에디터에서는 플레이 모드 정지
-            #else
-                Application.Quit(); // 실제 빌드된 앱에서는 앱 종료
-            #endif
+            // // [선택 2] 게임(앱)을 완전히 종료할 경우 (VR 환경에서는 보통 이걸 씁니다)
+            // #if UNITY_EDITOR
+            //     UnityEditor.EditorApplication.isPlaying = false; // 에디터에서는 플레이 모드 정지
+            // #else
+            //     Application.Quit(); // 실제 빌드된 앱에서는 앱 종료
+            // #endif
         }
 
         // public void OnRodStateChangedEvent()
@@ -366,6 +369,8 @@ namespace VirtualFishing.Feedback
 
         #region IFeedbackService 구현 (위임)
         public void PlaySound(string soundId) => soundManager.PlayWithId(soundId);
+        public void PlayBGM(string soundId) => soundManager.PlayBGMWithId(soundId);
+        public void StopBGM() => soundManager.StopBGM();
         public void PlayHaptic(HapticPattern pattern, ControllerHand hand) => hapticManager.Play(pattern, hand);
         public void PlayHaptic(HapticPattern pattern, ControllerHand hand, HapticSource source) => hapticManager.Play(pattern, hand, source);
         public void ShowVisualEffect(string effectId, Vector3 position) => visualManager.ShowEffect(effectId, position);
