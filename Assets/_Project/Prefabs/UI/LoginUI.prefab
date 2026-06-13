@@ -119,9 +119,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.UI.LoginUIController
   accountManager: {fileID: 0}
+  difficultySettings: {fileID: 11400000, guid: e5f9a2b34c6d4789012bcdef34567890, type: 2}
   accountButtonContainer: {fileID: 5532169539793127032}
   accountButtonPrefab: {fileID: 4461194991422770277, guid: 863790a6d507b134f982fad46a732fb0, type: 3}
-  createNewAccountButton: {fileID: 731245485760340076, guid: 863790a6d507b134f982fad46a732fb0, type: 3}
+  createNewAccountButton: {fileID: 1590232677224487735}
+  easyModeButton: {fileID: 0}
+  easyModeButtonLabel: {fileID: 0}
   statusText: {fileID: 2058735263185357883}
   maxAccountCount: 5
   accountPrefix: "\uD50C\uB808\uC774\uC5B4"

@@ -105,6 +105,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Fishing.CastingZoneVisualizer
   rodController: {fileID: 0}
   gameSettings: {fileID: 11400000, guid: 1c61eb2f944000b468c762caca86c870, type: 2}
+  difficultySettings: {fileID: 11400000, guid: e5f9a2b34c6d4789012bcdef34567890, type: 2}
   reelController: {fileID: 0}
   showOnlyWhenGrabbed: 0
   showOnlyInAttachedState: 0

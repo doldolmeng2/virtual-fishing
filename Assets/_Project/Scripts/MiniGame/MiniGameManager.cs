@@ -19,6 +19,7 @@ namespace VirtualFishing.MiniGame
     {
         [SerializeField] private TensionDataSO tensionData;
         [SerializeField] private MiniGameSettingsSO settings;
+        [SerializeField] private DifficultySettingsSO difficultySettings;
         [SerializeField] private TensionCalculator tensionCalculator;
         [SerializeField] private VoidEventSO onMiniGameResultEvent;
 
@@ -282,8 +283,10 @@ namespace VirtualFishing.MiniGame
             }
             else if (isReeling)
             {
-                // 릴링 시 게이지 상승 (텐션 구간 무관)
-                SuccessGauge += settings.gaugeIncreaseRate * reelingSpeed * Time.deltaTime;
+                float increaseRate = difficultySettings != null
+                    ? difficultySettings.GetSuccessGaugeIncreaseRate(settings.gaugeIncreaseRate)
+                    : settings.gaugeIncreaseRate;
+                SuccessGauge += increaseRate * reelingSpeed * Time.deltaTime;
             }
 
             SuccessGauge = Mathf.Clamp(SuccessGauge, 0f, settings.successGaugeMax);

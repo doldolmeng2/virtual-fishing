@@ -12,6 +12,7 @@ namespace VirtualFishing.Fishing
     {
         [Header("설정")]
         [SerializeField] private GameSettingsSO gameSettings;
+        [SerializeField] private DifficultySettingsSO difficultySettings;
         [SerializeField] private PlayerDataSO playerData;
 
         [Header("참조")]
@@ -250,14 +251,15 @@ namespace VirtualFishing.Fishing
             // → 손 떨림 / 짧은 탈선으로 인한 IN/OUT 깜빡임 방지, 자연스러운 스윙 유지
             float effectiveRadius;
             float yThreshold;
+            float baseRadius = GetEffectiveCastingZoneRadius();
             if (_wasInCastingZone)
             {
-                effectiveRadius = gameSettings.castingZoneRadius * 1.5f;
-                yThreshold = zoneCenter.y - gameSettings.castingZoneRadius * 0.5f;
+                effectiveRadius = baseRadius * 1.5f;
+                yThreshold = zoneCenter.y - baseRadius * 0.5f;
             }
             else
             {
-                effectiveRadius = gameSettings.castingZoneRadius;
+                effectiveRadius = baseRadius;
                 yThreshold = zoneCenter.y;
             }
 
@@ -317,6 +319,9 @@ namespace VirtualFishing.Fishing
         /// <summary>현재 캐스팅 존 체류 시간 (초). minCastingHoldTime 비교용.</summary>
         public float CastingHoldTime => _castingZoneHoldTime;
 
+        /// <summary>난이도 설정이 반영된 캐스팅 존 반경.</summary>
+        public float EffectiveCastingZoneRadius => GetEffectiveCastingZoneRadius();
+
         /// <summary>현재 가속도(=속도 크기) 기준 예상 캐스팅 파워. clamp 적용됨.</summary>
         public float PredictedCastingPower
         {
@@ -346,6 +351,16 @@ namespace VirtualFishing.Fishing
             return center + gameSettings.castingZoneOffset;
         }
 
+        private float GetEffectiveCastingZoneRadius()
+        {
+            if (gameSettings == null)
+                return 0f;
+
+            return difficultySettings != null
+                ? difficultySettings.GetEffectiveCastingZoneRadius(gameSettings.castingZoneRadius)
+                : gameSettings.castingZoneRadius;
+        }
+
         private void ResetCastingState()
         {
             _wasInCastingZone = false;
@@ -362,7 +377,9 @@ namespace VirtualFishing.Fishing
             if (_currentState != RodState.WaitingForBite) return;
 
             _isBiteActive = true;
-            _hookTimingTimer = gameSettings.hookTimingWindow;
+            _hookTimingTimer = difficultySettings != null
+                ? difficultySettings.GetEffectiveHookTimingWindow(gameSettings.hookTimingWindow)
+                : gameSettings.hookTimingWindow;
         }
 
         private void UpdateHookingCheck()
@@ -371,14 +388,17 @@ namespace VirtualFishing.Fishing
 
             _hookTimingTimer -= Time.deltaTime;
 
+            float hookingRadius = GetEffectiveHookingZoneRadius();
+            float minHookAcceleration = GetEffectiveHookingMinAcceleration();
+
             // 챔질 존 판정
             Vector3 hookZoneCenter = GetHookingZoneCenter();
             Vector3 controllerPos = _attachedHand != null ? _attachedHand.position : transform.position;
             float distance = Vector3.Distance(controllerPos, hookZoneCenter);
-            IsInHookingZone = distance < gameSettings.hookingZoneRadius;
+            IsInHookingZone = distance < hookingRadius;
 
             // 이중 조건: 존 진입 + 위쪽 가속도
-            if (IsInHookingZone && _acceleration >= gameSettings.hookingMinAcceleration)
+            if (IsInHookingZone && _acceleration >= minHookAcceleration)
             {
                 _isBiteActive = false;
                 IsInHookingZone = false;
@@ -418,6 +438,26 @@ namespace VirtualFishing.Fishing
                 center.y = playerData.sittingHeight;
             }
             return center + gameSettings.hookingZoneOffset;
+        }
+
+        private float GetEffectiveHookingZoneRadius()
+        {
+            if (gameSettings == null)
+                return 0f;
+
+            return difficultySettings != null
+                ? difficultySettings.GetEffectiveHookingZoneRadius(gameSettings.hookingZoneRadius)
+                : gameSettings.hookingZoneRadius;
+        }
+
+        private float GetEffectiveHookingMinAcceleration()
+        {
+            if (gameSettings == null)
+                return 0f;
+
+            return difficultySettings != null
+                ? difficultySettings.GetEffectiveHookingMinAcceleration(gameSettings.hookingMinAcceleration)
+                : gameSettings.hookingMinAcceleration;
         }
 
         #endregion
@@ -520,11 +560,11 @@ namespace VirtualFishing.Fishing
 
             // 캐스팅 존 시각화
             Gizmos.color = new Color(0f, 1f, 0f, 0.2f);
-            Gizmos.DrawWireSphere(GetCastingZoneCenter(), gameSettings.castingZoneRadius);
+            Gizmos.DrawWireSphere(GetCastingZoneCenter(), GetEffectiveCastingZoneRadius());
 
             // 챔질 존 시각화
             Gizmos.color = new Color(1f, 0f, 0f, 0.2f);
-            Gizmos.DrawWireSphere(GetHookingZoneCenter(), gameSettings.hookingZoneRadius);
+            Gizmos.DrawWireSphere(GetHookingZoneCenter(), GetEffectiveHookingZoneRadius());
         }
 
         #endregion

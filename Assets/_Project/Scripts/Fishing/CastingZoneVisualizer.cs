@@ -13,6 +13,7 @@ namespace VirtualFishing.Fishing
     {
         [SerializeField] private FishingRodController rodController;
         [SerializeField] private GameSettingsSO gameSettings;
+        [SerializeField] private DifficultySettingsSO difficultySettings;
         [Tooltip("선택: 릴 컨트롤러 — HUD에 릴 engagement 상태 표시용")]
         [SerializeField] private FishingReelController reelController;
 
@@ -62,7 +63,7 @@ namespace VirtualFishing.Fishing
 
             // 위치·크기
             transform.position = rodController.CastingZoneCenter;
-            transform.localScale = Vector3.one * gameSettings.castingZoneRadius * 2f;
+            transform.localScale = Vector3.one * GetEffectiveCastingZoneRadius() * 2f;
 
             // 상태 추출
             bool inZone = rodController.IsInCastingZone;
@@ -111,6 +112,16 @@ namespace VirtualFishing.Fishing
             if (_renderer.enabled != visible) _renderer.enabled = visible;
             if (infoText != null && infoText.gameObject.activeSelf != visible)
                 infoText.gameObject.SetActive(visible);
+        }
+
+        private float GetEffectiveCastingZoneRadius()
+        {
+            if (gameSettings == null)
+                return 0f;
+
+            return difficultySettings != null
+                ? difficultySettings.GetEffectiveCastingZoneRadius(gameSettings.castingZoneRadius)
+                : gameSettings.castingZoneRadius;
         }
     }
 }
