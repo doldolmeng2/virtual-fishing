@@ -183,7 +183,7 @@ namespace VirtualFishing.MiniGame
             if (_phaseHoldTimer >= settings.phaseHoldDuration)
             {
                 _phaseHoldTimer = 0f;
-                OnPhaseComplete?.Invoke();
+                CompletePhase();
             }
         }
 
@@ -203,7 +203,24 @@ namespace VirtualFishing.MiniGame
 
             _normalPhaseTimer = 0f;
             PickNormalPhaseDuration();
+            CompletePhase();
+        }
+
+        private void CompletePhase()
+        {
+            ApplyPhaseCompleteTensionReward();
             OnPhaseComplete?.Invoke();
+        }
+
+        private void ApplyPhaseCompleteTensionReward()
+        {
+            if (settings == null || tensionData == null || tensionCalculator == null)
+                return;
+
+            if (tensionData.currentTension < settings.phaseCompleteTensionRewardThreshold)
+                return;
+
+            tensionCalculator.AdjustTension(-settings.phaseCompleteTensionReduction);
         }
 
         private void PickNormalPhaseDuration()

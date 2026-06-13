@@ -93,6 +93,28 @@ namespace VirtualFishing.MiniGame
             OnTensionChanged?.Invoke(tensionData.currentTension);
         }
 
+        /// <summary>즉시 텐션 증감(페이즈 완료 보상 등). 이벤트를 발행한다.</summary>
+        public void AdjustTension(float delta)
+        {
+            if (tensionData == null)
+                return;
+
+            tensionData.currentTension = Mathf.Clamp(
+                tensionData.currentTension + delta,
+                0f,
+                tensionData.maxTension);
+
+            OnTensionChanged?.Invoke(tensionData.currentTension);
+            onTensionChangedEvent?.Raise(tensionData.currentTension);
+
+            TensionZone zone = tensionData.GetCurrentZone();
+            if (zone != _prevZone)
+            {
+                OnTensionZoneChanged?.Invoke(zone);
+                _prevZone = zone;
+            }
+        }
+
         private float GetStateMultiplier(FishMoveState state)
         {
             return state switch

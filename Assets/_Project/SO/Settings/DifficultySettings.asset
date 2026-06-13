@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: VirtualFishing::VirtualFishing.Data.DifficultySettingsSO
   isEasyMode: 0
   castingZoneRadiusMultiplier: 1.5
+  castingMinAccelerationMultiplier: 0.75
   hookingZoneRadiusMultiplier: 1.5
   hookingMinAccelerationMultiplier: 0.7
   hookTimingWindowMultiplier: 1.5
@@ -22,4 +23,5 @@ MonoBehaviour:
   lowTensionDecreaseMultiplier: 0.5
   highTensionDecreaseMultiplier: 1.5
   successGaugeIncreaseMultiplier: 1.5
+  baseReelingProgressScale: 0.9
   reelingProgressScale: 0.75

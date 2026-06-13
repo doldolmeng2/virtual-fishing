@@ -29,3 +29,5 @@ MonoBehaviour:
   phaseDirectionThreshold: 0.1
   normalPhaseDurationMin: 3
   normalPhaseDurationMax: 5
+  phaseCompleteTensionRewardThreshold: 65
+  phaseCompleteTensionReduction: 10

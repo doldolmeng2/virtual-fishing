@@ -296,8 +296,9 @@ namespace VirtualFishing.Fishing
             if (_wasInCastingZone && !IsInCastingZone)
             {
                 bool holdValid = _castingZoneHoldTime >= gameSettings.minCastingHoldTime;
-                bool accelValid = _acceleration >= gameSettings.minCastingAcceleration;
-                Debug.Log($"[Rod:Cast?] 존 이탈! holdTime={_castingZoneHoldTime:F2}(>={gameSettings.minCastingHoldTime}) holdOK={holdValid}, accel={_acceleration:F2}(>={gameSettings.minCastingAcceleration}) accelOK={accelValid}");
+                float minCastingAcceleration = GetEffectiveCastingMinAcceleration();
+                bool accelValid = _acceleration >= minCastingAcceleration;
+                Debug.Log($"[Rod:Cast?] 존 이탈! holdTime={_castingZoneHoldTime:F2}(>={gameSettings.minCastingHoldTime}) holdOK={holdValid}, accel={_acceleration:F2}(>={minCastingAcceleration:F2}) accelOK={accelValid}");
 
                 if (holdValid && accelValid)
                 {
@@ -359,6 +360,16 @@ namespace VirtualFishing.Fishing
             return difficultySettings != null
                 ? difficultySettings.GetEffectiveCastingZoneRadius(gameSettings.castingZoneRadius)
                 : gameSettings.castingZoneRadius;
+        }
+
+        private float GetEffectiveCastingMinAcceleration()
+        {
+            if (gameSettings == null)
+                return 0f;
+
+            return difficultySettings != null
+                ? difficultySettings.GetEffectiveCastingMinAcceleration(gameSettings.minCastingAcceleration)
+                : gameSettings.minCastingAcceleration;
         }
 
         private void ResetCastingState()

@@ -96,7 +96,7 @@ namespace VirtualFishing.Fishing
                     $"Rod: {rodStatus}   Reel: {reelStatus}\n" +
                     $"Zone: {(inZone ? "<color=#7CFFB4>IN</color>" : "<color=#FF8888>OUT</color>")}\n" +
                     $"Hold: {hold:F2} / {gameSettings.minCastingHoldTime:F2}s {(holdMet ? "<color=#7CFFB4>OK</color>" : "")}\n" +
-                    $"Accel: {accel:F1} m/s {(accel >= gameSettings.minCastingAcceleration ? "<color=#7CFFB4>OK</color>" : "")}\n" +
+                    $"Accel: {accel:F1} m/s {(accel >= GetEffectiveCastingMinAcceleration() ? "<color=#7CFFB4>OK</color>" : "")}\n" +
                     $"Power: {power:F1}";
 
                 if (textBillboard && Camera.main != null)
@@ -122,6 +122,16 @@ namespace VirtualFishing.Fishing
             return difficultySettings != null
                 ? difficultySettings.GetEffectiveCastingZoneRadius(gameSettings.castingZoneRadius)
                 : gameSettings.castingZoneRadius;
+        }
+
+        private float GetEffectiveCastingMinAcceleration()
+        {
+            if (gameSettings == null)
+                return 0f;
+
+            return difficultySettings != null
+                ? difficultySettings.GetEffectiveCastingMinAcceleration(gameSettings.minCastingAcceleration)
+                : gameSettings.minCastingAcceleration;
         }
     }
 }
