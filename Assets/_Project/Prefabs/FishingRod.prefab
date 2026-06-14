@@ -250,6 +250,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VirtualFishing.Fishing.FishingRodController
   gameSettings: {fileID: 11400000, guid: 1c61eb2f944000b468c762caca86c870, type: 2}
+  difficultySettings: {fileID: 11400000, guid: e5f9a2b34c6d4789012bcdef34567890, type: 2}
   playerData: {fileID: 11400000, guid: 17b42bec22960ec4398cc1bc2de363aa, type: 2}
   floatCtrl: {fileID: 0}
   rodTip: {fileID: 3198625726938648957}

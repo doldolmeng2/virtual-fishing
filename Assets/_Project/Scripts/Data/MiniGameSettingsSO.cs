@@ -16,7 +16,7 @@ namespace VirtualFishing.Data
         public float tensionMultiplierOpposite = 2.0f; // FishMoveState Opposite 시 텐션 증가 배율
 
         [Header("Success Gauge")]
-        public float gaugeIncreaseRate = 10f;          // 릴링 시 성공 게이지 증가율
+        public float gaugeIncreaseRate = 12f;          // 릴링 시 성공 게이지 증가율
         public float gaugeDecreaseRate = 5f;           // 텐션이 tooLowThreshold에 고정될 때 성공 게이지 감소율
         public float successGaugeMax = 100f;
 
@@ -33,5 +33,11 @@ namespace VirtualFishing.Data
         public float phaseFillFullMargin = 0.8f;       // 임계값을 이만큼(m) 초과하면 최대 속도(phaseFillSpeedMax) 도달
         public float normalPhaseDurationMin = 3f;      // Normal 상태에서 자동 phase 완료까지 최소 시간 (초)
         public float normalPhaseDurationMax = 5f;      // Normal 상태에서 자동 phase 완료까지 최대 시간 (초)
+
+        [Tooltip("페이즈 완료 시 텐션이 이 값 이상이면 phaseCompleteTensionReduction 만큼 감소")]
+        public float phaseCompleteTensionRewardThreshold = 65f;
+
+        [Tooltip("페이즈 완료 텐션 보상 — 감소량")]
+        public float phaseCompleteTensionReduction = 10f;
     }
 }

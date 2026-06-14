@@ -18,11 +18,24 @@ namespace VirtualFishing.UI
     {
         [Header("외부 서비스")]
         [SerializeField] private AccountManager accountManager;
+        [SerializeField] private DifficultySettingsSO difficultySettings;
 
         [Header("UI 루트")]
         [SerializeField] private Transform accountButtonContainer;
         [SerializeField] private GameObject accountButtonPrefab;
         [SerializeField] private Button createNewAccountButton;
+        [Tooltip("Inspector에서 OnClick → ToggleEasyMode 연결. 씬에 직접 배치한 버튼을 할당한다.")]
+        [SerializeField] private Button easyModeButton;
+        [SerializeField] private TextMeshProUGUI easyModeButtonLabel;
+        [Tooltip("비워두면 Easy Mode Button의 Image를 사용한다.")]
+        [SerializeField] private Image easyModeButtonBackground;
+
+        [Header("난이도 버튼 색상")]
+        [SerializeField] private Color easyModeOffColor = new(0.682f, 0.682f, 0.682f, 1f);       // #AEAEAE
+        [SerializeField] private Color easyModeOnColor = new(0.486f, 1f, 0.773f, 1f);            // #7CFFC5
+        [SerializeField] private Color easyModeOffTextColor = Color.black;
+        [SerializeField] private Color easyModeOnTextColor = new(0f, 0.831f, 0.435f, 1f);         // #00D46F
+
         [SerializeField] private TextMeshProUGUI statusText;
 
         [Header("계정 정보 프리뷰 (Hover/Focus)")]
@@ -56,6 +69,7 @@ namespace VirtualFishing.UI
         private void OnEnable()
         {
             SetPreviewVisible(false);
+            RefreshEasyModeButtonVisual();
             RefreshAccountList();
         }
 
@@ -225,6 +239,23 @@ namespace VirtualFishing.UI
             accountManager.LoadAccount(accountId);
         }
 
+        /// <summary>
+        /// 쉬운 난이도 토글 버튼 OnClick에 연결.
+        /// 난이도만 변경하며, 씬 전환은 계정 선택/생성 시에만 발생한다.
+        /// </summary>
+        public void ToggleEasyMode()
+        {
+            if (difficultySettings == null)
+            {
+                SetStatus("난이도 설정을 찾을 수 없습니다.");
+                return;
+            }
+
+            difficultySettings.SetEasyMode(!difficultySettings.IsEasyMode);
+            RefreshEasyModeButtonVisual();
+            SetStatus(difficultySettings.IsEasyMode ? "쉬운 난이도가 활성화되었습니다." : "일반 난이도로 변경되었습니다.");
+        }
+
         /// <summary>새 계정 만들기 버튼 클릭 시 호출된다.</summary>
         public void OnCreateNewAccount()
         {
@@ -259,6 +290,30 @@ namespace VirtualFishing.UI
         {
             if (statusText != null)
                 statusText.text = message;
+        }
+
+        private void RefreshEasyModeButtonVisual()
+        {
+            if (easyModeButtonLabel == null && easyModeButton != null)
+                easyModeButtonLabel = easyModeButton.GetComponentInChildren<TextMeshProUGUI>();
+
+            if (difficultySettings == null)
+                return;
+
+            bool isOn = difficultySettings.IsEasyMode;
+
+            if (easyModeButtonLabel != null)
+            {
+                easyModeButtonLabel.text = isOn ? "ON" : "OFF";
+                easyModeButtonLabel.color = isOn ? easyModeOnTextColor : easyModeOffTextColor;
+            }
+
+            Image background = easyModeButtonBackground;
+            if (background == null && easyModeButton != null)
+                background = easyModeButton.GetComponent<Image>();
+
+            if (background != null)
+                background.color = isOn ? easyModeOnColor : easyModeOffColor;
         }
 
         [ContextMenu("Debug: Refresh List")]

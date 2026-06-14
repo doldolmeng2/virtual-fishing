@@ -19,6 +19,7 @@ namespace VirtualFishing.MiniGame
     {
         [SerializeField] private TensionDataSO tensionData;
         [SerializeField] private MiniGameSettingsSO settings;
+        [SerializeField] private DifficultySettingsSO difficultySettings;
         [SerializeField] private TensionCalculator tensionCalculator;
         [SerializeField] private VoidEventSO onMiniGameResultEvent;
 
@@ -182,7 +183,7 @@ namespace VirtualFishing.MiniGame
             if (_phaseHoldTimer >= settings.phaseHoldDuration)
             {
                 _phaseHoldTimer = 0f;
-                OnPhaseComplete?.Invoke();
+                CompletePhase();
             }
         }
 
@@ -202,7 +203,24 @@ namespace VirtualFishing.MiniGame
 
             _normalPhaseTimer = 0f;
             PickNormalPhaseDuration();
+            CompletePhase();
+        }
+
+        private void CompletePhase()
+        {
+            ApplyPhaseCompleteTensionReward();
             OnPhaseComplete?.Invoke();
+        }
+
+        private void ApplyPhaseCompleteTensionReward()
+        {
+            if (settings == null || tensionData == null || tensionCalculator == null)
+                return;
+
+            if (tensionData.currentTension < settings.phaseCompleteTensionRewardThreshold)
+                return;
+
+            tensionCalculator.AdjustTension(-settings.phaseCompleteTensionReduction);
         }
 
         private void PickNormalPhaseDuration()
@@ -282,8 +300,10 @@ namespace VirtualFishing.MiniGame
             }
             else if (isReeling)
             {
-                // 릴링 시 게이지 상승 (텐션 구간 무관)
-                SuccessGauge += settings.gaugeIncreaseRate * reelingSpeed * Time.deltaTime;
+                float increaseRate = difficultySettings != null
+                    ? difficultySettings.GetSuccessGaugeIncreaseRate(settings.gaugeIncreaseRate)
+                    : settings.gaugeIncreaseRate;
+                SuccessGauge += increaseRate * reelingSpeed * Time.deltaTime;
             }
 
             SuccessGauge = Mathf.Clamp(SuccessGauge, 0f, settings.successGaugeMax);

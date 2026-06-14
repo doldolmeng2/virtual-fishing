@@ -175,6 +175,7 @@ namespace VirtualFishing.Core.Fish
         [SerializeField] private float currentDifficulty;
         [SerializeField, Range(0f, 1f)] private float currentReelingProgress;
         [SerializeField] private MiniGameManager miniGameManager;
+        [SerializeField] private DifficultySettingsSO difficultySettings;
         // 프로젝트에서 하나의 낚시터만 사용하므로 하나의 낚시터 타입만 사용 (추후 낚시터 추가시 수정 필요)
         [SerializeField] private BackgroundType miniGameSiteType = BackgroundType.Pond;
 
@@ -1919,7 +1920,10 @@ namespace VirtualFishing.Core.Fish
 
         private float SetReelingProgress(float successGauge)
         {
-            currentReelingProgress = Mathf.Clamp01(successGauge / 100f);
+            float gaugeProgress = Mathf.Clamp01(successGauge / 100f);
+            currentReelingProgress = difficultySettings != null
+                ? difficultySettings.GetReelingProgress(gaugeProgress)
+                : gaugeProgress;
             return currentReelingProgress;
         }
 

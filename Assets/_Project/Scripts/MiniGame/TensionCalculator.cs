@@ -10,6 +10,7 @@ namespace VirtualFishing.MiniGame
     {
         [SerializeField] private TensionDataSO tensionData;
         [SerializeField] private MiniGameSettingsSO settings;
+        [SerializeField] private DifficultySettingsSO difficultySettings;
         [SerializeField] private FloatEventSO onTensionChangedEvent;
 
         private float _difficulty = 1f;
@@ -44,9 +45,17 @@ namespace VirtualFishing.MiniGame
             float directionBonus = Mathf.Max(0f, -rodUpFactor) * settings.tensionDecreaseRate * dt;
 
             // 릴링 여부에 따른 증감
+            float decreaseRate = settings.tensionDecreaseRate;
+            if (!isReeling && difficultySettings != null)
+            {
+                decreaseRate *= difficultySettings.GetTensionDecreaseMultiplier(
+                    tensionData.currentTension,
+                    tensionData.maxTension);
+            }
+
             float reelingDelta = isReeling
                 ? reelingSpeed * settings.tensionIncreaseRate * dt
-                : -settings.tensionDecreaseRate * dt; // 릴링 안 할 때 감소 (배율 없음)
+                : -decreaseRate * dt;
 
             float totalDelta = resistanceDelta - directionBonus + reelingDelta;
 
@@ -82,6 +91,28 @@ namespace VirtualFishing.MiniGame
             tensionData.ResetTension();
             _prevZone = tensionData.GetCurrentZone();
             OnTensionChanged?.Invoke(tensionData.currentTension);
+        }
+
+        /// <summary>즉시 텐션 증감(페이즈 완료 보상 등). 이벤트를 발행한다.</summary>
+        public void AdjustTension(float delta)
+        {
+            if (tensionData == null)
+                return;
+
+            tensionData.currentTension = Mathf.Clamp(
+                tensionData.currentTension + delta,
+                0f,
+                tensionData.maxTension);
+
+            OnTensionChanged?.Invoke(tensionData.currentTension);
+            onTensionChangedEvent?.Raise(tensionData.currentTension);
+
+            TensionZone zone = tensionData.GetCurrentZone();
+            if (zone != _prevZone)
+            {
+                OnTensionZoneChanged?.Invoke(zone);
+                _prevZone = zone;
+            }
         }
 
         private float GetStateMultiplier(FishMoveState state)
