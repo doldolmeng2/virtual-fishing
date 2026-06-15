@@ -1,16 +1,19 @@
 @startuml
+!pragma layout smetana
 !theme plain
 title VR 낚시 게임 - 도메인 클래스 다이어그램
+skinparam defaultFontName "Malgun Gothic"
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 skinparam shadowing false
+skinparam linetype ortho
 
 ' ===== INTERFACES =====
 package "Core Interfaces" #F3E5F5 {
   interface IGameFlowManager {
     + CurrentState : GameState
     + TransitionTo(state : GameState) : void
-    + <<event>> OnStateChanged
+    + <<event>> OnStateChanged : Action<GameState,GameState>
   }
 
   interface ISceneService {
@@ -24,17 +27,15 @@ package "Core Interfaces" #F3E5F5 {
     + UpdateLastPlayedAt() : void
     + AddToEncyclopedia(data : FishCatchData) : void
     + <<event>> OnAccountLoaded
+    + <<event>> OnAccountSaved
   }
 }
 
 package "Player Interfaces" #E8F5E9 {
   interface ICalibrationService {
-    + StartCalibration() : void
-    + CaptureForwardGaze() : void
-    + CaptureArmLength() : void
-    + SittingHeight : float
-    + ArmLength : float
-    + <<event>> OnCalibrationComplete
+    + CalibrateFromGrab(hand : Transform) : void
+    + ResetCalibration() : void
+    + IsCalibrated : bool
   }
 
   interface ISafetyMonitor {
@@ -51,8 +52,7 @@ package "Fishing Interfaces" #E3F2FD {
     + IsGrabbed : bool
     + OnGrab(hand : Transform) : void
     + OnRelease() : void
-    + <<event>> OnGrabbed
-    + <<event>> OnReleased
+    + <<event>> OnGrabbed / OnReleased
   }
 
   interface IFishingRod {
@@ -62,9 +62,10 @@ package "Fishing Interfaces" #E3F2FD {
     + ReelingSpeed : float
     + IsInCastingZone : bool
     + IsInHookingZone : bool
-    + Attach(hand : Transform) : void
-    + Detach() : void
-    + <<event>> OnRodStateChanged
+    + Attach(hand) / Detach() : void
+    + UpdateCastingInput(vel, dir) : void
+    + UpdateReelingInput(rotDelta) : void
+    + <<event>> OnRodStateChanged : Action<RodStateTransition>
   }
 
   interface ICastable {
@@ -79,24 +80,30 @@ package "Fishing Interfaces" #E3F2FD {
     + Velocity : float
     + Launch(speed : float, dir : Vector3) : void
     + OnWaterContact() : void
+    + Sink(depth : float) : void
     + <<event>> OnWaterLanded
   }
 }
 
 package "Fish Interfaces" #FFF3E0 {
   interface IFish {
-    + SpeciesName : string
+    + CurrentSpecies : FishSpeciesDataSO
     + Weight : float
     + Resistance : float
+    + Pattern : MovementPattern
+    + CurrentPhase : FishPhase
+    + CurrentMoveMode : FishMoveMode
     + Initialize(data : FishSpeciesDataSO) : void
-    + ExecuteMovement() : void
-    + <<event>> OnFishMoved
+    + ResetFish() / ExecuteMovement() : void
+    + SetPhase(phase : FishPhase) : void
+    + <<event>> OnFishMoved : Action<Vector3>
   }
 
   interface IFishSpawner {
     + StartBiteTimer() : void
     + CancelBite() : void
-    + <<event>> OnBiteOccurred
+    + <<event>> OnFakeBite / OnWarningBite
+    + <<event>> OnBiteOccurred : Action<FishSpeciesDataSO>
   }
 }
 
@@ -108,16 +115,17 @@ package "MiniGame Interfaces" #FCE4EC {
     + StartMiniGame(data : FishCatchData) : void
     + UpdateReeling(speed : float, dir : Vector3) : void
     + EndMiniGame(success : bool) : void
-    + <<event>> OnMiniGameEnded
-    + <<event>> OnSuccessGaugeChanged
+    + SetFishMoveState(state : FishMoveState) : void
+    + <<event>> OnMiniGameEnded / OnSuccessGaugeChanged
   }
 
   interface ITensionCalculator {
     + CurrentTension : float
     + CurrentZone : TensionZone
-    + Calculate(resistance : float, reeling : float, dir : Vector3) : void
+    + SetDifficulty(d : float) : void
+    + Calculate(resistance, reeling, moveState, dir) : void
     + Reset() : void
-    + <<event>> OnTensionChanged
+    + <<event>> OnTensionChanged / OnTensionZoneChanged
   }
 }
 
@@ -127,30 +135,29 @@ package "Feedback Interfaces" #EDE7F6 {
     + PlayHaptic(pattern : HapticPattern, hand : ControllerHand) : void
     + ShowVisualEffect(id : string, pos : Vector3) : void
     + PlayTTS(message : string) : void
-    + ShowUI(uiId : string) : void
-    + HideUI(uiId : string) : void
+    + ShowUI(uiId : string, data) / HideUI(uiId) : void
   }
 
   interface ISoundFeedback {
-    + Play(clip : AudioClip) : void
-    + PlayBGM(clip : AudioClip) : void
-    + StopBGM() : void
+    + Play(clip) / PlayWithId(id) : void
+    + PlayBGM(clip) / StopBGM() : void
+    + SetVolume(v : float) : void
   }
 
   interface IHapticFeedback {
-    + Play(pattern : HapticPattern, hand : ControllerHand) : void
-    + Stop(hand : ControllerHand) : void
+    + Play(pattern, hand) : void
+    + Stop(hand) / StopAll() : void
   }
 
   interface IVisualFeedback {
-    + ShowEffect(id : string, pos : Vector3) : void
-    + FadeScreen(alpha : float, duration : float) : void
+    + ShowEffect(id/prefab, pos) : void
+    + HideEffect(id) : void
+    + FadeScreen(alpha, duration) : void
     + ShowPassthrough(enable : bool) : void
   }
 
   interface ITTSFeedback {
-    + Speak(message : string) : void
-    + Stop() : void
+    + Speak(message) / Stop() : void
     + IsSpeaking : bool
     + <<event>> OnSpeechComplete
   }
@@ -159,12 +166,12 @@ package "Feedback Interfaces" #EDE7F6 {
 ' ===== CONCRETE CLASSES =====
 package "Core System" #FFEBEE {
   class GameFlowManager <<MonoBehaviour>> {
-    - gameStateChangedEvent : VoidEventSO
     - gameSettings : GameSettingsSO
   }
-
-  class SceneTransitionService <<MonoBehaviour>> {
-    - onSceneLoaded : VoidEventSO
+  class SceneTransitionService <<MonoBehaviour>>
+  class FishCatchAccountBridge <<MonoBehaviour>> {
+    -- IVoidEventListener --
+    물고기 포획 → 계정 도감 저장 연결
   }
 
   GameFlowManager .up.|> IGameFlowManager
@@ -174,40 +181,35 @@ package "Core System" #FFEBEE {
 package "Account & Player" #C8E6C9 {
   class AccountManager <<MonoBehaviour>> {
     - accountData : AccountDataSO
-    - onAccountLoaded : VoidEventSO
   }
-
-  class CalibrationController <<MonoBehaviour>> {
+  class SeatedPoseCalibrator <<MonoBehaviour>> {
     - playerData : PlayerDataSO
-    - onCalibrationComplete : VoidEventSO
+    스니키(자동) 캘리브레이션
   }
-
+  class FollowHmdUntilGrabbed <<MonoBehaviour>>
   class PlayerSafetyMonitor <<MonoBehaviour>> {
     - playerData : PlayerDataSO
     - gameSettings : GameSettingsSO
-    - onSafetyWarning : IntEventSO
+    (SO 이벤트 기반, 인터페이스 미구현)
   }
+  class LoginUIController <<MonoBehaviour>>
 
   AccountManager .up.|> IAccountService
-  CalibrationController .up.|> ICalibrationService
-  PlayerSafetyMonitor .up.|> ISafetyMonitor
+  SeatedPoseCalibrator .up.|> ICalibrationService
+  PlayerSafetyMonitor .right.> ISafetyMonitor : 계약 참조
 }
 
 package "Fishing System" #BBDEFB {
   class FishingRodController <<MonoBehaviour>> {
     - currentState : RodState
-    - onRodStateChanged : VoidEventSO
-    - floatCtrl : FloatController
+    - gameSettings : GameSettingsSO
   }
-
-  class FloatController <<MonoBehaviour>> {
-    - velocity : float
-    - sinkingDepth : float
-    - onWaterLanded : VoidEventSO
-  }
-
-  class FishingLineRenderer <<MonoBehaviour>> {
-    - lineRenderer : LineRenderer
+  class FloatController <<MonoBehaviour>>
+  class FishingLineRenderer <<MonoBehaviour>>
+  class FishingReelController <<MonoBehaviour>>
+  class ReelController <<MonoBehaviour>>
+  class XRFishingRodAdapter <<MonoBehaviour>> {
+    XR 입력 → 컨트롤러 속도/회전 전달
   }
 
   FishingRodController .up.|> IFishingRod
@@ -215,6 +217,8 @@ package "Fishing System" #BBDEFB {
   FishingRodController .up.|> ICastable
   FloatController .up.|> IFishingFloat
   FishingRodController --> FloatController : controls
+  XRFishingRodAdapter ..> FishingRodController : UpdateCastingInput\nUpdateReelingInput
+  FishingRodController ..> FishingReelController : reel 회전
   FishingLineRenderer ..> FishingRodController
   FishingLineRenderer ..> FloatController
 }
@@ -222,32 +226,30 @@ package "Fishing System" #BBDEFB {
 package "Fish System" #FFE0B2 {
   class FishController <<MonoBehaviour>> {
     - speciesData : FishSpeciesDataSO
-    - weight : float
-    - resistance : float
+    -- IFish, IVoidEventListener --
   }
-
   class FishSpawner <<MonoBehaviour>> {
     - fishDatabase : FishDatabaseSO
     - siteData : FishingSiteDataSO
-    - onBiteOccurred : VoidEventSO
+    -- IFishSpawner, IVoidEventListener --
   }
+  class FishEnvironmentController <<MonoBehaviour>>
+  class PondWaterSurface <<MonoBehaviour>>
 
   FishController .up.|> IFish
   FishSpawner .up.|> IFishSpawner
-  FishSpawner ..> FishController : creates
+  FishSpawner ..> FishController : controls
 }
 
 package "MiniGame System" #F8BBD0 {
   class MiniGameManager <<MonoBehaviour>> {
     - tensionData : TensionDataSO
     - settings : MiniGameSettingsSO
-    - onMiniGameResult : VoidEventSO
   }
-
   class TensionCalculator <<MonoBehaviour>> {
     - tensionData : TensionDataSO
-    - onTensionChanged : FloatEventSO
   }
+  class FishIndicatorUI <<MonoBehaviour>>
 
   MiniGameManager .up.|> IMiniGame
   TensionCalculator .up.|> ITensionCalculator
@@ -256,29 +258,40 @@ package "MiniGame System" #F8BBD0 {
 
 package "Feedback System" #D1C4E9 {
   class FeedbackManager <<MonoBehaviour>>
-
   class SoundManager <<MonoBehaviour>>
   class HapticManager <<MonoBehaviour>>
   class VisualEffectManager <<MonoBehaviour>>
   class TTSManager <<MonoBehaviour>>
+  class UIManager <<MonoBehaviour>>
+  class CatchResultController <<MonoBehaviour>>
 
   FeedbackManager .up.|> IFeedbackService
   FeedbackManager *-- SoundManager
   FeedbackManager *-- HapticManager
   FeedbackManager *-- VisualEffectManager
   FeedbackManager *-- TTSManager
+  FeedbackManager *-- UIManager
   SoundManager .up.|> ISoundFeedback
   HapticManager .up.|> IHapticFeedback
   VisualEffectManager .up.|> IVisualFeedback
-  TTSManager .up.|> ITTSFeedback
 }
 
 ' ===== SO Event 기반 통신 (느슨한 결합) =====
-CalibrationController ..> GameFlowManager : <<VoidEventSO>>\nCalibrationComplete
-FishSpawner ..> FishingRodController : <<VoidEventSO>>\nBiteOccurred
+SeatedPoseCalibrator ..> GameFlowManager : <<VoidEventSO>>\nCalibrationComplete
+FishSpawner ..> FishingRodController : <<VoidEventSO>>\nBite
+FishController ..> MiniGameManager : <<event>>\nFishMoveState
 MiniGameManager ..> GameFlowManager : <<VoidEventSO>>\nMiniGameResult
+MiniGameManager ..> FeedbackManager : <<FloatEventSO>>\nSuccessGauge
 PlayerSafetyMonitor ..> GameFlowManager : <<IntEventSO>>\nSafetyWarning
-FishingRodController ..> FeedbackManager : <<VoidEventSO>>\nRodStateChanged
+FishingRodController ..> FeedbackManager : <<RodStateTransitionEventSO>>\nRodStateChanged
 TensionCalculator ..> FeedbackManager : <<FloatEventSO>>\nTensionChanged
+FishCatchAccountBridge ..> AccountManager : AddToEncyclopedia
+
+note as NAux #FFFDE7
+  <b>보조 컴포넌트</b> (XR/연출/디버그)
+  RodTremorDamper, CastingZoneVisualizer, XRGrabHighlight,
+  HandednessSelectFilter, XRSimulatorAutoEnabler,
+  HookingAnimation, ExitSequenceController, ProjectionBillboard
+end note
 
 @enduml
