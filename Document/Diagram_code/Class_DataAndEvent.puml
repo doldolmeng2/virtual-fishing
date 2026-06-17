@@ -1,9 +1,12 @@
 @startuml
+!pragma layout smetana
 !theme plain
 title VR 낚시 게임 - 코어 인프라 (SO Event System + Shared Data)
+skinparam defaultFontName "Malgun Gothic"
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
 skinparam shadowing false
+skinparam linetype ortho
 
 package "Enums" #F5F5F5 {
   enum GameState {
@@ -54,6 +57,33 @@ package "Enums" #F5F5F5 {
     Erratic
   }
 
+  enum FishMoveMode {
+    Stop
+    MoveLeft
+    MoveRight
+  }
+
+  enum FishMoveState {
+    Normal
+    Left
+    Right
+    Opposite
+  }
+
+  enum FishPhase {
+    None
+    Phase1
+    Phase2
+    Phase3
+    Phase4
+  }
+
+  enum ControllerHand {
+    Left
+    Right
+    Both
+  }
+
   enum HapticPattern {
     LightPulse
     StrongPulse
@@ -61,10 +91,10 @@ package "Enums" #F5F5F5 {
     RhythmicWarning
   }
 
-  enum ControllerHand {
-    Left
-    Right
-    Both
+  enum HapticSource {
+    Default
+    TensionWarning
+    SafetyWarning
   }
 }
 
@@ -94,26 +124,30 @@ package "SO Event System\n<<Observer Pattern>>" #E8F5E9 {
   class FloatEventSO <<ScriptableObject>>
   class IntEventSO <<ScriptableObject>>
   class StringEventSO <<ScriptableObject>>
+  class RodStateTransitionEventSO <<ScriptableObject>>
 
   class VoidEventListener <<MonoBehaviour>> {
     - gameEvent : VoidEventSO
     - response : UnityEvent
   }
-
-  class FloatEventListener <<MonoBehaviour>> {
-    - gameEvent : FloatEventSO
-    - response : UnityEvent<float>
-  }
+  class FloatEventListener <<MonoBehaviour>>
+  class IntEventListener <<MonoBehaviour>>
+  class StringEventListener <<MonoBehaviour>>
+  class RodStateTransitionEventListener <<MonoBehaviour>>
 
   FloatEventSO --|> GameEventSO
   IntEventSO --|> GameEventSO
   StringEventSO --|> GameEventSO
+  RodStateTransitionEventSO --|> GameEventSO
+
   VoidEventListener ..|> IVoidEventListener
   FloatEventListener ..|> IListener
-  VoidEventListener --> VoidEventSO : subscribes
-  FloatEventListener --> FloatEventSO : subscribes
-  GameEventSO --> IListener : notifies *
+  IntEventListener ..|> IListener
+  StringEventListener ..|> IListener
+  RodStateTransitionEventListener ..|> IListener
+
   VoidEventSO --> IVoidEventListener : notifies *
+  GameEventSO --> IListener : notifies *
 }
 
 package "Shared Data\n<<SO Pattern>>" #E3F2FD {
@@ -132,47 +166,61 @@ package "Shared Data\n<<SO Pattern>>" #E3F2FD {
   }
 
   class FishSpeciesDataSO <<ScriptableObject>> {
-    + speciesName : string
-    + displayName : string
-    + weightRange : FloatRange
-    + baseResistance : float
-    + movementPattern : MovementPattern
-    + rarity : int
-    + icon : Sprite
-    + prefab : GameObject
+    + FishId : string
+    + DisplayName : string
+    + Rarity : int (1~5)
+    + SizeRangeCm : FloatRange
+    + WeightRangeKg : FloatRange
+    + BaseResistance : float
+    + MovementPattern : MovementPattern
+    + MinWaitTime / MaxWaitTime : float
+    + BaseScore : int
+    + FishPrefab : GameObject
+    + Icon : Sprite
+    + GetRandomWeightKg() : float
+    + GetRandomSizeCm() : float
   }
 
   class FishDatabaseSO <<ScriptableObject>> {
-    + allSpecies : List<FishSpeciesDataSO>
+    + AllSpecies : IReadOnlyList<FishSpeciesDataSO>
     + GetRandomByRarity() : FishSpeciesDataSO
   }
 
   class FishingSiteDataSO <<ScriptableObject>> {
-    + siteName : string
-    + backgroundType : BackgroundType
+    + SiteId : string
+    + DisplayName : string
+    + SceneName : string
+    + BackgroundType : BackgroundType
+    + AmbientSound : AudioClip
+    + SkyboxMaterial : Material
+    + EnvironmentPrefab : GameObject
     + spawnFishList : List<FishSpawnEntry>
-    + sceneName : string
-    + ambientSound : AudioClip
   }
 
   class TensionDataSO <<ScriptableObject>> {
     + currentTension : float
     + maxTension : float
-    + safeZoneMin : float
-    + safeZoneMax : float
+    + initialTension : float
+    + tooLowThreshold : float
     + dangerThreshold : float
     + GetCurrentZone() : TensionZone
     + ResetTension() : void
   }
 
   class GameSettingsSO <<ScriptableObject>> {
+    + calibrationTimeout : float
     + castingPowerMultiplier : float
     + castingZoneRadius : float
+    + castingZoneOffset : Vector3
+    + minCastingHoldTime : float
+    + minCastingAcceleration : float
     + hookTimingWindow : float
     + hookingZoneRadius : float
-    + hookingZoneOffset : Vector3
     + hookingMinAcceleration : float
+    + dominantHand : ControllerHand
     + safetyCheckInterval : float
+    + nearBoundaryDistance : float
+    + emergencyTimeout : float
     + autoConfirmDelay : float
     + autoSaveInterval : float
   }
@@ -180,15 +228,24 @@ package "Shared Data\n<<SO Pattern>>" #E3F2FD {
   class MiniGameSettingsSO <<ScriptableObject>> {
     + baseDifficulty : float
     + baseTimeLimit : float
+    + resistanceFactor : float
     + tensionIncreaseRate : float
+    + tensionDecreaseRate : float
+    + tensionMultiplierSide : float
+    + tensionMultiplierOpposite : float
     + gaugeIncreaseRate : float
+    + gaugeDecreaseRate : float
+    + successGaugeMax : float
+    + biteMinTime / biteMaxTime : float
+    + phaseHoldDuration : float
   }
 
   FishDatabaseSO *-- "*" FishSpeciesDataSO
-  FishingSiteDataSO o-- "*" FishSpeciesDataSO
+  FishingSiteDataSO o-- "*" FishSpawnEntry
   FishSpeciesDataSO --> MovementPattern
   FishingSiteDataSO --> BackgroundType
   TensionDataSO --> TensionZone
+  AccountDataSO o-- "*" FishCatchRecord
 }
 
 package "Data Structures" #FFF3E0 {
@@ -208,17 +265,20 @@ package "Data Structures" #FFF3E0 {
   }
 
   class FishSpawnEntry <<Serializable>> {
-    + speciesData : FishSpeciesDataSO
-    + spawnProbability : float
-    + minWaitTime : float
-    + maxWaitTime : float
+    + SpeciesData : FishSpeciesDataSO
+    + SpawnWeight : float
+    + IsValid : bool
   }
 
-  class FloatRange <<Serializable>> {
+  class FloatRange <<struct>> {
     + min : float
     + max : float
     + GetRandom() : float
   }
+
+  FishSpawnEntry --> FishSpeciesDataSO
+  FishCatchData --> FishSpeciesDataSO
+  FishCatchData --> BackgroundType
 }
 
 note as N1
@@ -226,11 +286,12 @@ note as N1
   프리팹 간 직접 참조 없이 이벤트 통신
   인스펙터에서 드래그&드롭으로 연결
   씬 독립적 (씬 전환 시에도 유지)
+  RodStateTransitionEventSO: (이전,현재) 상태쌍 전달
 
   <b>Shared Data SO (SO Pattern)</b>
   런타임 공유 데이터 컨테이너
   여러 시스템이 동일 SO를 참조
-  씬 간 데이터 자연스럽게 유지
+  모든 설정값은 SO에 저장(하드코딩 금지)
 end note
 
 @enduml
